@@ -1,0 +1,225 @@
+@model HealthTrack.Areas.Trainer.ViewModels.FeedbackHistoryItemViewModel
+
+@{
+    ViewBag.Title = "Feedback Details";
+    var snapshot = ViewBag.ClientSnapshot as HealthTrack.Areas.Trainer.ViewModels.ClientFeedbackSnapshotDto;
+
+    var categoryColor = "primary";
+    var categoryIcon = "bi-stopwatch";
+    if (Model.Category == "Diet") { categoryColor = "success"; categoryIcon = "bi-egg-fried"; }
+    else if (Model.Category == "General Progress") { categoryColor = "info"; categoryIcon = "bi-graph-up-arrow"; }
+
+    var initials = "CL";
+    if (!string.IsNullOrWhiteSpace(Model.ClientName))
+    {
+        var parts = Model.ClientName.Trim().Split(' ');
+        initials = parts.Length > 1 
+            ? (parts[0].Substring(0, 1) + parts[parts.Length - 1].Substring(0, 1)).ToUpper()
+            : Model.ClientName.Substring(0, Math.Min(2, Model.ClientName.Length)).ToUpper();
+    }
+}
+
+<div class="container-fluid px-4 py-3">
+
+    <!-- Header Row -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                    <i class="bi bi-chat-left-text me-1"></i>Client Management
+                </span>
+                <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1">
+                    <i class="bi bi-eye me-1"></i>Feedback Details (FR-T-44)
+                </span>
+            </div>
+            <h2 class="h3 fw-bold mb-0 text-dark">Feedback Details</h2>
+            <p class="text-muted small mb-0">View submitted coaching observations and guidance for @Model.ClientName</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("Edit", "Feedback", new { id = Model.FeedbackId })" class="btn btn-warning d-inline-flex align-items-center gap-1 shadow-sm fw-semibold">
+                <i class="bi bi-pencil-square"></i>
+                <span>Edit Feedback</span>
+            </a>
+            <a href="@Url.Action("History", "Feedback", new { clientId = Model.ClientId })" class="btn btn-outline-secondary d-inline-flex align-items-center gap-1 shadow-sm">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to History</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- LEFT COLUMN: Feedback Content Card -->
+        <div class="col-lg-8">
+            <div class="card border shadow-sm rounded-3 bg-white overflow-hidden">
+                
+                <!-- Card Header -->
+                <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm"
+                             style="width: 48px; height: 48px; background: linear-gradient(135deg, #0d6efd, #0dcaf0); font-size: 1rem;">
+                            @initials
+                        </div>
+                        <div>
+                            <div class="d-flex align-items-center gap-2">
+                                <h5 class="fw-bold mb-0 text-dark">@Model.ClientName</h5>
+                                <span class="badge bg-@categoryColor-subtle text-@categoryColor border border-@categoryColor-subtle px-2 py-1 small">
+                                    <i class="bi @categoryIcon me-1"></i>@Model.Category Feedback
+                                </span>
+                                @if (Model.IsDraft)
+                                {
+                                    <span class="badge bg-warning text-dark px-2 py-1">
+                                        <i class="bi bi-pencil me-1"></i>Draft
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                        <i class="bi bi-check2-circle me-1"></i>Sent
+                                    </span>
+                                }
+                            </div>
+                            <div class="text-muted small mt-1">
+                                <i class="bi bi-envelope me-1"></i>@Model.ClientEmail
+                                <span class="mx-2">&bull;</span>
+                                <i class="bi bi-calendar3 me-1 text-primary"></i>Submitted on @Model.SentAt.ToString("MMMM dd, yyyy 'at' hh:mm tt")
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="@Url.Action("Edit", "Feedback", new { id = Model.FeedbackId })" class="btn btn-sm btn-outline-warning d-inline-flex align-items-center gap-1 shadow-sm">
+                            <i class="bi bi-pencil-square"></i>
+                            <span>Edit Feedback</span>
+                        </a>
+                        <a href="@Url.Action("Send", "Feedback", new { parentId = Model.FeedbackId })" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 shadow-sm">
+                            <i class="bi bi-reply-fill"></i>
+                            <span>Send Follow-Up</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Card Body -->
+                <div class="card-body p-4">
+                    
+                    @if (!string.IsNullOrWhiteSpace(Model.ParentFeedbackTitle))
+                    {
+                        <div class="badge bg-light text-muted border mb-3 px-3 py-2 fs-6">
+                            <i class="bi bi-arrow-return-right me-1 text-primary"></i>Follow-up to: <strong>@Model.ParentFeedbackTitle</strong>
+                        </div>
+                    }
+
+                    <!-- Feedback Subject / Headline -->
+                    <h4 class="fw-bold text-dark mb-3">@Model.Title</h4>
+
+                    <!-- Observations / Main Text -->
+                    <div class="mb-4">
+                        <div class="text-uppercase x-small fw-bold text-muted mb-2 d-flex align-items-center gap-1">
+                            <i class="bi bi-chat-text-fill text-primary"></i> Observations &amp; Detailed Review
+                        </div>
+                        <p class="text-secondary" style="white-space: pre-line; line-height: 1.7; font-size: 1rem;">@Model.FeedbackText</p>
+                    </div>
+
+                    <!-- Actionable Recommendations Box (if provided) -->
+                    @if (!string.IsNullOrWhiteSpace(Model.Recommendations))
+                    {
+                        <div class="p-4 bg-light border-start border-4 border-success rounded-end-3 mb-3">
+                            <div class="fw-bold text-success small text-uppercase mb-2 d-flex align-items-center gap-2">
+                                <i class="bi bi-check2-circle fs-5"></i> Coach Recommendations &amp; Action Items
+                            </div>
+                            <div class="text-dark" style="white-space: pre-line; line-height: 1.6;">@Model.Recommendations</div>
+                        </div>
+                    }
+
+                </div>
+
+                <!-- Card Footer: Audit Info -->
+                <div class="card-footer bg-light border-top py-3 px-4 d-flex justify-content-between align-items-center">
+                    <span class="text-muted small">
+                        <i class="bi bi-fingerprint me-1"></i>Feedback Record #@Model.FeedbackId
+                    </span>
+                    <span class="text-muted small">
+                        <i class="bi bi-person-badge me-1"></i>Assigned Client ID: @Model.ClientId
+                    </span>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Client Snapshot -->
+        <div class="col-lg-4">
+            @if (snapshot != null)
+            {
+                <div class="card border shadow-sm rounded-3 bg-white sticky-top" style="top: 1rem;">
+                    <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                        <h6 class="fw-bold mb-0 text-dark">
+                            <i class="bi bi-activity text-primary me-2"></i>Client Activity Snapshot
+                        </h6>
+                        <span class="badge bg-light text-muted border x-small">Live Data</span>
+                    </div>
+                    <div class="card-body p-4">
+                        <!-- Metrics Grid -->
+                        <div class="row g-2 mb-3 text-center">
+                            <div class="col-6">
+                                <div class="p-2 bg-light rounded-3">
+                                    <div class="text-muted x-small text-uppercase">Current Weight</div>
+                                    <div class="fw-bold text-primary">
+                                        @(snapshot.CurrentWeightKg.HasValue ? snapshot.CurrentWeightKg.Value.ToString("0.0") + " kg" : "—")
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 bg-light rounded-3">
+                                    <div class="text-muted x-small text-uppercase">BMI Category</div>
+                                    <div class="fw-bold text-info">
+                                        @(snapshot.CurrentBmi.HasValue ? snapshot.CurrentBmi.Value.ToString("0.0") : "—")
+                                        <span class="d-block x-small text-muted">@snapshot.BmiCategory</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Goal & Assigned Plans -->
+                        <ul class="list-group list-group-flush small mb-3">
+                            <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                <span class="text-muted"><i class="bi bi-flag me-1 text-primary"></i>Primary Goal</span>
+                                <span class="fw-semibold text-dark">@snapshot.PrimaryGoal</span>
+                            </li>
+                            <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                <span class="text-muted"><i class="bi bi-stopwatch me-1 text-success"></i>Workout Plan</span>
+                                <span class="fw-semibold text-dark text-truncate" style="max-width: 150px;">@snapshot.ActiveWorkoutPlan</span>
+                            </li>
+                            <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                <span class="text-muted"><i class="bi bi-egg-fried me-1 text-warning"></i>Diet Plan</span>
+                                <span class="fw-semibold text-dark text-truncate" style="max-width: 150px;">@snapshot.ActiveDietPlan</span>
+                            </li>
+                            <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                <span class="text-muted"><i class="bi bi-journal-check me-1 text-info"></i>Total Logged Meals</span>
+                                <span class="badge bg-secondary">@snapshot.LoggedMealsCount</span>
+                            </li>
+                        </ul>
+
+                        <div class="p-2 bg-light rounded-3 small mb-3">
+                            <div class="text-muted x-small fw-semibold text-uppercase mb-1">
+                                <i class="bi bi-clock-history me-1"></i>Last Workout
+                            </div>
+                            <div class="text-dark">@snapshot.LastWorkoutSummary</div>
+                        </div>
+
+                        <a href="@Url.Action("Details", "Clients", new { id = Model.ClientId })" class="btn btn-sm btn-outline-primary w-100">
+                            <i class="bi bi-person-lines-fill me-1"></i> View Full Client Profile
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+
+    </div>
+
+</div>
+
+<style>
+    .x-small {
+        font-size: 0.75rem;
+    }
+</style>

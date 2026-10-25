@@ -1,0 +1,817 @@
+@model HealthTrack.Areas.Trainer.ViewModels.ClientDetailsViewModel
+
+@{
+    ViewBag.Title = Model.Client.FullName + " - Client Details";
+    var activeTab = Model.ActiveTab?.ToLowerInvariant() ?? "profile";
+
+    var initials = "CL";
+    if (!string.IsNullOrWhiteSpace(Model.Client.FullName))
+    {
+        var parts = Model.Client.FullName.Trim().Split(' ');
+        initials = parts.Length > 1 
+            ? (parts[0].Substring(0, 1) + parts[parts.Length - 1].Substring(0, 1)).ToUpper()
+            : Model.Client.FullName.Substring(0, Math.Min(2, Model.Client.FullName.Length)).ToUpper();
+    }
+
+    var bmiColor = Model.BmiCategory == "Normal" ? "success" 
+                 : Model.BmiCategory == "Underweight" ? "info" 
+                 : Model.BmiCategory == "Overweight" ? "warning" 
+                 : "danger";
+}
+
+<div class="container-fluid px-4 py-3">
+
+    <!-- Top Breadcrumb & Navigation -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                    <a href="@Url.Action("Index", "Clients")" class="text-decoration-none text-primary">
+                        <i class="bi bi-people me-1"></i>Assigned Clients
+                    </a>
+                </li>
+                <li class="breadcrumb-item active text-dark fw-bold" aria-current="page">@Model.Client.FullName</li>
+            </ol>
+        </nav>
+        <a href="@Url.Action("Index", "Clients")" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 shadow-sm">
+            <i class="bi bi-arrow-left"></i>
+            <span>Back to Client List</span>
+        </a>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm mb-3" role="alert">
+            <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+            <div>@TempData["SuccessMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm mb-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-5 text-danger"></i>
+            <div>@TempData["ErrorMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Client Header Card -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4 bg-white overflow-hidden">
+        <div class="card-body p-4">
+            <div class="row align-items-center g-3">
+                <div class="col-auto">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm"
+                         style="width: 72px; height: 72px; background: linear-gradient(135deg, #0d6efd, #0dcaf0); font-size: 1.5rem;">
+                        @initials
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                        <h3 class="fw-bold mb-0 text-dark">@Model.Client.FullName</h3>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                            <i class="bi bi-check-circle-fill me-1"></i>Assigned client
+                        </span>
+                        <span class="badge bg-light text-muted border px-2 py-1">ID: @Model.Client.ClientId</span>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                            <i class="bi bi-trophy me-1"></i>@Model.Client.PrimaryGoal
+                        </span>
+                    </div>
+                    <div class="d-flex flex-wrap align-items-center gap-3 text-muted small mt-1">
+                        <span><i class="bi bi-envelope me-1 text-primary"></i>@Model.Client.Email</span>
+                        @if (Model.Age.HasValue)
+                        {
+                            <span><i class="bi bi-calendar-event me-1 text-primary"></i>Age: <strong>@Model.Age</strong> yrs</span>
+                        }
+                        <span><i class="bi bi-gender-ambiguous me-1 text-primary"></i>@(Model.Client.Gender ?? "Not specified")</span>
+                        <span><i class="bi bi-clock-history me-1 text-primary"></i>Joined: <strong>@Model.Client.JoinedDate.ToString("MMM yyyy")</strong></span>
+                    </div>
+                </div>
+                <div class="col-md-auto text-md-end">
+                    <div class="d-flex flex-wrap gap-2">
+                        @if (Model.ActiveWorkoutPlanId.HasValue)
+                        {
+                            <a href="@Url.Action("Details", "WorkoutPlans", new { id = Model.ActiveWorkoutPlanId.Value })" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 shadow-sm">
+                                <i class="bi bi-stopwatch"></i>
+                                <span>Workout Plan</span>
+                            </a>
+                        }
+                        else
+                        {
+                            <a href="@Url.Action("Create", "WorkoutPlans", new { clientId = Model.Client.ClientId })" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 shadow-sm">
+                                <i class="bi bi-plus-circle"></i>
+                                <span>Assign Workout</span>
+                            </a>
+                        }
+
+                        @if (Model.ActiveDietPlanId.HasValue)
+                        {
+                            <a href="@Url.Action("Details", "DietPlans", new { id = Model.ActiveDietPlanId.Value })" class="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-1 shadow-sm">
+                                <i class="bi bi-egg-fried"></i>
+                                <span>Diet Plan</span>
+                            </a>
+                        }
+                        else
+                        {
+                            <a href="@Url.Action("Create", "DietPlans", new { clientId = Model.Client.ClientId })" class="btn btn-sm btn-success d-inline-flex align-items-center gap-1 shadow-sm">
+                                <i class="bi bi-plus-circle"></i>
+                                <span>Assign Diet</span>
+                            </a>
+                        }
+
+                        <a href="@Url.Action("History", "Feedback", new { clientId = Model.Client.ClientId })" class="btn btn-sm btn-outline-info d-inline-flex align-items-center gap-1 shadow-sm">
+                            <i class="bi bi-chat-left-text"></i>
+                            <span>View Feedback</span>
+                        </a>
+                        <a href="@Url.Action("Send", "Feedback", new { clientId = Model.Client.ClientId })" class="btn btn-sm btn-info text-white d-inline-flex align-items-center gap-1 shadow-sm">
+                            <i class="bi bi-chat-quote-fill"></i>
+                            <span>Send Feedback</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4 TABS NAVIGATION -->
+        <div class="card-footer bg-light border-top p-0 px-4">
+            <ul class="nav nav-tabs border-0 gap-1" id="clientProfileTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link py-3 px-3 fw-semibold @(activeTab == "profile" ? "active" : "")" 
+                            id="tab-btn-profile" 
+                            data-bs-toggle="tab" 
+                            data-bs-target="#tab-profile" 
+                            type="button" 
+                            role="tab"
+                            aria-controls="tab-profile"
+                            aria-selected="@(activeTab == "profile" ? "true" : "false")">
+                        <i class="bi bi-person-heart me-1"></i> Profile &amp; Health
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link py-3 px-3 fw-semibold @(activeTab == "goals" ? "active" : "")" 
+                            id="tab-btn-goals" 
+                            data-bs-toggle="tab" 
+                            data-bs-target="#tab-goals" 
+                            type="button" 
+                            role="tab"
+                            aria-controls="tab-goals"
+                            aria-selected="@(activeTab == "goals" ? "true" : "false")">
+                        <i class="bi bi-trophy me-1"></i> Goals &amp; Progress
+                        <span class="badge bg-primary-subtle text-primary ms-1 small">@Model.Goals.Count</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link py-3 px-3 fw-semibold @(activeTab == "workouts" ? "active" : "")" 
+                            id="tab-btn-workouts" 
+                            data-bs-toggle="tab" 
+                            data-bs-target="#tab-workouts" 
+                            type="button" 
+                            role="tab"
+                            aria-controls="tab-workouts"
+                            aria-selected="@(activeTab == "workouts" ? "true" : "false")">
+                        <i class="bi bi-stopwatch me-1"></i> Workout History
+                        <span class="badge bg-secondary-subtle text-secondary ms-1 small">@Model.WorkoutLogs.Count</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link py-3 px-3 fw-semibold @(activeTab == "meals" ? "active" : "")" 
+                            id="tab-btn-meals" 
+                            data-bs-toggle="tab" 
+                            data-bs-target="#tab-meals" 
+                            type="button" 
+                            role="tab"
+                            aria-controls="tab-meals"
+                            aria-selected="@(activeTab == "meals" ? "true" : "false")">
+                        <i class="bi bi-egg-fried me-1"></i> Meal History
+                        <span class="badge bg-success-subtle text-success ms-1 small">@Model.MealLogs.Count</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- TAB CONTENTS CONTAINER -->
+    <div class="tab-content" id="clientProfileTabsContent">
+
+        <!-- ========================================================== -->
+        <!-- TAB 1: PROFILE & HEALTH                                     -->
+        <!-- ========================================================== -->
+        <div class="tab-pane fade @(activeTab == "profile" ? "show active" : "")" id="tab-profile" role="tabpanel">
+            
+            <div class="row g-4 mb-4">
+                <!-- Measurements & BMI -->
+                <div class="col-lg-6">
+                    <div class="card border shadow-sm rounded-3 h-100 bg-white">
+                        <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 text-dark">
+                                <i class="bi bi-speedometer2 text-primary me-2"></i>Recorded Health Measurements
+                            </h5>
+                            <span class="badge bg-@bmiColor text-white px-2 py-1">
+                                BMI: @Model.BmiCategory
+                            </span>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row g-3 mb-4">
+                                <div class="col-6 col-sm-3">
+                                    <div class="p-3 bg-light rounded-3 text-center border">
+                                        <div class="text-muted small text-uppercase fw-semibold">Height</div>
+                                        <div class="h4 fw-bold text-dark mb-0">
+                                            @(Model.HeightCm.HasValue ? Model.HeightCm.Value.ToString("0.0") : "—")
+                                        </div>
+                                        <div class="text-muted small">cm</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-sm-3">
+                                    <div class="p-3 bg-light rounded-3 text-center border">
+                                        <div class="text-muted small text-uppercase fw-semibold">Current</div>
+                                        <div class="h4 fw-bold text-primary mb-0">
+                                            @(Model.WeightKg.HasValue ? Model.WeightKg.Value.ToString("0.0") : "—")
+                                        </div>
+                                        <div class="text-muted small">kg</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-sm-3">
+                                    <div class="p-3 bg-light rounded-3 text-center border">
+                                        <div class="text-muted small text-uppercase fw-semibold">Baseline</div>
+                                        <div class="h4 fw-bold text-secondary mb-0">
+                                            @(Model.BaselineWeightKg.HasValue ? Model.BaselineWeightKg.Value.ToString("0.0") : "—")
+                                        </div>
+                                        <div class="text-muted small">kg</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-sm-3">
+                                    <div class="p-3 bg-light rounded-3 text-center border">
+                                        <div class="text-muted small text-uppercase fw-semibold">BMI Score</div>
+                                        <div class="h4 fw-bold text-dark mb-0">
+                                            @(Model.Bmi.HasValue ? Model.Bmi.Value.ToString("0.0") : "—")
+                                        </div>
+                                        <div class="text-muted small">kg/m²</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h6 class="fw-bold text-dark mb-3">Client Preferences &amp; Activity</h6>
+                            <div class="list-group list-group-flush border rounded-3 overflow-hidden">
+                                <div class="list-group-item d-flex justify-content-between align-items-center py-2">
+                                    <span class="text-muted small">Primary Fitness Goal</span>
+                                    <span class="fw-bold text-dark small">@Model.Client.PrimaryGoal</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center py-2">
+                                    <span class="text-muted small">Fitness Level</span>
+                                    <span class="badge bg-light text-dark border">@Model.FitnessLevel</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center py-2">
+                                    <span class="text-muted small">Target Training Frequency</span>
+                                    <span class="fw-bold text-dark small">@(Model.TargetDaysPerWeek.HasValue ? Model.TargetDaysPerWeek.Value + " days / week" : "Flexible")</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center py-2">
+                                    <span class="text-muted small">Preferred Workout Format</span>
+                                    <span class="fw-semibold text-dark small">@Model.PreferredWorkoutType</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center py-2">
+                                    <span class="text-muted small">Preferred Diet Style</span>
+                                    <span class="fw-semibold text-dark small">@Model.PreferredDietType</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Health History & Medical Conditions -->
+                <div class="col-lg-6">
+                    <div class="card border shadow-sm rounded-3 h-100 bg-white">
+                        <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 text-dark">
+                                <i class="bi bi-shield-shaded text-danger me-2"></i>Health History &amp; Medical Conditions
+                            </h5>
+                            <span class="badge bg-light text-muted border small">
+                                <i class="bi bi-lock-fill me-1"></i>Confidential
+                            </span>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="mb-3">
+                                <label class="fw-semibold text-dark small d-flex align-items-center gap-1 mb-1">
+                                    <i class="bi bi-bandaid text-danger"></i> Injuries &amp; Physical History
+                                </label>
+                                <div class="p-3 bg-light rounded-3 text-secondary small border">
+                                    @Model.InjuriesHistory
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="fw-semibold text-dark small d-flex align-items-center gap-1 mb-1">
+                                    <i class="bi bi-heart-pulse text-danger"></i> Medical Conditions
+                                </label>
+                                <div class="p-3 bg-light rounded-3 text-secondary small border">
+                                    @Model.MedicalConditions
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="fw-semibold text-dark small d-flex align-items-center gap-1 mb-1">
+                                    <i class="bi bi-exclamation-octagon text-warning"></i> Allergies &amp; Intolerances
+                                </label>
+                                <div class="p-3 bg-light rounded-3 text-secondary small border">
+                                    @Model.Allergies
+                                </div>
+                            </div>
+
+                            <div class="mb-0">
+                                <label class="fw-semibold text-dark small d-flex align-items-center gap-1 mb-1">
+                                    <i class="bi bi-egg-fried text-success"></i> Dietary Restrictions
+                                </label>
+                                <div class="p-3 bg-light rounded-3 text-secondary small border">
+                                    @Model.DietaryRestrictions
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- TAB 2: GOALS & PROGRESS                                     -->
+        <!-- ========================================================== -->
+        <div class="tab-pane fade @(activeTab == "goals" ? "show active" : "")" id="tab-goals" role="tabpanel">
+            
+            <!-- Goals Section -->
+            <div class="card border shadow-sm rounded-3 mb-4 bg-white">
+                <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-bullseye text-primary me-2"></i>Fitness Goals &amp; Milestones
+                    </h5>
+                    <span class="badge bg-secondary-subtle text-secondary border small">@Model.Goals.Count Goals Defined</span>
+                </div>
+                <div class="card-body p-4">
+                    @if (Model.Goals != null && Model.Goals.Any())
+                    {
+                        <div class="row g-3">
+                            @foreach (var g in Model.Goals)
+                            {
+                                <div class="col-md-6">
+                                    <div class="p-3 border rounded-3 bg-light h-100">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div>
+                                                <h6 class="fw-bold mb-0 text-dark">@g.GoalName</h6>
+                                                <span class="badge bg-secondary bg-opacity-25 text-dark x-small">@g.Category</span>
+                                            </div>
+                                            @if (g.IsAchieved)
+                                            {
+                                                <span class="badge bg-success"><i class="bi bi-check2 me-1"></i>Achieved</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">In Progress</span>
+                                            }
+                                        </div>
+
+                                        <!-- Progress Bar -->
+                                        <div class="mb-2">
+                                            <div class="d-flex justify-content-between small text-muted mb-1">
+                                                <span>Progress: <strong>@g.ProgressPercentage%</strong></span>
+                                                @if (g.TargetDate.HasValue)
+                                                {
+                                                    <span>Target: @g.TargetDate.Value.ToString("MMM dd, yyyy")</span>
+                                                }
+                                            </div>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar @(g.ProgressPercentage >= 100 ? "bg-success" : "bg-primary")" 
+                                                     role="progressbar" 
+                                                     style="width: @g.ProgressPercentage%;" 
+                                                     aria-valuenow="@g.ProgressPercentage" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex justify-content-between text-muted small pt-1 border-top">
+                                            <span>Baseline: <strong>@g.BaselineValue.ToString("0.#") @g.Unit</strong></span>
+                                            <span>Current: <strong class="text-primary">@g.CurrentValue.ToString("0.#") @g.Unit</strong></span>
+                                            <span>Target: <strong>@g.TargetValue.ToString("0.#") @g.Unit</strong></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-flag fs-3 d-block mb-2 text-secondary"></i>
+                            <p class="mb-0">No active goals currently logged for this client.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Progress History Table -->
+            <div class="card border shadow-sm rounded-3 bg-white">
+                <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-graph-up-arrow text-success me-2"></i>Recorded Health &amp; Weight Progress
+                    </h5>
+                    <span class="badge bg-light text-muted border small">@Model.ProgressRecords.Count Logged Records</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light border-bottom text-uppercase small text-muted">
+                            <tr>
+                                <th class="ps-4 text-nowrap">Date</th>
+                                <th class="text-nowrap">Weight</th>
+                                <th class="text-nowrap">BMI</th>
+                                <th class="text-nowrap">Calories In</th>
+                                <th class="text-nowrap">Calories Burned</th>
+                                <th class="text-nowrap">Water</th>
+                                <th class="pe-4">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.ProgressRecords != null && Model.ProgressRecords.Any())
+                            {
+                                foreach (var r in Model.ProgressRecords)
+                                {
+                                    <tr>
+                                        <td class="ps-4 fw-semibold text-dark text-nowrap">@r.RecordedDate.ToString("MMM dd, yyyy")</td>
+                                        <td class="fw-bold text-primary text-nowrap">@r.WeightKg.ToString("0.0") kg</td>
+                                        <td class="text-nowrap">
+                                            @if (r.Bmi.HasValue)
+                                            {
+                                                <span class="badge bg-light text-dark border">@r.Bmi.Value.ToString("0.0")</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                        <td class="text-nowrap"><i class="bi bi-fire text-danger me-1"></i>@r.CaloriesConsumed kcal</td>
+                                        <td class="text-nowrap"><i class="bi bi-lightning-charge text-warning me-1"></i>@r.CaloriesBurned kcal</td>
+                                        <td class="text-nowrap"><i class="bi bi-droplet-fill text-info me-1"></i>@Math.Round((decimal)r.WaterIntakeMl / 1000m, 1) L</td>
+                                        <td class="pe-4 text-muted small">@(string.IsNullOrWhiteSpace(r.Notes) ? "—" : r.Notes)</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="7" class="text-center py-4 text-muted">
+                                        No progress records logged yet.
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Sleep & Recovery Records -->
+            <div class="card border shadow-sm rounded-3 bg-white mt-4">
+                <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-moon-stars text-primary me-2" style="color: #6610f2 !important;"></i>Sleep &amp; Recovery Logs
+                    </h5>
+                    <span class="badge bg-light text-muted border small">@Model.SleepLogs.Count Logged Sessions</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light border-bottom text-uppercase small text-muted">
+                            <tr>
+                                <th class="ps-4 text-nowrap">Date</th>
+                                <th class="text-nowrap">Bedtime</th>
+                                <th class="text-nowrap">Wake Time</th>
+                                <th class="text-nowrap">Duration</th>
+                                <th class="text-nowrap">Rest Quality</th>
+                                <th class="pe-4">Client Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.SleepLogs != null && Model.SleepLogs.Any())
+                            {
+                                foreach (var s in Model.SleepLogs)
+                                {
+                                    <tr>
+                                        <td class="ps-4 fw-semibold text-dark">@s.SleepDate.ToString("MMM dd, yyyy")</td>
+                                        <td class="text-muted small">@s.BedTime.ToString("hh:mm tt")</td>
+                                        <td class="text-muted small">@s.WakeTime.ToString("hh:mm tt")</td>
+                                        <td class="fw-bold text-dark small">@s.DurationHours.ToString("F1") hrs</td>
+                                        <td>
+                                            <span class="text-warning small">
+                                                @(s.QualityRating ?? 5) <i class="bi bi-star-fill"></i>
+                                            </span>
+                                        </td>
+                                        <td class="pe-4 small text-secondary">
+                                            @(string.IsNullOrWhiteSpace(s.Notes) ? "--" : s.Notes)
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">
+                                        No sleep records logged by this client yet.
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- TAB 3: WORKOUT HISTORY                                     -->
+        <!-- ========================================================== -->
+        <div class="tab-pane fade @(activeTab == "workouts" ? "show active" : "")" id="tab-workouts" role="tabpanel">
+            
+            <!-- Filter Bar & Summary Ribbon -->
+            <div class="card border-0 shadow-sm rounded-3 mb-4 bg-light">
+                <div class="card-body p-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted small fw-semibold text-uppercase">Time Filter:</span>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <a href="@Url.Action("Details", "Clients", new { id = Model.Client.ClientId, tab = "workouts", workoutFilter = "7days" })" 
+                               class="btn @(Model.WorkoutDateFilter == "7days" ? "btn-primary" : "btn-outline-secondary")">
+                                Last 7 Days
+                            </a>
+                            <a href="@Url.Action("Details", "Clients", new { id = Model.Client.ClientId, tab = "workouts", workoutFilter = "30days" })" 
+                               class="btn @(Model.WorkoutDateFilter == "30days" ? "btn-primary" : "btn-outline-secondary")">
+                                Last 30 Days
+                            </a>
+                            <a href="@Url.Action("Details", "Clients", new { id = Model.Client.ClientId, tab = "workouts", workoutFilter = "90days" })" 
+                               class="btn @(Model.WorkoutDateFilter == "90days" ? "btn-primary" : "btn-outline-secondary")">
+                                Last 90 Days
+                            </a>
+                            <a href="@Url.Action("Details", "Clients", new { id = Model.Client.ClientId, tab = "workouts", workoutFilter = "all" })" 
+                               class="btn @(Model.WorkoutDateFilter == "all" ? "btn-primary" : "btn-outline-secondary")">
+                                All History
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="badge bg-success-subtle text-success border px-3 py-2">
+                            <i class="bi bi-check-circle-fill me-1"></i>Completed Workouts: <strong>@Model.TotalCompletedWorkouts</strong>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Workout Logs Table -->
+            <div class="card border shadow-sm rounded-3 bg-white">
+                <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-stopwatch text-primary me-2"></i>Completed Workout Sessions
+                    </h5>
+                    <span class="badge bg-light text-muted border small">@Model.WorkoutLogs.Count Sessions</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light border-bottom text-uppercase small text-muted">
+                            <tr>
+                                <th class="ps-4 text-nowrap">Date</th>
+                                <th>Session Name</th>
+                                <th>Routine Plan</th>
+                                <th class="text-nowrap">Duration</th>
+                                <th class="text-nowrap">Calories</th>
+                                <th class="text-nowrap">Exertion (RPE)</th>
+                                <th>Client Notes</th>
+                                <th class="pe-4">Trainer Feedback</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.WorkoutLogs != null && Model.WorkoutLogs.Any())
+                            {
+                                foreach (var log in Model.WorkoutLogs)
+                                {
+                                    <tr>
+                                        <td class="ps-4 fw-semibold text-dark text-nowrap">@log.LogDate.ToString("MMM dd, yyyy")</td>
+                                        <td class="fw-bold text-dark">@log.SessionName</td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border">@log.WorkoutPlanTitle</span>
+                                        </td>
+                                        <td class="text-nowrap"><span class="badge bg-primary-subtle text-primary">@log.DurationMinutes mins</span></td>
+                                        <td class="text-nowrap"><span class="fw-semibold text-danger"><i class="bi bi-fire me-1"></i>@log.CaloriesBurned kcal</span></td>
+                                        <td class="text-nowrap">
+                                            @if (log.PerceivedExertion > 0)
+                                            {
+                                                var badge = log.PerceivedExertion >= 8 ? "bg-danger" : log.PerceivedExertion >= 5 ? "bg-warning text-dark" : "bg-success";
+                                                <span class="badge @badge">RPE @log.PerceivedExertion/10</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                        <td class="small text-muted">@(string.IsNullOrWhiteSpace(log.ClientNotes) ? "—" : log.ClientNotes)</td>
+                                        <td class="pe-4 small text-secondary">@(string.IsNullOrWhiteSpace(log.CoachFeedback) ? "—" : log.CoachFeedback)</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="8" class="text-center py-5 text-muted">
+                                        <i class="bi bi-stopwatch fs-2 d-block mb-2 text-secondary"></i>
+                                        <p class="mb-0">No workout sessions logged for this selected timeframe.</p>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- TAB 4: MEAL HISTORY                                        -->
+        <!-- ========================================================== -->
+        <div class="tab-pane fade @(activeTab == "meals" ? "show active" : "")" id="tab-meals" role="tabpanel">
+            
+            <!-- Filter Bar & Nutrition Stats -->
+            <div class="card border-0 shadow-sm rounded-3 mb-4 bg-light">
+                <div class="card-body p-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted small fw-semibold text-uppercase">Filter Range:</span>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <a href="@Url.Action("Details", "Clients", new { id = Model.Client.ClientId, tab = "meals", mealFilter = "7days" })" 
+                               class="btn @(Model.MealDateFilter == "7days" ? "btn-success" : "btn-outline-secondary")">
+                                Last 7 Days
+                            </a>
+                            <a href="@Url.Action("Details", "Clients", new { id = Model.Client.ClientId, tab = "meals", mealFilter = "30days" })" 
+                               class="btn @(Model.MealDateFilter == "30days" ? "btn-success" : "btn-outline-secondary")">
+                                Last 30 Days
+                            </a>
+                            <a href="@Url.Action("Details", "Clients", new { id = Model.Client.ClientId, tab = "meals", mealFilter = "90days" })" 
+                               class="btn @(Model.MealDateFilter == "90days" ? "btn-success" : "btn-outline-secondary")">
+                                Last 90 Days
+                            </a>
+                            <a href="@Url.Action("Details", "Clients", new { id = Model.Client.ClientId, tab = "meals", mealFilter = "all" })" 
+                               class="btn @(Model.MealDateFilter == "all" ? "btn-success" : "btn-outline-secondary")">
+                                All History
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap align-items-center gap-3">
+                        @if (Model.DailyCalorieTarget.HasValue)
+                        {
+                            <span class="badge bg-primary-subtle text-primary border px-3 py-2">
+                                <i class="bi bi-bullseye me-1"></i>Daily Target: <strong>@Model.DailyCalorieTarget kcal</strong>
+                            </span>
+                        }
+                        <span class="badge bg-success-subtle text-success border px-3 py-2">
+                            <i class="bi bi-lightning-charge me-1"></i>Avg Daily: <strong>@Model.AverageDailyCalories kcal</strong>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Meal Logs Table: Clean, No-Wrap Columns -->
+            <div class="card border shadow-sm rounded-3 bg-white">
+                <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-journal-text text-success me-2"></i>Recorded Meals &amp; Nutrition Logs
+                    </h5>
+                    <span class="badge bg-light text-muted border small">@Model.MealLogs.Count Recorded Meals</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light border-bottom text-uppercase small text-muted">
+                            <tr>
+                                <th class="ps-4 text-nowrap">Date</th>
+                                <th class="text-nowrap">Meal Type</th>
+                                <th>Meal Name</th>
+                                <th class="text-nowrap">Portion</th>
+                                <th class="text-nowrap">Calories</th>
+                                <th class="text-nowrap">Macros (P / C / F)</th>
+                                <th class="text-nowrap">Hydration</th>
+                                <th class="pe-4">Client Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.MealLogs != null && Model.MealLogs.Any())
+                            {
+                                foreach (var meal in Model.MealLogs)
+                                {
+                                    var badgeColor = "primary";
+                                    var icon = "bi-cup-hot-fill";
+                                    if (meal.MealType.IndexOf("Breakfast", StringComparison.OrdinalIgnoreCase) >= 0) { badgeColor = "warning"; icon = "bi-sun-fill"; }
+                                    else if (meal.MealType.IndexOf("Lunch", StringComparison.OrdinalIgnoreCase) >= 0) { badgeColor = "success"; icon = "bi-egg-fried"; }
+                                    else if (meal.MealType.IndexOf("Dinner", StringComparison.OrdinalIgnoreCase) >= 0) { badgeColor = "info"; icon = "bi-moon-stars-fill"; }
+                                    else if (meal.MealType.IndexOf("Snack", StringComparison.OrdinalIgnoreCase) >= 0) { badgeColor = "secondary"; icon = "bi-apple"; }
+
+                                    <tr>
+                                        <td class="ps-4 fw-semibold text-dark text-nowrap">@meal.LogDate.ToString("MMM dd, yyyy")</td>
+                                        <td class="text-nowrap">
+                                            <span class="badge bg-@badgeColor-subtle text-@badgeColor border border-@badgeColor-subtle px-2 py-1">
+                                                <i class="bi @icon me-1"></i>@meal.MealType
+                                            </span>
+                                        </td>
+                                        <td class="fw-bold text-dark">@meal.MealName</td>
+                                        <td class="text-nowrap text-muted small">@(string.IsNullOrWhiteSpace(meal.PortionSize) ? "Standard" : meal.PortionSize)</td>
+                                        <td class="text-nowrap fw-bold text-success"><i class="bi bi-fire me-1"></i>@meal.Calories kcal</td>
+                                        <td class="text-nowrap small">
+                                            @if (meal.ProteinGrams > 0 || meal.CarbsGrams > 0 || meal.FatsGrams > 0)
+                                            {
+                                                <span class="text-primary fw-bold">@(meal.ProteinGrams)g</span><span class="text-muted">P</span><span class="text-muted mx-1">/</span><span class="text-warning fw-bold">@(meal.CarbsGrams)g</span><span class="text-muted">C</span><span class="text-muted mx-1">/</span><span class="text-danger fw-bold">@(meal.FatsGrams)g</span><span class="text-muted">F</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                        <td class="text-nowrap">
+                                            @if (meal.WaterLiters > 0)
+                                            {
+                                                <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1">
+                                                    <i class="bi bi-droplet-fill me-1"></i>@meal.WaterLiters.ToString("0.00") L
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                        <td class="pe-4 text-muted small">@(string.IsNullOrWhiteSpace(meal.ClientNotes) ? "—" : meal.ClientNotes)</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="8" class="text-center py-5 text-muted">
+                                        <i class="bi bi-journal-x fs-2 d-block mb-2 text-secondary"></i>
+                                        <p class="mb-0">No meals logged for this selected timeframe.</p>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<style>
+    /* Dynamic tab underline indicator bar */
+    #clientProfileTabs {
+        border-bottom: none !important;
+    }
+    #clientProfileTabs .nav-link {
+        color: #6c757d !important;
+        background: transparent !important;
+        border: none !important;
+        border-bottom: 3px solid transparent !important;
+        border-radius: 0 !important;
+        margin-bottom: 0 !important;
+        font-weight: 600;
+        transition: color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+    }
+    #clientProfileTabs .nav-link:hover {
+        color: #0d6efd !important;
+        border-color: transparent !important;
+        border-bottom: 3px solid rgba(13, 110, 253, 0.3) !important;
+    }
+    #clientProfileTabs .nav-link.active {
+        color: #0d6efd !important;
+        background: transparent !important;
+        border: none !important;
+        border-bottom: 3px solid #0d6efd !important;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Tab switching and URL persistence
+        var tabButtons = document.querySelectorAll('#clientProfileTabs button[data-bs-toggle="tab"]');
+        tabButtons.forEach(function (btn) {
+            btn.addEventListener('shown.bs.tab', function (e) {
+                var targetId = e.target.getAttribute('data-bs-target');
+                if (targetId) {
+                    var tabKey = targetId.replace('#tab-', '');
+                    var url = new URL(window.location);
+                    url.searchParams.set('tab', tabKey);
+                    window.history.replaceState({}, '', url);
+                }
+            });
+        });
+
+        // Auto-activate tab from URL parameter if present
+        var params = new URLSearchParams(window.location.search);
+        var tabParam = params.get('tab') || (window.location.hash ? window.location.hash.replace('#', '') : null);
+        if (tabParam) {
+            var targetBtn = document.querySelector('#tab-btn-' + tabParam);
+            if (targetBtn && !targetBtn.classList.contains('active')) {
+                var tabTrigger = new bootstrap.Tab(targetBtn);
+                tabTrigger.show();
+            }
+        }
+    });
+</script>
+

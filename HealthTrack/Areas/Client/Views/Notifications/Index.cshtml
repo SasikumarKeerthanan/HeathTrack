@@ -1,0 +1,189 @@
+@model HealthTrack.Areas.Client.ViewModels.ClientNotificationsPageViewModel
+@{
+    ViewBag.Title = "Activity & Notifications";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-3 py-2">
+
+    <!-- HERO HEADER -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0284c7 100%);">
+        <div class="card-body p-4 text-white">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-white bg-opacity-10 text-white border border-2 border-white border-opacity-25 d-flex align-items-center justify-content-center shadow" style="width: 58px; height: 58px;">
+                        <i class="bi bi-bell-fill fs-3 text-warning"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <h4 class="fw-bold text-white mb-0">Activity &amp; Notifications</h4>
+                            @if (Model.UnreadCount > 0)
+                            {
+                                <span class="badge bg-danger text-white rounded-pill px-2 py-1 small">
+                                    @Model.UnreadCount Unread
+                                </span>
+                            }
+                        </div>
+                        <p class="text-white-50 mb-0 small">
+                            Stay up-to-date with trainer guidance, plan updates, milestones, and coach-change decisions.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    @if (Model.UnreadCount > 0)
+                    {
+                        using (Html.BeginForm("MarkAllAsRead", "Notifications", new { area = "Client" }, FormMethod.Post))
+                        {
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-light rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1 shadow-sm">
+                                <i class="bi bi-check2-all text-primary"></i>
+                                <span>Mark All as Read</span>
+                            </button>
+                        }
+                    }
+                    <a href="@Url.Action("Index", "Dashboard", new { area = "Client" })" class="btn btn-sm btn-outline-light rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-arrow-left"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ALERTS -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm d-flex align-items-center gap-2 mb-4" role="alert">
+            <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+            <div>@TempData["SuccessMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- MAIN NOTIFICATION CARD -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+        <div class="card-header bg-white border-0 pt-4 px-4 pb-3">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <!-- Filter Pills -->
+                <ul class="nav nav-pills gap-2">
+                    <li class="nav-item">
+                        <a href="@Url.Action("Index", "Notifications", new { area = "Client", filter = "all" })" 
+                           class="nav-link rounded-pill py-1 px-3 small @(Model.ActiveFilter == "all" ? "active bg-dark" : "bg-light text-secondary")">
+                            All (@Model.TotalCount)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="@Url.Action("Index", "Notifications", new { area = "Client", filter = "unread" })" 
+                           class="nav-link rounded-pill py-1 px-3 small @(Model.ActiveFilter == "unread" ? "active bg-danger text-white fw-semibold" : "bg-light text-secondary")">
+                            Unread (@Model.UnreadCount)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="@Url.Action("Index", "Notifications", new { area = "Client", filter = "coach" })" 
+                           class="nav-link rounded-pill py-1 px-3 small @(Model.ActiveFilter == "coach" ? "active bg-info text-white" : "bg-light text-secondary")">
+                            Coach Guidance
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="@Url.Action("Index", "Notifications", new { area = "Client", filter = "requests" })" 
+                           class="nav-link rounded-pill py-1 px-3 small @(Model.ActiveFilter == "requests" ? "active bg-warning text-dark fw-semibold" : "bg-light text-secondary")">
+                            Coach Change Requests
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="@Url.Action("Index", "Notifications", new { area = "Client", filter = "plans" })" 
+                           class="nav-link rounded-pill py-1 px-3 small @(Model.ActiveFilter == "plans" ? "active bg-success text-white" : "bg-light text-secondary")">
+                            Workouts &amp; Diet
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="@Url.Action("Index", "Notifications", new { area = "Client", filter = "announcements" })" 
+                           class="nav-link rounded-pill py-1 px-3 small @(Model.ActiveFilter == "announcements" ? "active bg-primary text-white" : "bg-light text-secondary")">
+                            <i class="bi bi-megaphone-fill me-1"></i> Announcements
+                        </a>
+                    </li>
+                </ul>
+
+                <span class="text-muted x-small">
+                    Showing @Model.Notifications.Count notifications
+                </span>
+            </div>
+        </div>
+
+        <div class="card-body p-4 pt-1">
+            @if (Model.Notifications.Any())
+            {
+                <div class="d-flex flex-column gap-3">
+                    @foreach (var item in Model.Notifications)
+                    {
+                        string unreadStyle = item.IsRead ? "bg-white border" : "bg-light border border-primary border-opacity-25 shadow-sm";
+                        
+                        <div class="card rounded-4 @unreadStyle p-3 transition-hover">
+                            <div class="d-flex align-items-start gap-3">
+                                <!-- Category Icon -->
+                                <div class="rounded-circle bg-@item.Color bg-opacity-10 text-@item.Color p-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 46px; height: 46px;">
+                                    <i class="bi @item.Icon fs-5"></i>
+                                </div>
+
+                                <!-- Body -->
+                                <div class="flex-grow-1">
+                                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <h6 class="fw-bold text-dark mb-0">@item.Title</h6>
+                                            <span class="badge bg-secondary-subtle text-secondary rounded-pill x-small">
+                                                @item.Category
+                                            </span>
+                                            @if (!item.IsRead)
+                                            {
+                                                <span class="badge bg-danger rounded-pill x-small" style="font-size: 0.65rem;">NEW</span>
+                                            }
+                                        </div>
+                                        <span class="x-small text-muted">
+                                            <i class="bi bi-clock me-1"></i>@item.TimeAgo &bull; @item.Timestamp.ToString("MMM dd, yyyy - hh:mm tt")
+                                        </span>
+                                    </div>
+
+                                    <p class="small text-secondary mb-3" style="line-height: 1.45;">
+                                        @item.Message
+                                    </p>
+
+                                    <!-- Action buttons -->
+                                    <div class="d-flex align-items-center gap-2">
+                                        <a href="@item.Url" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold x-small">
+                                            <span>View Details</span>
+                                            <i class="bi bi-arrow-right ms-1"></i>
+                                        </a>
+
+                                        @if (!item.IsRead)
+                                        {
+                                            using (Html.BeginForm("MarkAsRead", "Notifications", new { area = "Client" }, FormMethod.Post))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@item.Id" />
+                                                <button type="submit" class="btn btn-sm btn-link text-muted text-decoration-none x-small px-2">
+                                                    <i class="bi bi-check2 me-1"></i>Mark as Read
+                                                </button>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <div class="rounded-circle bg-light text-muted d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
+                        <i class="bi bi-bell-slash fs-2"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-1">No Notifications Found</h5>
+                    <p class="text-muted small mb-0">You're completely caught up! New updates from your trainer and training plan will appear here.</p>
+                </div>
+            }
+        </div>
+    </div>
+
+</div>

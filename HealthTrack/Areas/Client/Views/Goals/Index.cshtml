@@ -1,0 +1,761 @@
+@model HealthTrack.Areas.Client.ViewModels.ClientGoalsIndexViewModel
+
+@{
+    ViewBag.Title = "Health & Fitness Goals";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid py-4 px-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold text-dark mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-flag-fill text-primary"></i> Goals &amp; Milestone Hub
+            </h3>
+            <p class="text-muted small mb-0">Set measurable fitness targets, track your ongoing progress, and review completed milestones.</p>
+        </div>
+        <button type="button" class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#createGoalModal">
+            <i class="bi bi-plus-circle-fill"></i> Create New Goal
+        </button>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show border-0 rounded-4 shadow-sm py-3 px-4 mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+            <span>@TempData["SuccessMessage"]</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show border-0 rounded-4 shadow-sm py-3 px-4 mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+            <span>@TempData["ErrorMessage"]</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- KPI Metric Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="x-small text-uppercase fw-bold text-muted">Active Goals</span>
+                    <div class="rounded-3 bg-primary bg-opacity-10 text-primary p-2">
+                        <i class="bi bi-hourglass-split fs-5"></i>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-dark mb-0">@Model.ActiveGoalsCount</h3>
+                <span class="x-small text-muted">Goals currently in progress</span>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="x-small text-uppercase fw-bold text-muted">Completed Goals</span>
+                    <div class="rounded-3 bg-success bg-opacity-10 text-success p-2">
+                        <i class="bi bi-check-circle-fill fs-5"></i>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-success mb-0">@Model.CompletedGoalsCount</h3>
+                <span class="x-small text-muted">Milestones successfully reached</span>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="x-small text-uppercase fw-bold text-muted">Total Milestones</span>
+                    <div class="rounded-3 bg-info bg-opacity-10 text-info p-2">
+                        <i class="bi bi-trophy-fill fs-5"></i>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-dark mb-0">@Model.TotalGoalsCount</h3>
+                <span class="x-small text-muted">Lifetime goals tracked</span>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="x-small text-uppercase fw-bold text-muted">Success Rate</span>
+                    <div class="rounded-3 bg-warning bg-opacity-10 text-warning p-2">
+                        <i class="bi bi-pie-chart-fill fs-5"></i>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-warning mb-0">@Model.OverallCompletionRate%</h3>
+                <span class="x-small text-muted">Goal completion percentage</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHARTS ROW: Workout Completion & Goal Progress Charts -->
+    <div class="row g-4 mb-4">
+        <!-- Chart 1: Workout Completion & Training Consistency -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-2 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-lightning-charge-fill text-warning fs-5"></i>
+                        <h5 class="fw-bold text-dark mb-0">Workout Completion Consistency</h5>
+                    </div>
+                    <span class="badge bg-light text-muted border x-small">Past 14 Days</span>
+                </div>
+                <div class="card-body p-4 pt-1">
+                    <p class="x-small text-muted mb-3">Daily completed training routines and exertion trends.</p>
+                    <div style="height: 240px; position: relative;">
+                        <canvas id="workoutCompletionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart 2: Goal Progress Milestones -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-2 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-bar-chart-line-fill text-primary fs-5"></i>
+                        <h5 class="fw-bold text-dark mb-0">Active Goal Progress Overview</h5>
+                    </div>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle x-small">@Model.ActiveGoalsCount Active</span>
+                </div>
+                <div class="card-body p-4 pt-1">
+                    <p class="x-small text-muted mb-3">Progress towards target values for each active goal.</p>
+                    @if (Model.ActiveGoals.Any())
+                    {
+                        <div style="height: 240px; position: relative;">
+                            <canvas id="goalProgressChart"></canvas>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-column align-items-center justify-content-center text-center text-muted" style="height: 240px;">
+                            <i class="bi bi-flag fs-1 mb-2 text-secondary opacity-50"></i>
+                            <h6 class="fw-bold text-dark">No Active Goals</h6>
+                            <p class="x-small text-muted mb-3">Click 'Create New Goal' to begin tracking fitness milestones.</p>
+                            <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#createGoalModal">
+                                Create Goal
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABS: Active Goals vs Completed History -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white">
+        <div class="card-header bg-white border-0 pt-3 px-4 pb-0">
+            <ul class="nav nav-tabs border-bottom-0 gap-2" id="goalTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fw-semibold px-4 py-2" id="active-tab" data-bs-toggle="tab" data-bs-target="#activeGoalsTab" type="button" role="tab" aria-controls="activeGoalsTab" aria-selected="true">
+                        <i class="bi bi-hourglass-split me-1 text-primary"></i> Active Goals (@Model.ActiveGoalsCount)
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-semibold px-4 py-2" id="history-tab" data-bs-toggle="tab" data-bs-target="#completedGoalsTab" type="button" role="tab" aria-controls="completedGoalsTab" aria-selected="false">
+                        <i class="bi bi-check2-circle me-1 text-success"></i> Completed Goals (@Model.CompletedGoalsCount)
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-semibold px-4 py-2" id="cancelled-tab" data-bs-toggle="tab" data-bs-target="#cancelledGoalsTab" type="button" role="tab" aria-controls="cancelledGoalsTab" aria-selected="false">
+                        <i class="bi bi-x-circle me-1 text-warning"></i> Cancelled Goals (@Model.CancelledGoalsCount)
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card-body p-4">
+            <div class="tab-content" id="goalTabsContent">
+                <!-- 1. ACTIVE GOALS TAB -->
+                <div class="tab-pane fade show active" id="activeGoalsTab" role="tabpanel" aria-labelledby="active-tab">
+                    @if (Model.ActiveGoals.Any())
+                    {
+                        <div class="row g-3">
+                            @foreach (var goal in Model.ActiveGoals)
+                            {
+                                int pct = 0;
+                                if (goal.IsAchieved)
+                                {
+                                    pct = 100;
+                                }
+                                else if (goal.BaselineValue != goal.TargetValue)
+                                {
+                                    var totalDist = Math.Abs(goal.TargetValue - goal.BaselineValue);
+                                    var progressDist = Math.Abs(goal.CurrentValue - goal.BaselineValue);
+                                    pct = totalDist > 0 ? (int)Math.Max(0, Math.Min(100, Math.Round((progressDist / totalDist) * 100))) : 0;
+                                }
+
+                                <div class="col-lg-6">
+                                    <div class="card border rounded-4 p-3 h-100 shadow-sm bg-light bg-opacity-25">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div>
+                                                <div class="d-flex align-items-center gap-2 mb-1">
+                                                    <h6 class="fw-bold text-dark mb-0">@goal.GoalName</h6>
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle x-small">@goal.Category</span>
+                                                </div>
+                                                <p class="x-small text-muted mb-0">@goal.StatusMessage</p>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="fs-5 fw-bold text-dark">@goal.CurrentValue.ToString("F1")</span>
+                                                <span class="x-small text-muted"> / @goal.TargetValue.ToString("F1") @goal.Unit</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Progress Bar -->
+                                        <div class="d-flex align-items-center gap-2 my-2">
+                                            <div class="progress flex-grow-1" style="height: 8px;">
+                                                <div class="progress-bar bg-primary" role="progressbar" style="width: @(pct)%;"></div>
+                                            </div>
+                                            <span class="small fw-bold text-primary">@pct%</span>
+                                        </div>
+
+                                        <div class="d-flex justify-content-between text-muted x-small pt-2 border-top">
+                                            <span>Baseline: <strong>@goal.BaselineValue.ToString("F1") @goal.Unit</strong></span>
+                                            <span>Target Date: <strong>@(goal.TargetDate.HasValue ? goal.TargetDate.Value.ToString("MMM dd, yyyy") : "Open-ended")</strong></span>
+                                        </div>
+
+                                        <!-- Action Buttons -->
+                                        <div class="d-flex flex-wrap gap-2 mt-3 pt-2">
+                                            <button type="button" class="btn btn-sm btn-outline-primary rounded-3 flex-grow-1 fw-semibold btn-edit-goal"
+                                                    data-id="@goal.GoalId"
+                                                    data-name="@goal.GoalName"
+                                                    data-category="@goal.Category"
+                                                    data-current="@goal.CurrentValue"
+                                                    data-target="@goal.TargetValue"
+                                                    data-unit="@goal.Unit"
+                                                    data-targetdate="@(goal.TargetDate.HasValue ? goal.TargetDate.Value.ToString("yyyy-MM-dd") : "")"
+                                                    data-status="@goal.StatusMessage"
+                                                    data-bs-toggle="modal" data-bs-target="#editGoalModal">
+                                                <i class="bi bi-pencil-square me-1"></i> Update
+                                            </button>
+
+                                            @using (Html.BeginForm("MarkComplete", "Goals", new { area = "Client" }, FormMethod.Post, new { @class = "d-inline flex-grow-1" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="goalId" value="@goal.GoalId" />
+                                                <button type="submit" class="btn btn-sm btn-success rounded-3 w-100 fw-semibold">
+                                                    <i class="bi bi-check2-circle me-1"></i> Complete
+                                                </button>
+                                            }
+
+                                            <button type="button" class="btn btn-sm btn-outline-warning text-dark rounded-3 px-3 fw-semibold btn-cancel-goal"
+                                                    data-id="@goal.GoalId"
+                                                    data-name="@goal.GoalName"
+                                                    data-category="@goal.Category"
+                                                    data-progress="@goal.CurrentValue.ToString("F1") / @goal.TargetValue.ToString("F1") @goal.Unit"
+                                                    data-bs-toggle="modal" data-bs-target="#cancelGoalModal"
+                                                    title="Cancel this active goal">
+                                                <i class="bi bi-x-circle me-1"></i> Cancel Goal
+                                            </button>
+
+                                            @using (Html.BeginForm("Delete", "Goals", new { area = "Client" }, FormMethod.Post, new { @class = "d-inline", onsubmit = "return confirm('Are you sure you want to delete this goal?');" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="goalId" value="@goal.GoalId" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-3 px-2" title="Delete Goal">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-5">
+                            <i class="bi bi-flag fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                            <h5 class="fw-bold text-dark">No Active Health Goals</h5>
+                            <p class="small text-muted mb-3">You do not currently have any active goals in progress.</p>
+                            <button type="button" class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#createGoalModal">
+                                <i class="bi bi-plus-circle me-1"></i> Create Your First Goal
+                            </button>
+                        </div>
+                    }
+                </div>
+
+                <!-- 2. COMPLETED GOAL HISTORY TAB -->
+                <div class="tab-pane fade" id="completedGoalsTab" role="tabpanel" aria-labelledby="history-tab">
+                    @if (Model.CompletedGoals.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr class="x-small text-uppercase text-secondary">
+                                        <th>Goal Name</th>
+                                        <th>Category</th>
+                                        <th>Baseline</th>
+                                        <th>Final Target</th>
+                                        <th>Achieved Value</th>
+                                        <th>Status</th>
+                                        <th>Target Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var g in Model.CompletedGoals)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="fw-bold text-dark">@g.GoalName</div>
+                                                <span class="x-small text-muted">Created @g.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-light text-dark border">@g.Category</span>
+                                            </td>
+                                            <td class="small">@g.BaselineValue.ToString("F1") @g.Unit</td>
+                                            <td class="small fw-semibold text-primary">@g.TargetValue.ToString("F1") @g.Unit</td>
+                                            <td class="small fw-bold text-success">@g.CurrentValue.ToString("F1") @g.Unit</td>
+                                            <td>
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill">
+                                                    <i class="bi bi-check-circle-fill me-1"></i> Completed
+                                                </span>
+                                            </td>
+                                            <td class="small text-muted">
+                                                @(g.TargetDate.HasValue ? g.TargetDate.Value.ToString("MMM dd, yyyy") : "Completed")
+                                            </td>
+                                            <td>
+                                                @using (Html.BeginForm("Delete", "Goals", new { area = "Client" }, FormMethod.Post, new { @class = "d-inline", onsubmit = "return confirm('Delete this completed goal history entry?');" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="goalId" value="@g.GoalId" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-3" title="Delete">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-5">
+                            <i class="bi bi-trophy fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                            <h5 class="fw-bold text-dark">No Completed Goals Yet</h5>
+                            <p class="small text-muted mb-0">As you reach your fitness targets and mark them complete, they will appear here in your achievement archive.</p>
+                        </div>
+                    }
+                </div>
+
+                <!-- 3. CANCELLED GOAL HISTORY TAB (FR-C-38) -->
+                <div class="tab-pane fade" id="cancelledGoalsTab" role="tabpanel" aria-labelledby="cancelled-tab">
+                    @if (Model.CancelledGoals.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr class="x-small text-uppercase text-secondary">
+                                        <th>Goal Name</th>
+                                        <th>Category</th>
+                                        <th>Baseline</th>
+                                        <th>Target Value</th>
+                                        <th>Value at Cancel</th>
+                                        <th>Status</th>
+                                        <th>Cancelled Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var g in Model.CancelledGoals)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="fw-bold text-dark">@g.GoalName</div>
+                                                <span class="x-small text-muted">Created @g.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-light text-dark border">@g.Category</span>
+                                            </td>
+                                            <td class="small">@g.BaselineValue.ToString("F1") @g.Unit</td>
+                                            <td class="small fw-semibold text-primary">@g.TargetValue.ToString("F1") @g.Unit</td>
+                                            <td class="small fw-bold text-muted">@g.CurrentValue.ToString("F1") @g.Unit</td>
+                                            <td>
+                                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-1 rounded-pill">
+                                                    <i class="bi bi-x-circle-fill me-1"></i> Cancelled
+                                                </span>
+                                            </td>
+                                            <td class="small text-muted">
+                                                @(g.CancelledAt.HasValue ? g.CancelledAt.Value.ToString("MMM dd, yyyy") : "--")
+                                            </td>
+                                            <td>
+                                                @using (Html.BeginForm("Delete", "Goals", new { area = "Client" }, FormMethod.Post, new { @class = "d-inline", onsubmit = "return confirm('Permanently remove this cancelled goal record?');" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="goalId" value="@g.GoalId" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-3" title="Delete">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-5">
+                            <i class="bi bi-clipboard-check fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                            <h5 class="fw-bold text-dark">No Cancelled Goals</h5>
+                            <p class="small text-muted mb-0">You currently have no cancelled health goals. Active and completed goals remain in their respective tabs.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: CREATE NEW GOAL -->
+<div class="modal fade" id="createGoalModal" tabindex="-1" aria-labelledby="createGoalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            @using (Html.BeginForm("Create", "Goals", new { area = "Client" }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="modal-header border-0 pb-0">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-3 bg-primary bg-opacity-10 text-primary p-2">
+                            <i class="bi bi-flag-fill fs-5"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title fw-bold text-dark mb-0" id="createGoalModalLabel">Create Health &amp; Fitness Goal</h5>
+                            <span class="x-small text-muted">Define a measurable target to work towards</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body py-3">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Goal Name <span class="text-danger">*</span></label>
+                        <input type="text" name="GoalName" class="form-control" placeholder="e.g. Target Body Weight, 10k Daily Steps, Bench Press 80kg" required maxlength="120" />
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Category <span class="text-danger">*</span></label>
+                            <select name="Category" class="form-select" required>
+                                <option value="Weight">Weight Management</option>
+                                <option value="Cardio">Cardio &amp; Steps</option>
+                                <option value="Strength">Strength &amp; Lifting</option>
+                                <option value="Nutrition">Nutrition &amp; Water</option>
+                                <option value="Habit">Daily Habits</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Unit <span class="text-danger">*</span></label>
+                            <input type="text" name="Unit" class="form-control" placeholder="e.g. kg, steps, hrs, kcal" required maxlength="20" />
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Starting Baseline <span class="text-danger">*</span></label>
+                            <input type="number" step="any" name="BaselineValue" class="form-control" placeholder="e.g. 80.0" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Current Value <span class="text-danger">*</span></label>
+                            <input type="number" step="any" name="CurrentValue" class="form-control" placeholder="e.g. 78.5" required />
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Target Value <span class="text-danger">*</span></label>
+                            <input type="number" step="any" name="TargetValue" class="form-control" placeholder="e.g. 72.0" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Target Date</label>
+                            <input type="date" name="TargetDate" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold text-secondary">Status Notes (Optional)</label>
+                        <input type="text" name="StatusMessage" class="form-control" placeholder="e.g. Aiming for 0.5kg loss per week" maxlength="250" />
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-check2-circle me-1"></i> Save Goal
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: UPDATE ACTIVE GOAL -->
+<div class="modal fade" id="editGoalModal" tabindex="-1" aria-labelledby="editGoalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            @using (Html.BeginForm("Edit", "Goals", new { area = "Client" }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="GoalId" id="editGoalId" />
+                <div class="modal-header border-0 pb-0">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-3 bg-info bg-opacity-10 text-info p-2">
+                            <i class="bi bi-pencil-square fs-5"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title fw-bold text-dark mb-0" id="editGoalModalLabel">Update Goal Progress</h5>
+                            <span class="x-small text-muted">Update your current value or change target details</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body py-3">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Goal Name <span class="text-danger">*</span></label>
+                        <input type="text" name="GoalName" id="editGoalName" class="form-control" required maxlength="120" />
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Category</label>
+                            <input type="text" name="Category" id="editCategory" class="form-control" required maxlength="30" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Unit</label>
+                            <input type="text" name="Unit" id="editUnit" class="form-control" required maxlength="20" />
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Current Progress Value <span class="text-danger">*</span></label>
+                            <input type="number" step="any" name="CurrentValue" id="editCurrentValue" class="form-control" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Target Value <span class="text-danger">*</span></label>
+                            <input type="number" step="any" name="TargetValue" id="editTargetValue" class="form-control" required />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Target Date</label>
+                        <input type="date" name="TargetDate" id="editTargetDate" class="form-control" />
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold text-secondary">Status Notes</label>
+                        <input type="text" name="StatusMessage" id="editStatusMessage" class="form-control" maxlength="250" />
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-save me-1"></i> Update Goal
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: CONFIRM CANCEL ACTIVE GOAL (FR-C-38) -->
+<div class="modal fade" id="cancelGoalModal" tabindex="-1" aria-labelledby="cancelGoalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            @using (Html.BeginForm("Cancel", "Goals", new { area = "Client" }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="goalId" id="cancelGoalId" />
+                <div class="modal-header border-0 pb-0">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-3 bg-warning bg-opacity-10 text-warning p-2">
+                            <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title fw-bold text-dark mb-0" id="cancelGoalModalLabel">Cancel Active Health Goal</h5>
+                            <span class="x-small text-muted">Confirm deactivation of this health goal</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body py-3">
+                    <div class="p-3 bg-light rounded-3 border mb-3">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <h6 class="fw-bold text-dark mb-0" id="cancelGoalNameText">--</h6>
+                            <span class="badge bg-secondary-subtle text-secondary x-small" id="cancelGoalCategoryText">--</span>
+                        </div>
+                        <div class="x-small text-muted mt-1">
+                            <span>Current Progress: </span><strong class="text-dark" id="cancelGoalProgressText">--</strong>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning border-0 rounded-3 p-3 mb-0 d-flex align-items-start gap-2">
+                        <i class="bi bi-info-circle-fill text-warning fs-5 mt-1"></i>
+                        <div class="small text-dark">
+                            <strong>Historical Record Will Be Preserved:</strong><br />
+                            This goal will no longer appear as active or count toward ongoing metrics. However, all original details, baselines, recorded progress, and creation timestamps will be safely retained in your <strong>Goal History</strong>.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 pt-0 d-flex justify-content-between">
+                    <button type="button" class="btn btn-light rounded-pill px-4 fw-semibold" data-bs-dismiss="modal">
+                        <i class="bi bi-arrow-left me-1"></i> Keep Goal
+                    </button>
+                    <button type="submit" class="btn btn-warning rounded-pill px-4 fw-semibold shadow-sm text-dark">
+                        <i class="bi bi-x-circle me-1"></i> Cancel Goal
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // Edit modal data population
+            $('.btn-edit-goal').on('click', function () {
+                var btn = $(this);
+                $('#editGoalId').val(btn.data('id'));
+                $('#editGoalName').val(btn.data('name'));
+                $('#editCategory').val(btn.data('category'));
+                $('#editCurrentValue').val(btn.data('current'));
+                $('#editTargetValue').val(btn.data('target'));
+                $('#editUnit').val(btn.data('unit'));
+                $('#editTargetDate').val(btn.data('targetdate'));
+                $('#editStatusMessage').val(btn.data('status'));
+            });
+
+            // Cancel modal data population (FR-C-38)
+            $('.btn-cancel-goal').on('click', function () {
+                var btn = $(this);
+                $('#cancelGoalId').val(btn.data('id'));
+                $('#cancelGoalNameText').text(btn.data('name'));
+                $('#cancelGoalCategoryText').text(btn.data('category'));
+                $('#cancelGoalProgressText').text(btn.data('progress'));
+            });
+
+            // 1. Workout Completion Consistency Chart
+            var workoutCtx = document.getElementById('workoutCompletionChart');
+            if (workoutCtx) {
+                var workoutDates = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.WorkoutChartData.Dates));
+                var completedWorkouts = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.WorkoutChartData.CompletedCount));
+                var workoutDuration = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.WorkoutChartData.DurationMinutes));
+
+                new Chart(workoutCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: workoutDates,
+                        datasets: [
+                            {
+                                label: 'Completed Routines',
+                                data: completedWorkouts,
+                                backgroundColor: 'rgba(13, 110, 253, 0.75)',
+                                borderColor: 'rgba(13, 110, 253, 1)',
+                                borderWidth: 1,
+                                borderRadius: 6,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: 'Duration (Mins)',
+                                data: workoutDuration,
+                                type: 'line',
+                                borderColor: 'rgba(255, 193, 7, 1)',
+                                backgroundColor: 'rgba(255, 193, 7, 0.15)',
+                                fill: true,
+                                tension: 0.3,
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } }
+                        },
+                        scales: {
+                            x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                beginAtZero: true,
+                                ticks: { stepSize: 1, font: { size: 10 } },
+                                title: { display: true, text: 'Workouts', font: { size: 10 } }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                beginAtZero: true,
+                                grid: { drawOnChartArea: false },
+                                ticks: { font: { size: 10 } },
+                                title: { display: true, text: 'Minutes', font: { size: 10 } }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 2. Goal Progress Overview Chart
+            var goalCtx = document.getElementById('goalProgressChart');
+            if (goalCtx) {
+                var goalLabels = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.GoalChartData.Labels));
+                var goalProgressPct = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.GoalChartData.ProgressPercentages));
+
+                new Chart(goalCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: goalLabels,
+                        datasets: [{
+                            label: 'Completion Progress (%)',
+                            data: goalProgressPct,
+                            backgroundColor: goalProgressPct.map(function(val) {
+                                return val >= 100 ? 'rgba(25, 135, 84, 0.85)' : 'rgba(13, 110, 253, 0.85)';
+                            }),
+                            borderRadius: 6,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) { return value + '%'; },
+                                    font: { size: 10 }
+                                }
+                            },
+                            y: {
+                                grid: { display: false },
+                                ticks: { font: { size: 11, weight: 'bold' } }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+}

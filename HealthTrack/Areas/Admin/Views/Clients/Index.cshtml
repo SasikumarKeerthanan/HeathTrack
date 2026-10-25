@@ -1,0 +1,311 @@
+@model HealthTrack.Areas.Admin.ViewModels.AdminClientIndexViewModel
+@{
+    ViewBag.Title = "Clients Management";
+}
+
+<div class="container-fluid py-4 px-md-4">
+
+    <!-- Page Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill small fw-semibold">
+                    <i class="bi bi-people-fill me-1"></i>Client Directory
+                </span>
+                <span class="text-muted small">| Total @Model.TotalClientsCount Clients</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mt-2 mb-1">
+                Client Management & Access Control
+            </h2>
+            <p class="text-muted small mb-0">
+                View registered client profiles, monitor coach assignments, and toggle active/inactive system access.
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("Index", "Assignments", new { area = "Admin" })" class="btn btn-outline-danger d-inline-flex align-items-center gap-2 shadow-sm px-3 py-2 fw-semibold" style="border-radius: 8px;">
+                <i class="bi bi-person-check-fill"></i>
+                <span>Assign Clients</span>
+            </a>
+            <a href="@Url.Action("Index", "Dashboard", new { area = "Admin" })" class="btn btn-dark d-inline-flex align-items-center gap-2 shadow-sm px-3 py-2 fw-semibold" style="border-radius: 8px;">
+                <i class="bi bi-speedometer2"></i>
+                <span>Admin Dashboard</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm mb-4" role="alert" style="border-radius: 10px;">
+            <i class="bi bi-check-circle-fill fs-5 text-success flex-shrink-0"></i>
+            <div>@TempData["SuccessMessage"]</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm mb-4" role="alert" style="border-radius: 10px;">
+            <i class="bi bi-shield-exclamation fs-5 text-danger flex-shrink-0"></i>
+            <div>@TempData["ErrorMessage"]</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Filter Pills & Search Card -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
+        <div class="card-body p-3 p-md-4">
+            <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+                
+                <!-- Filter Pills -->
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="@Url.Action("Index", "Clients", new { area = "Admin", status = "All", search = Model.SearchQuery })" 
+                       class="btn btn-sm rounded-pill px-3 py-2 fw-semibold @(Model.StatusFilter == "All" ? "btn-dark shadow-sm" : "btn-outline-secondary")">
+                        All Clients
+                        <span class="badge @(Model.StatusFilter == "All" ? "bg-white text-dark" : "bg-secondary text-white") ms-1">
+                            @Model.TotalClientsCount
+                        </span>
+                    </a>
+                    <a href="@Url.Action("Index", "Clients", new { area = "Admin", status = "Active", search = Model.SearchQuery })" 
+                       class="btn btn-sm rounded-pill px-3 py-2 fw-semibold @(Model.StatusFilter == "Active" ? "btn-success shadow-sm" : "btn-outline-secondary")">
+                        Active Accounts
+                        <span class="badge @(Model.StatusFilter == "Active" ? "bg-white text-success" : "bg-success text-white") ms-1">
+                            @Model.ActiveClientsCount
+                        </span>
+                    </a>
+                    <a href="@Url.Action("Index", "Clients", new { area = "Admin", status = "Inactive", search = Model.SearchQuery })" 
+                       class="btn btn-sm rounded-pill px-3 py-2 fw-semibold @(Model.StatusFilter == "Inactive" ? "btn-danger shadow-sm" : "btn-outline-secondary")">
+                        Deactivated
+                        <span class="badge @(Model.StatusFilter == "Inactive" ? "bg-white text-danger" : "bg-danger text-white") ms-1">
+                            @Model.InactiveClientsCount
+                        </span>
+                    </a>
+                    <a href="@Url.Action("Index", "Clients", new { area = "Admin", status = "Unassigned", search = Model.SearchQuery })" 
+                       class="btn btn-sm rounded-pill px-3 py-2 fw-semibold @(Model.StatusFilter == "Unassigned" ? "btn-warning shadow-sm text-dark" : "btn-outline-secondary")">
+                        Unassigned Coach
+                        <span class="badge @(Model.StatusFilter == "Unassigned" ? "bg-dark text-white" : "bg-warning text-dark") ms-1">
+                            @Model.UnassignedClientsCount
+                        </span>
+                    </a>
+                </div>
+
+                <!-- Search Bar -->
+                @using (Html.BeginForm("Index", "Clients", new { area = "Admin" }, FormMethod.Get, new { @class = "d-flex gap-2 align-items-center" }))
+                {
+                    @Html.Hidden("status", Model.StatusFilter)
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="bi bi-search text-muted"></i>
+                        </span>
+                        <input type="text" 
+                               name="search" 
+                               value="@Model.SearchQuery" 
+                               class="form-control bg-light border-start-0" 
+                               placeholder="Search name, email, ID..." 
+                               style="max-width: 260px;" />
+                        <button type="submit" class="btn btn-primary fw-semibold px-3">Search</button>
+                        @if (!string.IsNullOrWhiteSpace(Model.SearchQuery))
+                        {
+                            <a href="@Url.Action("Index", "Clients", new { area = "Admin", status = Model.StatusFilter })" class="btn btn-outline-secondary" title="Clear search">
+                                <i class="bi bi-x-lg"></i>
+                            </a>
+                        }
+                    </div>
+                }
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Clients Table Card -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+        <div class="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+            <h5 class="card-title mb-0 fw-bold fs-6">
+                Client Accounts Roster
+            </h5>
+            <span class="badge bg-light text-muted border">
+                Showing @Model.Clients.Count client(s)
+            </span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-muted small text-uppercase">
+                    <tr>
+                        <th class="ps-4">Client ID</th>
+                        <th>Member Details</th>
+                        <th>Gender</th>
+                        <th>Assigned Coach</th>
+                        <th>Account Access Status</th>
+                        <th>Registered Date</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Clients == null || !Model.Clients.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="bi bi-person-x fs-1 d-block mb-2 text-secondary"></i>
+                                <span class="fw-semibold">No clients match the selected criteria.</span>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var client in Model.Clients)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <span class="badge bg-secondary-subtle text-secondary font-monospace fw-bold px-2 py-1">
+                                        @client.ClientId
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 38px; height: 38px; font-size: 0.9rem;">
+                                            @(string.IsNullOrWhiteSpace(client.FullName) ? "C" : client.FullName.Substring(0, 1).ToUpper())
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark">@client.FullName</div>
+                                            <div class="text-muted small">
+                                                <i class="bi bi-envelope me-1"></i>@client.Email
+                                                @if (!string.IsNullOrEmpty(client.PhoneNumber))
+                                                {
+                                                    <span class="ms-2"><i class="bi bi-telephone me-1"></i>@client.PhoneNumber</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (client.Gender == "Female")
+                                    {
+                                        <span class="badge rounded-pill bg-danger-subtle text-danger px-2 py-1">
+                                            <i class="bi bi-gender-female me-1"></i>Female
+                                        </span>
+                                    }
+                                    else if (client.Gender == "Male")
+                                    {
+                                        <span class="badge rounded-pill bg-primary-subtle text-primary px-2 py-1">
+                                            <i class="bi bi-gender-male me-1"></i>Male
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">@(client.Gender ?? "Not Specified")</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(client.AssignedTrainerId))
+                                    {
+                                        <div class="d-flex align-items-center gap-1">
+                                            <i class="bi bi-person-badge text-danger"></i>
+                                            <span class="fw-semibold text-dark small">@client.AssignedTrainerName</span>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge bg-warning-subtle text-dark border border-warning-subtle rounded-pill px-2 py-1">
+                                                <i class="bi bi-exclamation-triangle me-1"></i>Unassigned
+                                            </span>
+                                            <a href="@Url.Action("Index", "Assignments", new { area = "Admin" })" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size: 0.72rem;">
+                                                Assign
+                                            </a>
+                                        </div>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-column gap-1">
+                                        @if (client.IsActive)
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 d-inline-flex align-items-center gap-1" style="width: fit-content;">
+                                                <i class="bi bi-check-circle-fill"></i>Active Account
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-1 d-inline-flex align-items-center gap-1" style="width: fit-content;">
+                                                <i class="bi bi-slash-circle-fill"></i>Deactivated
+                                            </span>
+                                        }
+
+                                        @if (client.IsLockedOut)
+                                        {
+                                            <span class="badge bg-warning-subtle text-dark border border-warning-subtle rounded-pill px-2 py-1 d-inline-flex align-items-center gap-1" style="width: fit-content; font-size: 0.7rem;">
+                                                <i class="bi bi-lock-fill text-warning"></i>Locked Out
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="text-muted small">@client.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <!-- One-Click Active/Inactive Toggle Button -->
+                                    <button type="button" 
+                                            class="btn btn-sm @(client.IsActive ? "btn-outline-danger" : "btn-success") py-1 px-3 fw-semibold rounded-pill"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#toggleModal-@client.ClientId">
+                                        <i class="bi @(client.IsActive ? "bi-slash-circle me-1" : "bi-check-circle me-1")"></i>
+                                        @(client.IsActive ? "Deactivate" : "Activate")
+                                    </button>
+
+                                    <!-- Confirmation Modal -->
+                                    <div class="modal fade text-start" id="toggleModal-@client.ClientId" tabindex="-1" aria-labelledby="toggleModalLabel-@client.ClientId" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content border-0 shadow">
+                                                <div class="modal-header border-bottom">
+                                                    <h5 class="modal-title fw-bold" id="toggleModalLabel-@client.ClientId">
+                                                        <i class="bi @(client.IsActive ? "bi-exclamation-triangle text-danger" : "bi-shield-check text-success") me-2"></i>
+                                                        Confirm Account @(client.IsActive ? "Deactivation" : "Activation")
+                                                    </h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body p-4">
+                                                    @if (client.IsActive)
+                                                    {
+                                                        <p class="text-dark mb-2">
+                                                            Are you sure you want to <strong>deactivate</strong> the client account for <strong>@client.FullName</strong> (<code>@client.Email</code>)?
+                                                        </p>
+                                                        <div class="alert alert-warning small mb-0">
+                                                            <i class="bi bi-info-circle-fill me-1"></i>
+                                                            Deactivating this account will immediately revoke login privileges and prevent access to workout plans and bookings.
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <p class="text-dark mb-2">
+                                                            Are you sure you want to <strong>reactivate</strong> the client account for <strong>@client.FullName</strong> (<code>@client.Email</code>)?
+                                                        </p>
+                                                        <div class="alert alert-success small mb-0">
+                                                            <i class="bi bi-info-circle-fill me-1"></i>
+                                                            Reactivating will restore standard login permissions and reset any existing temporary brute-force lockouts.
+                                                        </div>
+                                                    }
+                                                </div>
+                                                <div class="modal-footer border-top bg-light">
+                                                    <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                                                    @using (Html.BeginForm("ToggleStatus", "Clients", new { area = "Admin" }, FormMethod.Post, new { @class = "d-inline" }))
+                                                    {
+                                                        @Html.AntiForgeryToken()
+                                                        @Html.Hidden("clientId", client.ClientId)
+                                                        @Html.Hidden("returnStatus", Model.StatusFilter)
+                                                        <button type="submit" class="btn @(client.IsActive ? "btn-danger" : "btn-success") rounded-pill px-4 fw-semibold">
+                                                            Yes, @(client.IsActive ? "Deactivate Account" : "Activate Account")
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>

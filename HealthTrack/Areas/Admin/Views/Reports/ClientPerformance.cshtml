@@ -1,0 +1,429 @@
+@model HealthTrack.Areas.Admin.ViewModels.AdminClientPerformanceReportViewModel
+@{
+    ViewBag.Title = "Client Performance Report";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Include Chart.js & html2pdf -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="@Url.Content("~/Scripts/html2pdf.bundle.min.js")"></script>
+
+<style>
+    @@media print {
+        .no-print, .desktop-sidebar, .top-app-header, .btn, form {
+            display: none !important;
+        }
+        .main-content-wrapper {
+            margin-left: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+        .card {
+            box-shadow: none !important;
+            border: 1px solid #e2e8f0 !important;
+            page-break-inside: avoid;
+        }
+    }
+</style>
+
+<div class="container-fluid py-4 px-md-4" id="reportExportArea">
+
+    <!-- REPORT SUITE SUB-NAVIGATION -->
+    <ul class="nav nav-pills gap-2 mb-4 no-print">
+        <li class="nav-item">
+            <a class="nav-link bg-light text-secondary rounded-pill px-3 py-2 fw-semibold small" href="@Url.Action("Index", "Reports", new { area = "Admin" })">
+                <i class="bi bi-speedometer2 me-1"></i> Executive Overview
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active bg-dark text-white rounded-pill px-3 py-2 fw-semibold small" href="@Url.Action("ClientPerformance", "Reports", new { area = "Admin" })">
+                <i class="bi bi-person-fill-gear me-1"></i> Client Performance
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link bg-light text-secondary rounded-pill px-3 py-2 fw-semibold small" href="@Url.Action("PopularRoutines", "Reports", new { area = "Admin" })">
+                <i class="bi bi-fire me-1 text-danger"></i> Popular Workout Routines
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link bg-light text-secondary rounded-pill px-3 py-2 fw-semibold small" href="@Url.Action("TrainerActivity", "Reports", new { area = "Admin" })">
+                <i class="bi bi-person-badge-fill me-1 text-primary"></i> Trainer Activity &amp; Engagement
+            </a>
+        </li>
+    </ul>
+
+    <!-- PAGE HEADER -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 no-print">
+        <div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge border px-2 py-1 rounded-pill small fw-semibold" style="background-color: rgba(0, 163, 255, 0.1); color: #0284c7; border-color: rgba(0, 163, 255, 0.25) !important;">
+                    <i class="bi bi-heart-pulse-fill me-1 text-danger"></i>Performance Analytics
+                </span>
+                <span class="badge bg-secondary rounded-pill px-2 py-1 small">FR-A-26 &bull; FR-A-31</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mt-2 mb-1">Client Health &amp; Performance Report</h2>
+            <p class="text-muted small mb-0">
+                Detailed physiological metrics, workout completion adherence, health goal tracking, and nutrition summary.
+            </p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <button type="button" id="btnExportPdf" onclick="exportReportToPdf()" class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-sm px-3 py-2 fw-semibold" style="border-radius: 8px; background: linear-gradient(135deg, #00A3FF 0%, #0284c7 100%); border: none;">
+                <i class="bi bi-file-earmark-pdf-fill"></i>
+                <span>Export PDF</span>
+            </button>
+            <a href="@Url.Action("ExportClientPerformancePdf", "Reports", new { area = "Admin", clientId = Model.SelectedClientId, preset = Model.DatePreset, fromDate = Model.FromDate, toDate = Model.ToDate })" target="_blank" class="btn btn-outline-secondary d-inline-flex align-items-center gap-1 shadow-sm px-3 py-2 fw-semibold" style="border-radius: 8px;">
+                <i class="bi bi-printer"></i>
+                <span>Print-Ready</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- FILTER TOOLBAR -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4 no-print">
+        <div class="card-body p-3">
+            @using (Html.BeginForm("ClientPerformance", "Reports", new { area = "Admin" }, FormMethod.Get, new { @class = "row g-3 align-items-end" }))
+            {
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-muted mb-1">SELECT CLIENT / MEMBER</label>
+                    <select name="clientId" class="form-select form-select-sm" onchange="this.form.submit()">
+                        @foreach (var opt in Model.AvailableClients)
+                        {
+                            <option value="@opt.Value" @(opt.Selected ? "selected" : "")>@opt.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted mb-1">TIME RANGE PRESET</label>
+                    <select name="preset" id="presetSelect" class="form-select form-select-sm" onchange="toggleCustomDates(this.value)">
+                        <option value="7days" @(Model.DatePreset == "7days" ? "selected" : "")>Last 7 Days</option>
+                        <option value="30days" @(Model.DatePreset == "30days" ? "selected" : "")>Last 30 Days</option>
+                        <option value="90days" @(Model.DatePreset == "90days" ? "selected" : "")>Last 90 Days</option>
+                        <option value="all" @(Model.DatePreset == "all" ? "selected" : "")>All Historical Records</option>
+                        <option value="custom" @(Model.DatePreset == "custom" ? "selected" : "")>Custom Date Range</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2 custom-date-col @(Model.DatePreset == "custom" ? "" : "d-none")">
+                    <label class="form-label small fw-bold text-muted mb-1">FROM DATE</label>
+                    <input type="date" name="fromDate" value="@Model.FromDate.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+                </div>
+
+                <div class="col-md-2 custom-date-col @(Model.DatePreset == "custom" ? "" : "d-none")">
+                    <label class="form-label small fw-bold text-muted mb-1">TO DATE</label>
+                    <input type="date" name="toDate" value="@Model.ToDate.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+                </div>
+
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-sm btn-dark w-100 py-1 fw-semibold">Generate</button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- VALIDATION ERROR ALERT -->
+    @if (!string.IsNullOrEmpty(Model.ValidationError))
+    {
+        <div class="alert alert-warning alert-dismissible fade show d-flex align-items-center gap-2 mb-4" role="alert" style="border-radius: 10px;">
+            <i class="bi bi-exclamation-triangle-fill fs-5 text-warning flex-shrink-0"></i>
+            <div>@Model.ValidationError</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- CLIENT PROFILE SNAPSHOT CARD -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center fw-bold fs-3 flex-shrink-0" style="width: 54px; height: 54px;">
+                        @(string.IsNullOrEmpty(Model.ClientName) ? "C" : Model.ClientName.Substring(0, 1).ToUpper())
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <h4 class="fw-bold text-dark mb-0">@Model.ClientName</h4>
+                            <span class="badge bg-light text-dark border">@Model.Gender</span>
+                        </div>
+                        <div class="text-muted small">@Model.ClientEmail &bull; Member ID: <strong class="font-monospace">@Model.SelectedClientId</strong></div>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-3">
+                    <div class="p-2 border rounded-3 bg-light text-center" style="min-width: 130px;">
+                        <div class="text-muted small" style="font-size: 0.72rem;">ASSIGNED COACH</div>
+                        <div class="fw-bold text-success text-truncate">@Model.AssignedTrainerName</div>
+                    </div>
+                    <div class="p-2 border rounded-3 bg-light text-center" style="min-width: 130px;">
+                        <div class="text-muted small" style="font-size: 0.72rem;">PRIMARY FITNESS GOAL</div>
+                        <div class="fw-bold text-primary text-truncate">@Model.PrimaryGoal</div>
+                    </div>
+                    <div class="p-2 border rounded-3 bg-light text-center" style="min-width: 130px;">
+                        <div class="text-muted small" style="font-size: 0.72rem;">REPORTING PERIOD</div>
+                        <div class="fw-bold text-dark text-truncate">@Model.FromDate.ToString("MMM dd") - @Model.ToDate.ToString("MMM dd, yyyy")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4 CORE PERFORMANCE PILLARS (FR-A-26 Section 5) -->
+    <div class="row g-3 mb-4">
+        <!-- 1. Body Weight & Composition -->
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 h-100 border-start border-4 border-primary">
+                <div class="text-muted small fw-semibold">CURRENT WEIGHT / BMI</div>
+                <div class="d-flex align-items-baseline gap-2 mt-1">
+                    <span class="h3 fw-bold text-dark mb-0">@(Model.CurrentWeightKg > 0 ? $"{Model.CurrentWeightKg:F1} kg" : "N/A")</span>
+                    @if (Model.WeightChangeKg != 0 && Model.BaselineWeightKg > 0)
+                    {
+                        <span class="badge @(Model.WeightChangeKg < 0 ? "bg-success-subtle text-success" : "bg-warning-subtle text-warning")" style="font-size: 0.72rem;">
+                            @(Model.WeightChangeKg > 0 ? "+" : "")@Model.WeightChangeKg kg
+                        </span>
+                    }
+                </div>
+                <div class="small text-muted mt-1">
+                    BMI: <strong>@(Model.CurrentBmi > 0 ? Model.CurrentBmi.ToString("F1") : "N/A")</strong> (@Model.BmiCategory)
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Workout Completion Rate -->
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 h-100 border-start border-4 border-success">
+                <div class="text-muted small fw-semibold">WORKOUT COMPLETION RATE</div>
+                <div class="d-flex align-items-baseline gap-2 mt-1">
+                    <span class="h3 fw-bold text-success mb-0">@Model.FormattedCompletionRate</span>
+                    <span class="badge bg-light text-dark border" style="font-size: 0.72rem;">@Model.TotalWorkoutsCompleted / @Model.TotalWorkoutsScheduled Done</span>
+                </div>
+                <div class="small text-muted mt-1">
+                    Active Time: <strong>@Model.TotalExerciseMinutes mins</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Total Calories Burned -->
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 h-100 border-start border-4 border-danger">
+                <div class="text-muted small fw-semibold">TOTAL ENERGY EXPENDITURE</div>
+                <div class="d-flex align-items-baseline gap-2 mt-1">
+                    <span class="h3 fw-bold text-danger mb-0">@Model.TotalCaloriesBurned.ToString("N0")</span>
+                    <span class="text-muted small">kcal burned</span>
+                </div>
+                <div class="small text-muted mt-1">
+                    Across logged workout sessions
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Nutrition Adherence -->
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 h-100 border-start border-4 border-info">
+                <div class="text-muted small fw-semibold">NUTRITION &amp; HYDRATION</div>
+                <div class="d-flex align-items-baseline gap-2 mt-1">
+                    <span class="h3 fw-bold text-dark mb-0">@(Model.AverageConsumedCalories > 0 ? $"{Model.AverageConsumedCalories:N0}" : "N/A")</span>
+                    <span class="text-muted small">avg kcal/day</span>
+                </div>
+                <div class="small text-muted mt-1">
+                    Target: <strong>@(Model.PrescribedDailyCalories > 0 ? $"{Model.PrescribedDailyCalories:N0} kcal" : "No Plan")</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HEALTH GOAL MILESTONES (FR-A-26 Section 5.c) -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+            <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-bullseye text-danger"></i>Recorded Health &amp; Fitness Goal Progress
+            </h5>
+            <span class="badge bg-light text-dark border">@Model.GoalProgressItems.Count Goals Recorded</span>
+        </div>
+        <div class="card-body p-3">
+            @if (!Model.GoalProgressItems.Any())
+            {
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-flag fs-2 d-block mb-1 text-secondary opacity-50"></i>
+                    <div>No specific health goals recorded for this client yet.</div>
+                </div>
+            }
+            else
+            {
+                <div class="row g-3">
+                    @foreach (var goal in Model.GoalProgressItems)
+                    {
+                        <div class="col-md-6 col-lg-4">
+                            <div class="p-3 border rounded-3 bg-light h-100">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <span class="badge bg-white text-secondary border small mb-1">@goal.Category</span>
+                                        <div class="fw-bold text-dark">@goal.GoalName</div>
+                                    </div>
+                                    <span class="badge @(goal.ProgressPercentage >= 100 ? "bg-success" : "bg-primary") rounded-pill">
+                                        @goal.ProgressPercentage%
+                                    </span>
+                                </div>
+                                <div class="progress mb-2" style="height: 6px;">
+                                    <div class="progress-bar @(goal.ProgressPercentage >= 100 ? "bg-success" : "bg-primary")" style="width: @goal.ProgressPercentage%;"></div>
+                                </div>
+                                <div class="d-flex justify-content-between small text-muted">
+                                    <span>Base: @goal.BaselineValue @goal.Unit</span>
+                                    <span>Current: <strong>@goal.CurrentValue @goal.Unit</strong></span>
+                                    <span>Target: @goal.TargetValue @goal.Unit</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- PHYSIOLOGICAL PROGRESS & WORKOUT COMPLETION TABLES -->
+    <div class="row g-4 mb-4">
+        <!-- Progress Records Table -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                    <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-clipboard2-pulse text-primary"></i>Health Measurement Log
+                    </h6>
+                    <span class="badge bg-light text-secondary border">@Model.ProgressRecords.Count Logged</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                        <thead class="table-light text-muted small">
+                            <tr>
+                                <th class="ps-3">Date</th>
+                                <th>Weight</th>
+                                <th>BMI</th>
+                                <th>Calories</th>
+                                <th>Water</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.ProgressRecords.Any())
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">No measurements logged in this period.</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                foreach (var rec in Model.ProgressRecords)
+                                {
+                                    <tr>
+                                        <td class="ps-3 fw-semibold">@rec.RecordedDate.ToString("MMM dd, yyyy")</td>
+                                        <td>@rec.WeightKg kg</td>
+                                        <td>@(rec.Bmi.HasValue ? rec.Bmi.Value.ToString("F1") : "-")</td>
+                                        <td>@(rec.CaloriesConsumed > 0 ? $"{rec.CaloriesConsumed} kcal" : "-")</td>
+                                        <td>@(rec.WaterIntakeMl > 0 ? $"{rec.WaterIntakeMl / 1000.0:F1} L" : "-")</td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workout Sessions Log Table -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                    <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-activity text-success"></i>Workout Sessions &amp; Adherence
+                    </h6>
+                    <span class="badge bg-light text-secondary border">@Model.WorkoutLogs.Count Sessions</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                        <thead class="table-light text-muted small">
+                            <tr>
+                                <th class="ps-3">Date</th>
+                                <th>Routine / Session</th>
+                                <th>Duration</th>
+                                <th>Burned</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.WorkoutLogs.Any())
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">No workout sessions logged in this period.</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                foreach (var w in Model.WorkoutLogs)
+                                {
+                                    <tr>
+                                        <td class="ps-3 fw-semibold">@w.LogDate.ToString("MMM dd")</td>
+                                        <td class="text-truncate" style="max-width: 160px;">@(w.SessionName ?? (w.WorkoutPlans != null ? w.WorkoutPlans.Title : "Workout Session"))</td>
+                                        <td>@w.DurationMinutes mins</td>
+                                        <td>@w.CaloriesBurned kcal</td>
+                                        <td>
+                                            @if (w.IsCompleted)
+                                            {
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Completed</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Incomplete</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function toggleCustomDates(preset) {
+        var customCols = document.querySelectorAll('.custom-date-col');
+        if (preset === 'custom') {
+            customCols.forEach(function (col) { col.classList.remove('d-none'); });
+        } else {
+            customCols.forEach(function (col) { col.classList.add('d-none'); });
+        }
+    }
+
+    function exportReportToPdf() {
+        var btn = document.getElementById('btnExportPdf');
+        var originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Exporting...';
+
+        var element = document.getElementById('reportExportArea');
+        var opt = {
+            margin: [8, 8, 8, 8],
+            filename: 'HealthTrack_ClientPerformance_@(Model.SelectedClientId).pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff' },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+
+        if (typeof html2pdf !== 'undefined') {
+            html2pdf().set(opt).from(element).save().then(function () {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }).catch(function (err) {
+                console.error('PDF error:', err);
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                window.print();
+            });
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            window.print();
+        }
+    }
+</script>

@@ -1,0 +1,333 @@
+@model HealthTrack.Areas.Trainer.ViewModels.DietPlanIndexViewModel
+
+@{
+    ViewBag.Title = "Client Diet Plans";
+}
+
+<div class="container-fluid px-4 py-3">
+
+    <!-- Header & Action Row -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1">
+                    <i class="bi bi-egg-fried me-1"></i>Diet Management
+                </span>
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                    <i class="bi bi-person-check me-1"></i>Personalized Nutrition Plans
+                </span>
+            </div>
+            <h2 class="h3 fw-bold mb-0 text-dark">Client Diet Plans</h2>
+            <p class="text-muted small mb-0">Design, monitor, and adjust customized meal schedules, caloric targets, and macronutrient distributions for assigned clients</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("Create", "DietPlans")" class="btn btn-warning text-dark fw-semibold d-inline-flex align-items-center gap-2 shadow-sm">
+                <i class="bi bi-plus-circle-fill"></i>
+                <span>Create Diet Plan</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+            <div>@TempData["SuccessMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-5 text-danger"></i>
+            <div>@TempData["ErrorMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Stat Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-3">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle bg-warning bg-opacity-10 text-warning p-3 me-3">
+                        <i class="bi bi-people fs-3"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small text-uppercase fw-semibold">Assigned Clients</div>
+                        <h3 class="fw-bold mb-0 text-dark">@Model.TotalClientsCount</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-3">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle bg-success bg-opacity-10 text-success p-3 me-3">
+                        <i class="bi bi-check2-circle fs-3"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small text-uppercase fw-semibold">Active Diet Plans</div>
+                        <h3 class="fw-bold mb-0 text-success">@Model.ActivePlansCount</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-3">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle bg-secondary bg-opacity-10 text-secondary p-3 me-3">
+                        <i class="bi bi-archive fs-3"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small text-uppercase fw-semibold">Archived Plans</div>
+                        <h3 class="fw-bold mb-0 text-secondary">@Model.DeactivatedPlansCount</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-3">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-3 me-3">
+                        <i class="bi bi-person-plus fs-3"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small text-uppercase fw-semibold">Awaiting Diet Plan</div>
+                        <h3 class="fw-bold mb-0 text-primary">@Model.ClientsWithoutPlanCount</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body p-3">
+            <form method="get" action="@Url.Action("Index", "DietPlans")" class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="bi bi-search text-muted"></i>
+                        </span>
+                        <input type="text" name="search" value="@Model.SearchTerm" class="form-control bg-light border-start-0" 
+                               placeholder="Search client, plan title, or meals..." />
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <select name="clientId" class="form-select bg-light">
+                        <option value="">All Assigned Clients</option>
+                        @foreach (var c in Model.AssignedClients)
+                        {
+                            <option value="@c.Id" selected="@(Model.SelectedClientId == c.Id ? "selected" : null)">
+                                @c.FullName (@c.PrimaryGoal)
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <select name="preference" class="form-select bg-light">
+                        @foreach (var pref in Model.DietaryPreferences)
+                        {
+                            var prefVal = pref.StartsWith("All ") ? "" : pref;
+                            <option value="@prefVal" selected="@(Model.SelectedPreference == pref || Model.SelectedPreference == prefVal || (string.IsNullOrEmpty(Model.SelectedPreference) && prefVal == "") ? "selected" : null)">
+                                @pref
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <select name="status" class="form-select bg-light">
+                        <option value="all" selected="@(Model.SelectedStatus == "all" || string.IsNullOrEmpty(Model.SelectedStatus) ? "selected" : null)">All Status</option>
+                        <option value="active" selected="@(Model.SelectedStatus == "active" ? "selected" : null)">Active</option>
+                        <option value="deactivated" selected="@(Model.SelectedStatus == "deactivated" ? "selected" : null)">Archived</option>
+                    </select>
+                </div>
+
+                <div class="col-md-1 d-flex gap-1">
+                    <button type="submit" class="btn btn-dark w-100" title="Apply Filters">
+                        <i class="bi bi-funnel"></i>
+                    </button>
+                    <a href="@Url.Action("Index", "DietPlans")" class="btn btn-outline-secondary" title="Reset Filters">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Alert for Clients Needing a Diet Plan -->
+    @if (Model.ClientsWithoutPlanCount > 0)
+    {
+        var clientsWithoutPlan = Model.AssignedClients.Where(c => !Model.Plans.Any(p => p.ClientId == c.Id && p.IsActive)).ToList();
+        <div class="alert alert-warning border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center justify-content-between p-3">
+            <div class="d-flex align-items-center gap-3">
+                <i class="bi bi-exclamation-triangle-fill fs-3 text-warning"></i>
+                <div>
+                    <div class="fw-bold text-dark">Clients Awaiting Nutrition Plans</div>
+                    <div class="small text-muted">
+                        The following client(s) do not have an active diet plan: 
+                        <strong>@string.Join(", ", clientsWithoutPlan.Select(c => $"{c.FullName} ({c.PrimaryGoal})"))</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                @foreach (var client in clientsWithoutPlan)
+                {
+                    <a href="@Url.Action("Create", "DietPlans", new { clientId = client.Id })" class="btn btn-sm btn-outline-dark">
+                        <i class="bi bi-plus-circle me-1"></i> Create for @client.FullName
+                    </a>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Diet Plans Grid -->
+    @if (!Model.Plans.Any())
+    {
+        <div class="card border-0 shadow-sm rounded-3 text-center p-5 bg-white">
+            <div class="py-4">
+                <i class="bi bi-egg-fried display-4 text-muted mb-3 d-block"></i>
+                <h4 class="fw-semibold text-dark">No Diet Plans Found</h4>
+                <p class="text-muted mb-4">No diet plans match your search or filter criteria.</p>
+                <a href="@Url.Action("Index", "DietPlans")" class="btn btn-outline-secondary me-2">Clear Filters</a>
+                <a href="@Url.Action("Create", "DietPlans")" class="btn btn-warning text-dark fw-semibold">
+                    <i class="bi bi-plus-circle me-1"></i> Create New Diet Plan
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var plan in Model.Plans)
+            {
+                <div class="col-4">
+                    <div class="card border-0 shadow-sm rounded-3 h-100 transition-hover bg-white">
+                        <div class="card-body p-4 d-flex flex-column">
+
+                            <!-- Top Client & Status Header -->
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="rounded-circle bg-warning bg-opacity-10 text-warning p-2 d-inline-flex align-items-center justify-content-center" style="width: 34px; height: 34px;">
+                                        <i class="bi bi-person-fill"></i>
+                                    </span>
+                                    <div>
+                                        <h6 class="fw-bold text-dark mb-0">@(plan.Clients != null ? plan.Clients.FullName : "Client")</h6>
+                                        <small class="text-muted font-monospace x-small">@(plan.Clients != null ? plan.Clients.Email : "")</small>
+                                    </div>
+                                </div>
+
+                                @if (plan.IsActive)
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                        <span class="spinner-grow spinner-grow-sm" style="width: 0.35rem; height: 0.35rem;"></span> Active
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                                        Archived
+                                    </span>
+                                }
+                            </div>
+
+                            <!-- Dietary Style & Target Calories Badges -->
+                            <div class="d-flex flex-wrap gap-1 my-2">
+                                <span class="badge bg-warning-subtle text-dark border border-warning-subtle fw-semibold">
+                                    <i class="bi bi-fire text-danger me-1"></i>@plan.DailyCalorieTarget kcal / day
+                                </span>
+                                <span class="badge bg-light text-dark border">
+                                    <i class="bi bi-egg me-1 text-warning"></i>@plan.DietaryPreference
+                                </span>
+                                <span class="badge bg-info-subtle text-info border border-info-subtle">
+                                    <i class="bi bi-droplet me-1"></i>@plan.WaterIntakeLiters L Water
+                                </span>
+                            </div>
+
+                            <!-- Plan Title & Description -->
+                            <h5 class="fw-bold text-dark mt-1 mb-2">@plan.Title</h5>
+                            <p class="text-muted small flex-grow-1 mb-3" style="min-height: 40px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                @plan.Description
+                            </p>
+
+                            <!-- Daily Macronutrient Target Chips -->
+                            <div class="bg-light rounded-3 p-2 mb-3">
+                                <div class="d-flex justify-content-around text-center small">
+                                    <div>
+                                        <span class="text-muted x-small d-block text-uppercase fw-semibold">Protein</span>
+                                        <span class="fw-bold text-primary">@plan.TargetProteinGrams g</span>
+                                    </div>
+                                    <div class="border-start ps-3">
+                                        <span class="text-muted x-small d-block text-uppercase fw-semibold">Carbs</span>
+                                        <span class="fw-bold text-success">@plan.TargetCarbsGrams g</span>
+                                    </div>
+                                    <div class="border-start ps-3">
+                                        <span class="text-muted x-small d-block text-uppercase fw-semibold">Fats</span>
+                                        <span class="fw-bold text-warning">@plan.TargetFatsGrams g</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Meal Schedule Summary -->
+                            <div class="d-flex justify-content-between align-items-center text-muted small mb-3 pb-2 border-bottom">
+                                <span>
+                                    <i class="bi bi-calendar3 text-secondary me-1"></i>@plan.DurationWeeks Weeks &bull; @plan.DietMeals.Count Meals
+                                </span>
+                                <span class="badge bg-light text-secondary border">
+                                    @plan.DietMeals.Select(m => m.MealType).Distinct().Count() Meal Types
+                                </span>
+                            </div>
+
+                            <!-- Action Toolbar -->
+                            <div class="d-flex gap-2">
+                                <a href="@Url.Action("Details", "DietPlans", new { id = plan.DietPlanId })" class="btn btn-sm btn-outline-warning text-dark fw-semibold flex-fill">
+                                    <i class="bi bi-eye me-1"></i> View Meals
+                                </a>
+
+                                <a href="@Url.Action("Edit", "DietPlans", new { id = plan.DietPlanId })" class="btn btn-sm btn-outline-secondary" title="Edit Plan">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+
+                                <form action="@Url.Action("ToggleStatus", "DietPlans", new { id = plan.DietPlanId })" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm @(plan.IsActive ? "btn-outline-warning" : "btn-outline-success")" 
+                                            title="@(plan.IsActive ? "Deactivate plan" : "Reactivate plan")">
+                                        <i class="bi @(plan.IsActive ? "bi-pause-circle" : "bi-play-circle")"></i>
+                                    </button>
+                                </form>
+
+                                <form action="@Url.Action("Delete", "DietPlans", new { id = plan.DietPlanId })" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Plan"
+                                            onclick="return confirm('Are you sure you want to delete this diet plan for @(plan.Clients != null ? plan.Clients.FullName : "Client")?');">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+</div>
+
+<style>
+    .transition-hover {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .transition-hover:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
+    }
+</style>

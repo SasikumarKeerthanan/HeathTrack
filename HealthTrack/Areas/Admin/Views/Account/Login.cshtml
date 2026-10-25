@@ -1,0 +1,281 @@
+@model HealthTrack.Areas.Admin.ViewModels.AdminLoginViewModel
+@{
+    ViewBag.Title = "Administrator Sign In";
+    Layout = "~/Views/Shared/_AuthLayout.cshtml";
+}
+
+<link rel="stylesheet" href="@Url.Content("~/Content/trainer-auth.css")" />
+
+<div class="trainer-auth-wrapper">
+    <div class="trainer-auth-card">
+
+        <!-- ========================================================
+             LEFT COLUMN: Form Panel (Inputs & Credentials)
+             ======================================================== -->
+        <div class="trainer-form-side">
+            <div>
+                <!-- Brand Header (HealthTrack Logo + Name + Admin Badge) -->
+                <a href="@Url.Action("Login", "Account", new { area = "Admin" })" class="trainer-brand-header text-decoration-none d-flex align-items-center mb-4">
+                    <img src="@Url.Content("~/Content/images/logo.png")" alt="HealthTrack Logo" class="trainer-brand-icon flex-shrink-0" style="width: 46px; height: 46px;" />
+                    <div class="d-flex flex-column justify-content-center ms-2" style="line-height: 1.1;">
+                        <span class="fw-bold tracking-tight" style="font-size: 1.45rem; color: #00A3FF; font-weight: 800; letter-spacing: -0.3px;">HealthTrack</span>
+                        <span class="text-uppercase fw-bold" style="font-size: 0.66rem; letter-spacing: 0.8px; color: #22C55E; margin-top: 2px;">WORKOUT &amp; NUTRITION</span>
+                    </div>
+                    <span class="badge rounded-pill px-2 py-1 ms-3" style="background-color: rgba(0, 163, 255, 0.18); color: #38bdf8; border: 1px solid rgba(0, 163, 255, 0.35); font-size: 0.65rem; letter-spacing: 0.6px;">ADMIN</span>
+                </a>
+
+                <!-- Headline & Subtext -->
+                <h1 class="trainer-headline">Welcome Back</h1>
+                <p class="trainer-subtext">Administrator Portal. Secure system access.</p>
+
+                <!-- Feedback / Error Alerts -->
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="dark-alert-success mb-4">
+                        <div class="dark-alert-content">
+                            <i class="bi bi-check-circle-fill fs-5 flex-shrink-0 text-success"></i>
+                            <div>@TempData["SuccessMessage"]</div>
+                        </div>
+                    </div>
+                }
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="dark-alert-error mb-4">
+                        <div class="dark-alert-content">
+                            <i class="bi bi-shield-exclamation fs-5 flex-shrink-0 text-danger"></i>
+                            <div>@TempData["ErrorMessage"]</div>
+                        </div>
+                    </div>
+                }
+
+                @if (!ViewData.ModelState.IsValid && ViewData.ModelState[""] != null && ViewData.ModelState[""].Errors.Count > 0)
+                {
+                    <div class="dark-alert-error mb-4">
+                        <div class="dark-alert-content">
+                            <i class="bi bi-shield-exclamation fs-5 flex-shrink-0 text-danger"></i>
+                            <div>
+                                @Html.ValidationSummary(true, "", new { @class = "mb-0 ps-0 list-unstyled" })
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Admin Login Form -->
+                @using (Html.BeginForm("Login", "Account", new { area = "Admin" }, FormMethod.Post, new { id = "adminLoginForm" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.ReturnUrl)
+
+                    <!-- Email Address Field -->
+                    <div class="mb-3">
+                        <label class="trainer-input-label" for="adminEmailInput">Administrator Email</label>
+                        @Html.TextBoxFor(m => m.Email, new { 
+                            @class = "trainer-input", 
+                            id = "adminEmailInput",
+                            placeholder = "Enter your admin email", 
+                            type = "email",
+                            autocomplete = "email",
+                            autofocus = "autofocus"
+                        })
+                        @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger small mt-1 d-block" })
+                    </div>
+
+                    <!-- Password Field with Embedded Eye Toggle -->
+                    <div class="mb-3">
+                        <label class="trainer-input-label" for="adminPasswordInput">Password</label>
+                        <div class="password-input-wrapper">
+                            @Html.PasswordFor(m => m.Password, new { 
+                                @class = "trainer-input", 
+                                id = "adminPasswordInput",
+                                placeholder = "Enter your password",
+                                autocomplete = "current-password"
+                            })
+                            <button type="button" class="password-toggle-btn" id="toggleAdminPassBtn" aria-label="Toggle password visibility">
+                                <i class="bi bi-eye" id="toggleAdminPassIcon"></i>
+                            </button>
+                        </div>
+                        @Html.ValidationMessageFor(m => m.Password, "", new { @class = "text-danger small mt-1 d-block" })
+                    </div>
+
+                    <!-- Remember Me & Forgot Password Row -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="form-check mb-0">
+                            @Html.CheckBoxFor(m => m.RememberMe, new { @class = "form-check-input", id = "rememberMeCheck" })
+                            <label class="form-check-label text-muted small" for="rememberMeCheck" style="font-size: 0.85rem; user-select: none;">
+                                Remember me
+                            </label>
+                        </div>
+                        <a href="javascript:void(0)" class="trainer-forgot-link" id="adminForgotLink" style="color: #00A3FF !important;">
+                            Forgot password?
+                        </a>
+                    </div>
+
+                    <!-- Sign In Button -->
+                    <button type="submit" class="btn-trainer-signin" id="adminSignInBtn" style="background: linear-gradient(135deg, #00A3FF 0%, #0284c7 100%) !important; color: #ffffff !important; box-shadow: 0 4px 18px rgba(0, 163, 255, 0.35) !important;">
+                        Sign in as Admin
+                    </button>
+                }
+            </div>
+        </div>
+
+        <!-- ========================================================
+             RIGHT COLUMN: Visual Panel (Matching Trainer Design)
+             ======================================================== -->
+        <div class="trainer-visual-side">
+            <div class="trainer-visual-container">
+                <img src="@Url.Content("~/Content/images/trainer-login-hero.jpg")" 
+                     alt="HealthTrack System Management" 
+                     class="trainer-visual-img" />
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ============================================================
+     FORGOT PASSWORD MODAL (Self-Service Reset for Administrators)
+     ============================================================ -->
+<div id="adminForgotModal" class="auth-modal-overlay" style="display: none;">
+    <div class="trainer-modal-card">
+        <!-- Close Button in Top-Right Corner -->
+        <button type="button" class="trainer-modal-close" id="closeAdminForgotBtn" aria-label="Close modal">
+            <i class="bi bi-x-lg"></i>
+        </button>
+
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <div class="trainer-modal-icon-badge" style="background: rgba(0, 163, 255, 0.15); color: #00A3FF;">
+                <i class="bi bi-key-fill fs-5"></i>
+            </div>
+            <h4 class="trainer-modal-title">Reset Administrator Password</h4>
+        </div>
+
+        <p class="trainer-modal-subtitle">
+            Enter your registered administrator email to receive a secure, time-limited password reset link.
+        </p>
+
+        <div id="adminForgotAlert" style="display: none;"></div>
+
+        <div class="mb-3" id="adminForgotEmailGroup">
+            <label class="trainer-input-label" for="adminForgotEmail">Administrator Email Address</label>
+            <input type="email" class="trainer-input" id="adminForgotEmail" placeholder="admin@healthtrack.com" autocomplete="email" />
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+            <button type="button" class="btn btn-trainer-modal-cancel flex-grow-1" id="cancelAdminForgotBtn">
+                Cancel
+            </button>
+            <button type="button" class="btn btn-trainer-modal-send flex-grow-1" id="sendAdminResetBtn" style="background: linear-gradient(135deg, #00A3FF 0%, #0284c7 100%) !important; color: #ffffff !important; border: none !important;">
+                Send Reset Link
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Password Visibility Toggle
+        var passInput = document.getElementById('adminPasswordInput');
+        var passBtn = document.getElementById('toggleAdminPassBtn');
+        var passIcon = document.getElementById('toggleAdminPassIcon');
+
+        if (passBtn && passInput && passIcon) {
+            passBtn.addEventListener('click', function () {
+                if (passInput.type === 'password') {
+                    passInput.type = 'text';
+                    passIcon.classList.remove('bi-eye');
+                    passIcon.classList.add('bi-eye-slash');
+                } else {
+                    passInput.type = 'password';
+                    passIcon.classList.remove('bi-eye-slash');
+                    passIcon.classList.add('bi-eye');
+                }
+            });
+        }
+
+        // Forgot Password Modal
+        var forgotModal = document.getElementById('adminForgotModal');
+        var forgotLink = document.getElementById('adminForgotLink');
+        var closeForgotBtn = document.getElementById('closeAdminForgotBtn');
+        var cancelForgotBtn = document.getElementById('cancelAdminForgotBtn');
+        var sendResetBtn = document.getElementById('sendAdminResetBtn');
+        var forgotEmail = document.getElementById('adminForgotEmail');
+        var forgotAlert = document.getElementById('adminForgotAlert');
+        var forgotGroup = document.getElementById('adminForgotEmailGroup');
+
+        function openForgotModal() {
+            if (forgotAlert) {
+                forgotAlert.style.display = 'none';
+                forgotAlert.innerHTML = '';
+            }
+            if (forgotGroup) forgotGroup.style.display = 'block';
+            if (sendResetBtn) {
+                sendResetBtn.style.display = 'inline-block';
+                sendResetBtn.disabled = false;
+                sendResetBtn.innerText = 'Send Reset Link';
+            }
+            if (cancelForgotBtn) cancelForgotBtn.innerText = 'Cancel';
+            if (forgotEmail) {
+                var loginEmail = document.getElementById('adminEmailInput');
+                forgotEmail.value = (loginEmail && loginEmail.value) ? loginEmail.value.trim() : '';
+            }
+            if (forgotModal) forgotModal.style.display = 'flex';
+        }
+
+        function closeForgotModal() {
+            if (forgotModal) forgotModal.style.display = 'none';
+        }
+
+        if (forgotLink) forgotLink.addEventListener('click', openForgotModal);
+        if (closeForgotBtn) closeForgotBtn.addEventListener('click', closeForgotModal);
+        if (cancelForgotBtn) cancelForgotBtn.addEventListener('click', closeForgotModal);
+
+        if (sendResetBtn) {
+            sendResetBtn.addEventListener('click', function () {
+                var email = forgotEmail ? forgotEmail.value.trim() : '';
+                if (!email) {
+                    if (forgotAlert) {
+                        forgotAlert.innerHTML = '<div class="dark-alert-error mb-3"><div class="dark-alert-content"><i class="bi bi-shield-exclamation fs-5 flex-shrink-0 text-danger"></i><div>Please enter your administrator email address.</div></div></div>';
+                        forgotAlert.style.display = 'block';
+                    }
+                    return;
+                }
+
+                sendResetBtn.disabled = true;
+                sendResetBtn.innerText = 'Sending...';
+
+                var token = $('input[name="__RequestVerificationToken"]').val();
+                $.ajax({
+                    url: '@Url.Action("ForgotPassword", "Account", new { area = "Admin" })',
+                    type: 'POST',
+                    data: { 
+                        __RequestVerificationToken: token,
+                        email: email 
+                    },
+                    success: function (res) {
+                        sendResetBtn.disabled = false;
+                        sendResetBtn.innerText = 'Send Reset Link';
+
+                        if (res && res.success) {
+                            var alertHtml = '<div class="dark-alert-success mb-3"><div class="dark-alert-content"><i class="bi bi-check-circle-fill fs-5 flex-shrink-0 text-success"></i><div>' + res.message + '</div></div></div>';
+                            forgotAlert.innerHTML = alertHtml;
+                            forgotAlert.style.display = 'block';
+                            if (forgotGroup) forgotGroup.style.display = 'none';
+                            sendResetBtn.style.display = 'none';
+                            cancelForgotBtn.innerText = 'Close';
+                        } else {
+                            var errMsg = (res && res.message) ? res.message : 'Unable to send reset link.';
+                            forgotAlert.innerHTML = '<div class="dark-alert-error mb-3"><div class="dark-alert-content"><i class="bi bi-shield-exclamation fs-5 flex-shrink-0 text-danger"></i><div>' + errMsg + '</div></div></div>';
+                            forgotAlert.style.display = 'block';
+                        }
+                    },
+                    error: function () {
+                        sendResetBtn.disabled = false;
+                        sendResetBtn.innerText = 'Send Reset Link';
+                        forgotAlert.innerHTML = '<div class="dark-alert-error mb-3"><div class="dark-alert-content"><i class="bi bi-shield-exclamation fs-5 flex-shrink-0 text-danger"></i><div>Error connecting to server. Please try again.</div></div></div>';
+                        forgotAlert.style.display = 'block';
+                    }
+                });
+            });
+        }
+    </script>
+}

@@ -1,0 +1,16 @@
+@model HealthTrack.Models.ErrorViewModel
+@{
+    ViewBag.Title = "Error";
+}
+
+<div class="container-fluid px-4 py-4">
+    <div class="alert alert-danger shadow-sm">
+        <h3 class="alert-heading"><i class="bi bi-exclamation-triangle-fill me-2"></i>An error occurred</h3>
+        <p>An unexpected error occurred while processing your request.</p>
+        @if (Model != null && Model.ShowRequestId)
+        {
+            <hr />
+            <p class="mb-0 small"><strong>Request ID:</strong> <code>@Model.RequestId</code></p>
+        }
+    </div>
+</div>

@@ -1,0 +1,220 @@
+@model HealthTrack.Areas.Admin.ViewModels.AdminClientPerformanceReportViewModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HealthTrack_ClientPerformance_@(Model.SelectedClientId)</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <script src="@Url.Content("~/Scripts/html2pdf.bundle.min.js")"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+            padding: 20px;
+        }
+        .report-page {
+            max-width: 960px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 40px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-radius: 8px;
+        }
+        .print-btn-bar {
+            max-width: 960px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        @@media print {
+            body { background: #ffffff !important; padding: 0 !important; }
+            .report-page { box-shadow: none !important; padding: 0 !important; max-width: 100% !important; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="print-btn-bar no-print">
+        <a href="javascript:history.back()" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to System
+        </a>
+        <div class="d-flex gap-2">
+            <button onclick="downloadPdf()" class="btn btn-primary">
+                <i class="bi bi-file-earmark-pdf-fill me-1"></i> Save as PDF
+            </button>
+            <button onclick="window.print()" class="btn btn-dark">
+                <i class="bi bi-printer-fill me-1"></i> Print Document
+            </button>
+        </div>
+    </div>
+
+    <div class="report-page" id="printableReport">
+        <!-- Letterhead Header -->
+        <div class="row align-items-center pb-3 mb-4 border-bottom">
+            <div class="col-7">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <img src="@Url.Content("~/Content/images/logo.png")" alt="HealthTrack Logo" style="width: 40px; height: 40px; object-fit: contain;" />
+                    <div>
+                        <h4 class="fw-bold mb-0 text-dark">HealthTrack</h4>
+                        <div class="small text-uppercase text-muted fw-bold" style="font-size: 0.75rem; letter-spacing: 0.8px;">Personal Fitness &amp; Health Management System</div>
+                    </div>
+                </div>
+                <div class="small text-muted">Official Client Performance &amp; Physiological Health Summary (FR-A-26)</div>
+            </div>
+            <div class="col-5 text-end">
+                <div class="fw-bold text-dark fs-5">Client Performance Report</div>
+                <div class="small text-muted">Generated: <strong>@Model.GeneratedAt.ToString("MMM dd, yyyy - HH:mm")</strong></div>
+                <div class="small text-muted">Scope: <strong>@Model.FromDate.ToString("MMM dd, yyyy") &ndash; @Model.ToDate.ToString("MMM dd, yyyy")</strong></div>
+            </div>
+        </div>
+
+        <!-- Metadata Card -->
+        <div class="row g-2 p-3 bg-light rounded-3 border mb-4" style="font-size: 0.9rem;">
+            <div class="col-3">
+                <span class="text-muted text-uppercase fw-semibold d-block" style="font-size: 0.72rem;">Client Name</span>
+                <span class="fw-bold text-dark">@Model.ClientName</span>
+            </div>
+            <div class="col-3">
+                <span class="text-muted text-uppercase fw-semibold d-block" style="font-size: 0.72rem;">Client ID</span>
+                <span class="font-monospace text-secondary">@Model.SelectedClientId</span>
+            </div>
+            <div class="col-3">
+                <span class="text-muted text-uppercase fw-semibold d-block" style="font-size: 0.72rem;">Assigned Coach</span>
+                <span class="fw-bold text-success">@Model.AssignedTrainerName</span>
+            </div>
+            <div class="col-3">
+                <span class="text-muted text-uppercase fw-semibold d-block" style="font-size: 0.72rem;">Primary Goal</span>
+                <span class="fw-bold text-primary">@Model.PrimaryGoal</span>
+            </div>
+        </div>
+
+        <!-- 4 Pillars -->
+        <div class="row g-3 mb-4 text-center">
+            <div class="col-3">
+                <div class="p-3 border rounded-3 bg-light">
+                    <div class="small text-muted fw-semibold">CURRENT WEIGHT / BMI</div>
+                    <div class="fs-4 fw-bold text-dark">@(Model.CurrentWeightKg > 0 ? $"{Model.CurrentWeightKg:F1} kg" : "N/A")</div>
+                    <div class="small text-muted">BMI: @(Model.CurrentBmi > 0 ? Model.CurrentBmi.ToString("F1") : "N/A") (@Model.BmiCategory)</div>
+                </div>
+            </div>
+            <div class="col-3">
+                <div class="p-3 border rounded-3 bg-light">
+                    <div class="small text-muted fw-semibold">WORKOUT COMPLETION</div>
+                    <div class="fs-4 fw-bold text-success">@Model.FormattedCompletionRate</div>
+                    <div class="small text-muted">@Model.TotalWorkoutsCompleted / @Model.TotalWorkoutsScheduled Finished</div>
+                </div>
+            </div>
+            <div class="col-3">
+                <div class="p-3 border rounded-3 bg-light">
+                    <div class="small text-muted fw-semibold">CALORIES BURNED</div>
+                    <div class="fs-4 fw-bold text-danger">@Model.TotalCaloriesBurned.ToString("N0") kcal</div>
+                    <div class="small text-muted">@Model.TotalExerciseMinutes Active Minutes</div>
+                </div>
+            </div>
+            <div class="col-3">
+                <div class="p-3 border rounded-3 bg-light">
+                    <div class="small text-muted fw-semibold">NUTRITION ADHERENCE</div>
+                    <div class="fs-4 fw-bold text-primary">@(Model.AverageConsumedCalories > 0 ? $"{Model.AverageConsumedCalories:N0} kcal" : "N/A")</div>
+                    <div class="small text-muted">Target: @(Model.PrescribedDailyCalories > 0 ? $"{Model.PrescribedDailyCalories:N0} kcal" : "None")</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Health Goals -->
+        @if (Model.GoalProgressItems.Any())
+        {
+            <div class="mb-4">
+                <h6 class="fw-bold text-dark mb-2 border-bottom pb-1">Health &amp; Fitness Goal Milestones</h6>
+                <table class="table table-sm table-bordered" style="font-size: 0.85rem;">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Goal</th>
+                            <th>Category</th>
+                            <th>Baseline</th>
+                            <th>Current</th>
+                            <th>Target</th>
+                            <th>Progress</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var g in Model.GoalProgressItems)
+                        {
+                            <tr>
+                                <td class="fw-bold">@g.GoalName</td>
+                                <td>@g.Category</td>
+                                <td>@g.BaselineValue @g.Unit</td>
+                                <td>@g.CurrentValue @g.Unit</td>
+                                <td>@g.TargetValue @g.Unit</td>
+                                <td class="fw-bold text-primary">@g.ProgressPercentage% (@g.StatusMessage)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <!-- Progress Records -->
+        @if (Model.ProgressRecords.Any())
+        {
+            <div class="mb-4">
+                <h6 class="fw-bold text-dark mb-2 border-bottom pb-1">Logged Physiological Measurements</h6>
+                <table class="table table-sm table-bordered" style="font-size: 0.85rem;">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Weight</th>
+                            <th>BMI</th>
+                            <th>Calories Intake</th>
+                            <th>Water Intake</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in Model.ProgressRecords.Take(10))
+                        {
+                            <tr>
+                                <td>@p.RecordedDate.ToString("MMM dd, yyyy")</td>
+                                <td>@p.WeightKg kg</td>
+                                <td>@(p.Bmi.HasValue ? p.Bmi.Value.ToString("F1") : "-")</td>
+                                <td>@(p.CaloriesConsumed > 0 ? $"{p.CaloriesConsumed} kcal" : "-")</td>
+                                <td>@(p.WaterIntakeMl > 0 ? $"{p.WaterIntakeMl / 1000.0:F1} L" : "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <!-- Footer -->
+        <div class="border-top pt-3 text-center text-muted small mt-5">
+            Confidential Client Performance Record &bull; Generated by HealthTrack Administrator Management System &bull; Authorized Access Only
+        </div>
+    </div>
+
+    <script>
+        function downloadPdf() {
+            var element = document.getElementById('printableReport');
+            var opt = {
+                margin: [8, 8, 8, 8],
+                filename: 'HealthTrack_ClientPerformance_@(Model.SelectedClientId).pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff' },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+            if (typeof html2pdf !== 'undefined') {
+                html2pdf().set(opt).from(element).save();
+            } else {
+                window.print();
+            }
+        }
+    </script>
+</body>
+</html>

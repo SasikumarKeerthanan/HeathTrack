@@ -1,0 +1,1076 @@
+@model HealthTrack.Areas.Client.ViewModels.ClientWorkoutDashboardViewModel
+
+@{
+    ViewBag.Title = "Client Workout Hub";
+    var todaySchedule = Model.TodaySchedule;
+    var hasActivePlan = Model.ActivePlan != null;
+    var isCompletedToday = todaySchedule != null && todaySchedule.IsCompletedToday;
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" />
+
+<div class="container-fluid px-4 py-3">
+
+    <!-- Top Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm rounded-3 mb-4" role="alert">
+            <i class="bi bi-trophy-fill fs-4 text-success"></i>
+            <div>
+                <strong>Awesome Work!</strong> @TempData["SuccessMessage"]
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- ========================================================
+         HERO HEADER
+         ======================================================== -->
+    <div class="row justify-content-end mb-4 pb-3 border-bottom g-3">
+        <div class="col-md-5 d-flex justify-content-md-end align-items-center gap-2">
+            <a href="@Url.Action("Plan", "Workout", new { area = "Client" })" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 shadow-sm">
+                <i class="bi bi-card-checklist"></i> View Full Plan
+            </a>
+        </div>
+    </div>
+
+    <!-- ========================================================
+         HIGH-IMPACT STATS KPI BANNER
+         ======================================================== -->
+    <div class="row g-3 mb-4">
+        <!-- Streak -->
+        <div class="col-xl-3 col-sm-6">
+            <div class="kpi-card card border-0 shadow-sm rounded-4 p-3 bg-white h-100 position-relative overflow-hidden">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted x-small fw-bold text-uppercase tracking-wider">Training Streak</span>
+                    <div class="kpi-icon-badge bg-warning bg-opacity-10 text-warning">
+                        <i class="bi bi-fire fs-5"></i>
+                    </div>
+                </div>
+                <div class="d-flex align-items-baseline gap-2">
+                    <h3 class="fw-extrabold mb-0 text-dark">@Model.CurrentStreakDays</h3>
+                    <span class="text-muted small">days in a row</span>
+                </div>
+                <div class="progress mt-2" style="height: 4px;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: @(Math.Min(100, Model.CurrentStreakDays * 20))%"></div>
+                </div>
+                <div class="text-muted small mt-2">
+                    @Html.Raw(Model.CurrentStreakDays > 0 ? "<i class=\"bi bi-fire text-danger me-1\"></i>Keep the momentum going!" : "Start your streak today!")
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Completed -->
+        <div class="col-xl-3 col-sm-6">
+            <div class="kpi-card card border-0 shadow-sm rounded-4 p-3 bg-white h-100 position-relative overflow-hidden">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted x-small fw-bold text-uppercase tracking-wider">Workouts Logged</span>
+                    <div class="kpi-icon-badge bg-success bg-opacity-10 text-success">
+                        <i class="bi bi-check2-circle fs-5"></i>
+                    </div>
+                </div>
+                <div class="d-flex align-items-baseline gap-2">
+                    <h3 class="fw-extrabold mb-0 text-dark">@Model.TotalWorkoutsCompleted</h3>
+                    <span class="text-muted small">total sessions</span>
+                </div>
+                <div class="progress mt-2" style="height: 4px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: @(Math.Min(100, Model.TotalWorkoutsCompleted * 8))%"></div>
+                </div>
+                <div class="text-muted x-small mt-2">
+                    <i class="bi bi-award text-success me-1"></i> Verified completion records
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Time -->
+        <div class="col-xl-3 col-sm-6">
+            <div class="kpi-card card border-0 shadow-sm rounded-4 p-3 bg-white h-100 position-relative overflow-hidden">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted x-small fw-bold text-uppercase tracking-wider">Minutes Trained</span>
+                    <div class="kpi-icon-badge bg-primary bg-opacity-10 text-primary">
+                        <i class="bi bi-stopwatch-fill fs-5"></i>
+                    </div>
+                </div>
+                <div class="d-flex align-items-baseline gap-2">
+                    <h3 class="fw-extrabold mb-0 text-dark">@Model.TotalMinutesTrained</h3>
+                    <span class="text-muted small">mins (~@((Model.TotalMinutesTrained / 60.0).ToString("0.0")) hrs)</span>
+                </div>
+                <div class="progress mt-2" style="height: 4px;">
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: 75%"></div>
+                </div>
+                <div class="text-muted x-small mt-2">
+                    <i class="bi bi-heart-pulse text-danger me-1"></i> Heart &amp; muscular endurance
+                </div>
+            </div>
+        </div>
+
+        <!-- Calories Burned -->
+        <div class="col-xl-3 col-sm-6">
+            <div class="kpi-card card border-0 shadow-sm rounded-4 p-3 bg-white h-100 position-relative overflow-hidden">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted x-small fw-bold text-uppercase tracking-wider">Energy Burned</span>
+                    <div class="kpi-icon-badge bg-danger bg-opacity-10 text-danger">
+                        <i class="bi bi-lightning-charge-fill fs-5"></i>
+                    </div>
+                </div>
+                <div class="d-flex align-items-baseline gap-2">
+                    <h3 class="fw-extrabold mb-0 text-dark">@Model.TotalCaloriesBurned.ToString("N0")</h3>
+                    <span class="text-muted small">estimated kcal</span>
+                </div>
+                <div class="progress mt-2" style="height: 4px;">
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: @(Math.Min(100, Model.TotalCaloriesBurned / 50))%"></div>
+                </div>
+                <div class="text-muted x-small mt-2">
+                    <i class="bi bi-bullseye text-primary me-1"></i> Consistent progress to goal
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================
+         MAIN INTERACTIVE ROW: TODAY'S FOCUS & LIVE WORKOUT PLAYER
+         ======================================================== -->
+    <div class="row g-4 mb-4">
+        
+        <!-- Left: Today's Scheduled Routine Card & Live Player -->
+        <div class="col-lg-8">
+
+            @if (todaySchedule != null)
+            {
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-white">
+                    <div class="p-4 p-md-5 hero-workout-banner text-white position-relative">
+                        <div class="position-relative z-1">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                                <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 py-1 px-3 rounded-pill fw-semibold">
+                                    <i class="bi bi-calendar2-event me-1"></i> TODAY'S FOCUS: @todaySchedule.DayOfWeek.ToUpper()
+                                </span>
+                                @if (isCompletedToday)
+                                {
+                                    <span class="badge bg-success py-1 px-3 rounded-pill fw-bold d-inline-flex align-items-center gap-1 shadow-sm">
+                                        <i class="bi bi-check-circle-fill"></i> Completed Today!
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark py-1 px-3 rounded-pill fw-bold">
+                                        <i class="bi bi-hourglass-split me-1"></i> Ready for Action
+                                    </span>
+                                }
+                            </div>
+
+                            <h1 class="display-6 fw-bold mb-2">@todaySchedule.FocusTitle Routine</h1>
+                            <p class="text-white-50 mb-4" style="max-width: 600px;">
+                                Target volume: <strong>@todaySchedule.ExerciseCount Exercises</strong> &bull; 
+                                <strong>@todaySchedule.TotalSets Total Sets</strong> &bull; 
+                                Est. Duration: <strong>@todaySchedule.EstimatedDurationMinutes mins</strong> &bull; 
+                                Est. Burn: <strong>@todaySchedule.EstimatedCaloriesBurn kcal</strong>
+                            </p>
+
+                            <!-- Hero Quick Actions -->
+                            <div class="d-flex flex-wrap gap-2">
+                                <button type="button" class="btn btn-light fw-bold px-4 py-2 rounded-pill shadow-sm d-inline-flex align-items-center gap-2" id="btnToggleLivePlayer">
+                                    <i class="bi bi-play-circle-fill text-primary fs-5"></i> 
+                                    <span id="liveBtnText">Launch Live Workout Player</span>
+                                </button>
+                                
+                                <button type="button" class="btn btn-outline-light px-4 py-2 rounded-pill d-inline-flex align-items-center gap-2" 
+                                        data-bs-toggle="modal" data-bs-target="#completeWorkoutModal"
+                                        data-session-name="@todaySchedule.DayOfWeek: @todaySchedule.FocusTitle"
+                                        data-est-mins="@todaySchedule.EstimatedDurationMinutes"
+                                        data-est-cals="@todaySchedule.EstimatedCaloriesBurn">
+                                    <i class="bi bi-check2-circle fs-5"></i> 
+                                    @(isCompletedToday ? "Update Today's Log" : "Log & Mark Completed")
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ========================================================
+                         LIVE WORKOUT PLAYER (Collapsible Interactive Section)
+                         ======================================================== -->
+                    <div id="liveWorkoutPlayer" class="bg-dark text-white p-4 d-none border-top border-secondary border-opacity-50">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-3 border-bottom border-secondary border-opacity-25 gap-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="live-stopwatch-display font-monospace fs-2 fw-bold text-success" id="stopwatchDisplay">
+                                    00:00:00
+                                </div>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-success" id="btnStartStopwatch"><i class="bi bi-play-fill"></i> Start</button>
+                                    <button class="btn btn-sm btn-outline-light" id="btnPauseStopwatch"><i class="bi bi-pause-fill"></i> Pause</button>
+                                    <button class="btn btn-sm btn-outline-secondary" id="btnResetStopwatch"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+                                </div>
+                            </div>
+
+                            <!-- Interactive Rest Interval Countdown Ring -->
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="text-end">
+                                    <div class="x-small text-white-50 text-uppercase fw-bold">Rest Interval</div>
+                                    <div class="fw-bold text-info fs-5 font-monospace" id="restTimerDisplay">60s</div>
+                                </div>
+                                <div class="rest-ring-wrapper position-relative">
+                                    <svg class="rest-ring-svg" width="50" height="50">
+                                        <circle class="rest-ring-bg" cx="25" cy="25" r="20"></circle>
+                                        <circle class="rest-ring-progress" id="restRingCircle" cx="25" cy="25" r="20"></circle>
+                                    </svg>
+                                    <button class="btn btn-sm btn-link text-white position-absolute top-50 start-50 translate-middle p-0" id="btnTriggerRest" title="Start Rest Timer">
+                                        <i class="bi bi-stopwatch text-warning fs-5"></i>
+                                    </button>
+                                </div>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-secondary text-white-50 rest-preset-btn active" data-seconds="60">60s</button>
+                                    <button class="btn btn-outline-secondary text-white-50 rest-preset-btn" data-seconds="90">90s</button>
+                                    <button class="btn btn-outline-secondary text-white-50 rest-preset-btn" data-seconds="120">120s</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Live Set Checkbox Progress Bar -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center x-small text-white-50 mb-1">
+                                <span>Workout Sets Completed: <strong class="text-white" id="liveSetsCounter">0 of @todaySchedule.TotalSets</strong></span>
+                                <span id="liveProgressPercent">0%</span>
+                            </div>
+                            <div class="progress" style="height: 6px; background-color: rgba(255,255,255,0.1);">
+                                <div class="progress-bar bg-gradient-success" id="liveProgressBar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-white-50"><i class="bi bi-info-circle me-1"></i> Check off sets as you complete them below. Your elapsed time will auto-fill your log.</small>
+                            <button type="button" class="btn btn-sm btn-success px-3 fw-bold" id="btnFinishLiveWorkout">
+                                <i class="bi bi-flag-fill me-1"></i> Finish &amp; Log Session
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Exercises List for Today -->
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                                <i class="bi bi-list-task text-primary"></i> Prescribed Exercises for Today
+                            </h5>
+                            <span class="badge bg-light text-muted border">@todaySchedule.ExerciseCount Movements</span>
+                        </div>
+
+                        <div class="d-flex flex-column gap-3">
+                            @for (int i = 0; i < todaySchedule.Exercises.Count; i++)
+                            {
+                                var ex = todaySchedule.Exercises[i];
+                                <div class="exercise-item-card p-3 rounded-3 border bg-light bg-opacity-50 transition-hover" id="exercise-row-@ex.ExerciseId">
+                                    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                                        <!-- Left Info -->
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="position-relative">
+                                                @if (!string.IsNullOrEmpty(ex.ImagePath))
+                                                {
+                                                    <img src="@Url.Content(ex.ImagePath)" alt="@ex.Name" class="rounded-3 border object-fit-cover shadow-2xs" style="width: 62px; height: 62px;"
+                                                         onerror="this.onerror=null;this.src='@Url.Content("~/Content/images/exercises/placeholder-exercise.png")';" />
+                                                }
+                                                else
+                                                {
+                                                    <div class="rounded-3 bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center" style="width: 62px; height: 62px;">
+                                                        <i class="bi bi-activity fs-3"></i>
+                                                    </div>
+                                                }
+                                                <span class="badge bg-dark text-white position-absolute top-0 start-0 translate-middle rounded-pill x-small">
+                                                    #@(i + 1)
+                                                </span>
+                                            </div>
+
+                                            <div>
+                                                <div class="d-flex align-items-center gap-2 mb-1">
+                                                    <h6 class="fw-bold text-dark mb-0">@ex.Name</h6>
+                                                    <span class="badge bg-primary-subtle text-primary x-small">@ex.TargetMuscle</span>
+                                                    @if (!string.IsNullOrEmpty(ex.ExerciseRole))
+                                                    {
+                                                        <span class="badge bg-light text-muted border x-small">@ex.ExerciseRole</span>
+                                                    }
+                                                </div>
+                                                <div class="text-muted small">
+                                                    <strong class="text-dark">@ex.Sets Sets</strong> &bull; 
+                                                    @(ex.Reps.HasValue ? ex.Reps + " Reps" : (ex.DurationMinutes.HasValue ? ex.DurationMinutes + " mins" : "As Prescribed")) &bull; 
+                                                    <span class="text-secondary"><i class="bi bi-hourglass-split"></i> @ex.RestSeconds s rest</span> &bull; 
+                                                    <span class="text-secondary"><i class="bi bi-fire"></i> ~@ex.DefaultCaloriesBurnEstimate kcal</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Right: Interactive Sets Checkboxes + Technique Guide Modal -->
+                                        <div class="d-flex align-items-center gap-2 justify-content-end">
+                                            <!-- Set Checkboxes for Live Workout -->
+                                            <div class="d-flex align-items-center gap-1 me-2 live-sets-group">
+                                                @for (int s = 1; s <= ex.Sets; s++)
+                                                {
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary set-check-btn rounded-circle p-0 d-flex align-items-center justify-content-center" 
+                                                            style="width: 28px; height: 28px; font-size: 0.75rem;" 
+                                                            data-set-number="@s" title="Set @s">
+                                                        @s
+                                                    </button>
+                                                }
+                                            </div>
+
+                                            <button type="button" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 btn-view-technique" 
+                                                    data-exercise-id="@ex.ExerciseId">
+                                                <i class="bi bi-camera-video"></i> Form Guide
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    @if (!string.IsNullOrWhiteSpace(ex.Instructions))
+                                    {
+                                        <div class="mt-2 pt-2 border-top text-dark small d-flex align-items-start gap-2">
+                                            <i class="bi bi-info-circle-fill text-primary mt-1 flex-shrink-0"></i>
+                                            <span><strong>Coach Cue:</strong> @ex.Instructions</span>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <!-- REST DAY BANNER -->
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-white">
+                    <div class="p-4 p-md-5 bg-gradient-rest text-white position-relative">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 py-1 px-3 rounded-pill fw-semibold">
+                                <i class="bi bi-moon-stars me-1"></i> ACTIVE RECOVERY &amp; REST DAY
+                            </span>
+                        </div>
+                        <h2 class="display-6 fw-bold mb-2">Rest, Recover &amp; Recharge <i class="bi bi-moon-stars-fill text-info ms-2"></i></h2>
+                        <p class="text-white-50 mb-4" style="max-width: 600px;">
+                            No heavy lifting scheduled for today. Muscle growth and strength adaptations occur during rest. Focus on hydration, mobility stretching, and restful sleep!
+                        </p>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="@Url.Action("Plan", "Workout", new { area = "Client" })" class="btn btn-light fw-bold px-4 py-2 rounded-pill shadow-sm">
+                                <i class="bi bi-calendar3 me-1"></i> Preview Weekly Routine
+                            </a>
+                            <button type="button" class="btn btn-outline-light px-4 py-2 rounded-pill" data-bs-toggle="modal" data-bs-target="#completeWorkoutModal"
+                                    data-session-name="Active Mobility & Recovery" data-est-mins="25" data-est-cals="120">
+                                <i class="bi bi-plus-circle me-1"></i> Log Custom Session
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- 7-Day Weekly Schedule Ribbon -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                        <i class="bi bi-calendar-week text-primary"></i> Weekly Training Split
+                    </h5>
+                    <a href="@Url.Action("Calendar", "Workout", new { area = "Client" })" class="text-decoration-none small fw-semibold">
+                        View Interactive Calendar <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+
+                <div class="row g-2">
+                    @{
+                        var daysOfWeek = new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+                        var todayDayName = DateTime.Today.DayOfWeek.ToString();
+                    }
+                    @foreach (var day in daysOfWeek)
+                    {
+                        var sched = Model.WeeklySchedules.FirstOrDefault(s => s.DayOfWeek.Equals(day, StringComparison.OrdinalIgnoreCase));
+                        var isDayToday = day.Equals(todayDayName, StringComparison.OrdinalIgnoreCase);
+                        <div class="col">
+                            @if (sched != null)
+                            {
+                                <a href="@Url.Action("Plan", "Workout", new { area = "Client", day = day })" class="text-decoration-none">
+                                    <div class="day-split-card p-3 rounded-3 text-center border h-100 transition-hover @(isDayToday ? "border-primary bg-primary bg-opacity-10 shadow-sm" : "bg-light")">
+                                        <div class="x-small text-uppercase fw-bold @(isDayToday ? "text-primary" : "text-muted")">
+                                            @day.Substring(0, 3)
+                                        </div>
+                                        @if (isDayToday)
+                                        {
+                                            <span class="badge bg-primary text-white x-small rounded-pill my-1">Today</span>
+                                        }
+                                        <div class="mt-2">
+                                            <div class="fw-bold text-dark x-small text-truncate" title="@sched.FocusTitle">@sched.FocusTitle</div>
+                                            <span class="badge bg-emerald-subtle text-emerald x-small mt-1">@sched.ExerciseCount moves</span>
+                                        </div>
+                                    </div>
+                                </a>
+                            }
+                            else
+                            {
+                                <div class="day-split-card p-3 rounded-3 text-center border h-100 bg-white opacity-75">
+                                    <div class="x-small text-uppercase fw-bold text-muted">
+                                        @day.Substring(0, 3)
+                                    </div>
+                                    <div class="mt-2">
+                                        <div class="text-muted x-small">Rest Day</div>
+                                        <i class="bi bi-cup-hot text-muted x-small mt-1 d-block"></i>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right: Active Plan Snapshot & Recent Logs Feed -->
+        <div class="col-lg-4">
+
+            <!-- Active Plan Snapshot Card -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                        <i class="bi bi-shield-check text-success"></i> Routine Snapshot
+                    </h5>
+                    @if (hasActivePlan)
+                    {
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Active Routine</span>
+                    }
+                </div>
+
+                @if (hasActivePlan)
+                {
+                    <h6 class="fw-bold text-dark mb-1">@Model.ActivePlan.Title</h6>
+                    <p class="text-muted small mb-3">@Model.ActivePlan.Description</p>
+
+                    <div class="d-flex flex-column gap-2 small">
+                        <div class="d-flex justify-content-between py-1 border-bottom">
+                            <span class="text-muted"><i class="bi bi-bullseye me-1"></i>Primary Goal:</span>
+                            <strong class="text-dark">@Model.ActivePlan.Goal</strong>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 border-bottom">
+                            <span class="text-muted"><i class="bi bi-calendar3 me-1"></i>Plan Duration:</span>
+                            <strong class="text-dark">@Model.ActivePlan.DurationWeeks Weeks</strong>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 border-bottom">
+                            <span class="text-muted"><i class="bi bi-repeat me-1"></i>Frequency:</span>
+                            <strong class="text-dark">@Model.ActivePlan.DaysPerWeek Days / Week</strong>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(Model.ActivePlan.TargetRepRange))
+                        {
+                            <div class="d-flex justify-content-between py-1 border-bottom">
+                                <span class="text-muted"><i class="bi bi-hash me-1"></i>Rep Target:</span>
+                                <strong class="text-dark">@Model.ActivePlan.TargetRepRange</strong>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.ActivePlan.ProgressionStrategy))
+                        {
+                            <div class="p-3 bg-primary bg-opacity-10 rounded-3 mt-3 border border-primary-subtle">
+                                <strong class="text-primary d-flex align-items-center gap-1 mb-1 small fw-bold">
+                                    <i class="bi bi-graph-up-arrow"></i> Progression Strategy:
+                                </strong>
+                                <div class="text-dark small lh-base">
+                                    @Model.ActivePlan.ProgressionStrategy
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-card-checklist fs-1 d-block mb-2 text-muted"></i>
+                        No active workout plan assigned. Reach out to your coach to prescribe your routine.
+                    </div>
+                }
+            </div>
+
+            <!-- Recent Completed Workout Logs Feed -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                        <i class="bi bi-clock-history text-primary"></i> Recent History
+                    </h5>
+                    <a href="@Url.Action("History", "Workout", new { area = "Client" })" class="text-decoration-none small">
+                        View All <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+
+                @if (!Model.RecentLogs.Any())
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-journal-check fs-2 d-block mb-2 text-muted"></i>
+                        No workouts logged yet. Complete today's workout to start your history!
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex flex-column gap-3">
+                        @foreach (var log in Model.RecentLogs)
+                        {
+                            <div class="p-3 rounded-3 border bg-light bg-opacity-50">
+                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                    <h6 class="fw-bold text-dark mb-0 fs-6">@log.SessionName</h6>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle small py-1 px-2">
+                                        <i class="bi bi-check-circle-fill me-1"></i>Completed
+                                    </span>
+                                </div>
+                                <div class="text-muted small mb-2 d-flex flex-wrap align-items-center gap-2">
+                                    <span><i class="bi bi-calendar-event me-1"></i>@log.LogDate.ToString("MMM dd, yyyy")</span>
+                                    <span>&bull;</span>
+                                    <span><i class="bi bi-clock me-1"></i>@log.DurationMinutes mins</span>
+                                    <span>&bull;</span>
+                                    <span><i class="bi bi-fire text-danger me-1"></i>@log.CaloriesBurned kcal</span>
+                                </div>
+                                @if (log.PerceivedExertion > 0)
+                                {
+                                    <div class="d-flex align-items-center gap-2 small mb-2">
+                                        <span class="text-muted fw-semibold">Exertion:</span>
+                                        <span class="badge @(log.PerceivedExertion >= 8 ? "bg-danger" : (log.PerceivedExertion >= 5 ? "bg-warning text-dark" : "bg-info text-dark")) rounded-pill px-2 py-1">
+                                            RPE @log.PerceivedExertion/10
+                                        </span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(log.ClientNotes))
+                                {
+                                    <div class="client-note-box bg-white p-2.5 px-3 rounded-3 border mb-2 shadow-xs">
+                                        <i class="bi bi-quote text-muted me-1"></i>@log.ClientNotes
+                                    </div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(log.CoachFeedback))
+                                {
+                                    <div class="coach-feedback-box mt-2 p-2.5 px-3 bg-primary bg-opacity-10 rounded-3 border border-primary-subtle">
+                                        <strong class="text-primary d-inline-flex align-items-center gap-1 mb-1"><i class="bi bi-chat-dots-fill"></i>Coach Feedback:</strong>
+                                        <div class="text-dark">@log.CoachFeedback</div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ========================================================
+     MODAL 1: MARK WORKOUT COMPLETED & RECORD DETAILS
+     ======================================================== -->
+<div class="modal fade" id="completeWorkoutModal" tabindex="-1" aria-labelledby="completeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-dark text-white border-0 py-3 px-4">
+                <h5 class="modal-title fw-bold d-flex align-items-center gap-2 mb-0" id="completeModalLabel">
+                    <i class="bi bi-trophy-fill text-warning"></i> Log &amp; Record Completed Workout
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form action="@Url.Action("CompleteWorkout", "Workout", new { area = "Client" })" method="post" id="completeWorkoutForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ClientId" value="@Model.Client.ClientId" />
+                <input type="hidden" name="WorkoutPlanId" value="@(Model.ActivePlan != null ? Model.ActivePlan.WorkoutPlanId : (int?)null)" />
+                <input type="hidden" name="IsCompleted" value="true" />
+                <input type="hidden" name="PerceivedExertion" id="inputPerceivedExertion" value="7" />
+
+                <div class="modal-body p-4">
+                    <!-- Session Name -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">Session Title <span class="text-danger">*</span></label>
+                        <input type="text" name="SessionName" id="modalSessionName" class="form-control" 
+                               value="@(todaySchedule != null ? todaySchedule.DayOfWeek + ": " + todaySchedule.FocusTitle : "Daily Workout Session")" required />
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <!-- Duration in Minutes -->
+                        <div class="col-6">
+                            <label class="form-label fw-bold small text-dark"><i class="bi bi-clock me-1 text-primary"></i>Duration (Minutes)</label>
+                            <div class="input-group">
+                                <input type="number" name="DurationMinutes" id="modalDurationMinutes" class="form-control fw-bold" 
+                                       value="@(todaySchedule != null ? todaySchedule.EstimatedDurationMinutes : 45)" min="5" max="300" required />
+                                <span class="input-group-text">mins</span>
+                            </div>
+                        </div>
+
+                        <!-- Calories Burned -->
+                        <div class="col-6">
+                            <label class="form-label fw-bold small text-dark"><i class="bi bi-fire me-1 text-danger"></i>Calories Burned</label>
+                            <div class="input-group">
+                                <input type="number" name="CaloriesBurned" id="modalCaloriesBurned" class="form-control fw-bold" 
+                                       value="@(todaySchedule != null ? todaySchedule.EstimatedCaloriesBurn : 320)" min="10" max="2500" required />
+                                <span class="input-group-text">kcal</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Borg RPE 1-10 Exertion Scale -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-speedometer2 me-1 text-warning"></i>Rate of Perceived Exertion (RPE)</span>
+                            <span class="badge bg-warning text-dark fw-bold" id="rpeValueBadge">7 / 10 &bull; Vigorous Effort</span>
+                        </label>
+                        
+                        <div class="rpe-buttons-grid d-flex gap-1 justify-content-between mb-2">
+                            @for (int r = 1; r <= 10; r++)
+                            {
+                                <button type="button" class="btn btn-sm rpe-select-btn @(r == 7 ? "active" : "")" data-rpe="@r">
+                                    @r
+                                </button>
+                            }
+                        </div>
+                        <div class="x-small text-muted d-flex justify-content-between px-1">
+                            <span>1-3 (Light)</span>
+                            <span>4-6 (Moderate)</span>
+                            <span>7-8 (Hard)</span>
+                            <span>9-10 (Maximum)</span>
+                        </div>
+                    </div>
+
+                    <!-- Client Notes -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">
+                            <i class="bi bi-pencil-square me-1 text-secondary"></i>Workout Notes &amp; Reflections
+                        </label>
+                        <textarea name="ClientNotes" id="modalClientNotes" class="form-control" rows="3" 
+                                  placeholder="How did the session feel? Did you hit any PRs or experience muscle fatigue?"></textarea>
+                        <div class="form-text x-small text-muted">Your coach can read and provide feedback on these notes.</div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top bg-light px-4 py-3">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success px-4 fw-bold shadow-sm" id="btnSubmitWorkoutLog">
+                        <i class="bi bi-check2-circle me-1"></i> Save &amp; Mark Completed
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================
+     MODAL 2: EXERCISE TECHNIQUE & FORM DRAWER (DUAL-POSE)
+     ======================================================== -->
+<div class="modal fade" id="exerciseTechniqueModal" tabindex="-1" aria-labelledby="techniqueModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle bg-primary bg-opacity-25 text-primary p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                        <i class="bi bi-camera-video-fill"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold text-white mb-0" id="techModalExerciseName">Exercise Name</h5>
+                        <div class="x-small text-white-50" id="techModalCategory">Category &bull; Target Muscle</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-4">
+                <!-- Dual-Image Pose Showcase (Start Posture vs Movement Posture) -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="card border rounded-3 overflow-hidden h-100 bg-light">
+                            <div class="bg-secondary bg-opacity-10 py-1 px-3 border-bottom text-muted x-small fw-bold text-uppercase">
+                                <i class="bi bi-1-circle me-1 text-primary"></i> 1. Starting Posture
+                            </div>
+                            <div class="d-flex align-items-center justify-content-center p-2" style="min-height: 220px;">
+                                <img id="techModalStartImg" src="@Url.Content("~/Content/images/exercises/placeholder-exercise.png")" alt="Start Posture" 
+                                     class="img-fluid rounded-2 object-fit-contain" style="max-height: 210px;" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border rounded-3 overflow-hidden h-100 bg-light">
+                            <div class="bg-secondary bg-opacity-10 py-1 px-3 border-bottom text-muted x-small fw-bold text-uppercase">
+                                <i class="bi bi-2-circle me-1 text-success"></i> 2. Movement / Apex Execution
+                            </div>
+                            <div class="d-flex align-items-center justify-content-center p-2" style="min-height: 220px;">
+                                <img id="techModalMoveImg" src="@Url.Content("~/Content/images/exercises/placeholder-exercise.png")" alt="Movement Execution" 
+                                     class="img-fluid rounded-2 object-fit-contain" style="max-height: 210px;" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Muscle & Equipment Badges -->
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle" id="techModalTargetMuscle">Target: Chest</span>
+                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle" id="techModalSecondaryMuscles">Secondary: Triceps</span>
+                    <span class="badge bg-info-subtle text-info border border-info-subtle" id="techModalEquipment">Equipment: Dumbbells</span>
+                    <span class="badge bg-dark text-white" id="techModalDifficulty">Difficulty: Intermediate</span>
+                </div>
+
+                <!-- Guidance & Instructions -->
+                <div class="p-3 bg-light rounded-3 mb-3 border-start border-3 border-success">
+                    <h6 class="fw-bold text-dark small mb-1"><i class="bi bi-check2-all text-success me-1"></i>Key Execution Guidance:</h6>
+                    <p class="small text-muted mb-0" id="techModalGuidance">Controlled tempo on the eccentric, explosive drive on the concentric.</p>
+                </div>
+
+                <div class="mb-3">
+                    <h6 class="fw-bold text-dark small mb-1"><i class="bi bi-card-text text-primary me-1"></i>Step-by-Step Instructions:</h6>
+                    <p class="small text-muted mb-0" id="techModalInstructions">Instructions description...</p>
+                </div>
+
+                <div class="p-3 bg-warning bg-opacity-10 rounded-3 border border-warning-subtle">
+                    <h6 class="fw-bold text-warning-emphasis small mb-1"><i class="bi bi-shield-exclamation text-warning me-1"></i>Form Tips &amp; Precautions:</h6>
+                    <p class="small text-dark mb-0" id="techModalTips">Keep shoulders packed down, do not hyperextend lower spine.</p>
+                </div>
+            </div>
+
+            <div class="modal-footer border-top bg-light py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close Guide</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================
+     CUSTOM CLIENT STYLES & INTERACTIVE SCRIPTS
+     ======================================================== -->
+<style>
+    /* Athletic Mint & Modern Elevation Styling */
+    .hero-workout-banner {
+        background: linear-gradient(135deg, #093325 0%, #0d543c 50%, #059669 100%);
+    }
+
+    .bg-gradient-rest {
+        background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+    }
+
+    .bg-emerald-subtle {
+        background-color: #d1fae5 !important;
+    }
+    .text-emerald {
+        color: #059669 !important;
+    }
+    .border-emerald-subtle {
+        border-color: #a7f3d0 !important;
+    }
+
+    .pulse-indicator {
+        width: 8px;
+        height: 8px;
+        background-color: #10b981;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+        animation: pulseRing 1.8s infinite;
+    }
+
+    @@keyframes pulseRing {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .kpi-icon-badge {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .transition-hover {
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .transition-hover:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    /* Rest Timer Circle SVG */
+    .rest-ring-svg {
+        transform: rotate(-90deg);
+    }
+    .rest-ring-bg {
+        fill: none;
+        stroke: rgba(255,255,255,0.15);
+        stroke-width: 4;
+    }
+    .rest-ring-progress {
+        fill: none;
+        stroke: #38bdf8;
+        stroke-width: 4;
+        stroke-linecap: round;
+        stroke-dasharray: 125.6; /* 2 * PI * 20 */
+        stroke-dashoffset: 0;
+        transition: stroke-dashoffset 1s linear;
+    }
+
+    /* RPE Selector Grid */
+    .rpe-select-btn {
+        flex: 1;
+        border: 1px solid #cbd5e1;
+        background-color: #f8fafc;
+        color: #1e293b;
+        font-weight: bold;
+        padding: 8px 4px;
+        border-radius: 6px;
+        transition: all 0.15s ease;
+    }
+    .rpe-select-btn:hover {
+        background-color: #e2e8f0;
+    }
+    .rpe-select-btn.active {
+        background-color: #0d6efd;
+        color: #ffffff;
+        border-color: #0d6efd;
+        box-shadow: 0 2px 6px rgba(13, 110, 253, 0.35);
+        transform: scale(1.05);
+    }
+
+    .set-check-btn.checked {
+        background-color: #10b981 !important;
+        border-color: #10b981 !important;
+        color: #ffffff !important;
+    }
+</style>
+
+@section Scripts {
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        // ==========================================
+        // 1. LIVE WORKOUT STOPWATCH
+        // ==========================================
+        let stopwatchInterval = null;
+        let stopwatchSeconds = 0;
+        let stopwatchRunning = false;
+
+        const stopwatchDisplay = document.getElementById("stopwatchDisplay");
+        const btnStartStopwatch = document.getElementById("btnStartStopwatch");
+        const btnPauseStopwatch = document.getElementById("btnPauseStopwatch");
+        const btnResetStopwatch = document.getElementById("btnResetStopwatch");
+        const liveWorkoutPlayer = document.getElementById("liveWorkoutPlayer");
+        const btnToggleLivePlayer = document.getElementById("btnToggleLivePlayer");
+        const liveBtnText = document.getElementById("liveBtnText");
+
+        function formatTime(totalSeconds) {
+            const hrs = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+            const mins = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+            const secs = String(totalSeconds % 60).padStart(2, '0');
+            return hrs + ":" + mins + ":" + secs;
+        }
+
+        function startStopwatch() {
+            if (!stopwatchRunning) {
+                stopwatchRunning = true;
+                stopwatchInterval = setInterval(function () {
+                    stopwatchSeconds++;
+                    stopwatchDisplay.textContent = formatTime(stopwatchSeconds);
+                }, 1000);
+            }
+        }
+
+        function pauseStopwatch() {
+            stopwatchRunning = false;
+            clearInterval(stopwatchInterval);
+        }
+
+        function resetStopwatch() {
+            pauseStopwatch();
+            stopwatchSeconds = 0;
+            stopwatchDisplay.textContent = "00:00:00";
+        }
+
+        if (btnStartStopwatch) btnStartStopwatch.addEventListener("click", startStopwatch);
+        if (btnPauseStopwatch) btnPauseStopwatch.addEventListener("click", pauseStopwatch);
+        if (btnResetStopwatch) btnResetStopwatch.addEventListener("click", resetStopwatch);
+
+        if (btnToggleLivePlayer) {
+            btnToggleLivePlayer.addEventListener("click", function () {
+                if (liveWorkoutPlayer.classList.contains("d-none")) {
+                    liveWorkoutPlayer.classList.remove("d-none");
+                    liveBtnText.textContent = "Hide Live Workout Player";
+                    startStopwatch();
+                } else {
+                    liveWorkoutPlayer.classList.add("d-none");
+                    liveBtnText.textContent = "Launch Live Workout Player";
+                }
+            });
+        }
+
+        // ==========================================
+        // 2. REST INTERVAL COUNTDOWN TIMER
+        // ==========================================
+        let restInterval = null;
+        let selectedRestSeconds = 60;
+        let restSecondsLeft = 60;
+        const restTimerDisplay = document.getElementById("restTimerDisplay");
+        const restRingCircle = document.getElementById("restRingCircle");
+        const btnTriggerRest = document.getElementById("btnTriggerRest");
+        const maxDashoffset = 125.6;
+
+        document.querySelectorAll(".rest-preset-btn").forEach(btn => {
+            btn.addEventListener("click", function () {
+                document.querySelectorAll(".rest-preset-btn").forEach(b => b.classList.remove("active"));
+                this.classList.add("active");
+                selectedRestSeconds = parseInt(this.getAttribute("data-seconds"));
+                restSecondsLeft = selectedRestSeconds;
+                if (restTimerDisplay) restTimerDisplay.textContent = selectedRestSeconds + "s";
+                if (restRingCircle) restRingCircle.style.strokeDashoffset = 0;
+            });
+        });
+
+        function playBeepSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(880, ctx.currentTime); // A5
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.3);
+            } catch (e) {
+                // AudioContext not allowed or not supported
+            }
+        }
+
+        function startRestTimer() {
+            clearInterval(restInterval);
+            restSecondsLeft = selectedRestSeconds;
+            if (restTimerDisplay) restTimerDisplay.textContent = restSecondsLeft + "s";
+
+            restInterval = setInterval(function () {
+                restSecondsLeft--;
+                if (restTimerDisplay) restTimerDisplay.textContent = restSecondsLeft + "s";
+
+                if (restRingCircle) {
+                    const progress = (selectedRestSeconds - restSecondsLeft) / selectedRestSeconds;
+                    restRingCircle.style.strokeDashoffset = (progress * maxDashoffset);
+                }
+
+                if (restSecondsLeft <= 0) {
+                    clearInterval(restInterval);
+                    if (restTimerDisplay) restTimerDisplay.textContent = "READY!";
+                    playBeepSound();
+                    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                }
+            }, 1000);
+        }
+
+        if (btnTriggerRest) btnTriggerRest.addEventListener("click", startRestTimer);
+
+        // ==========================================
+        // 3. SETS CHECKBOXES & LIVE PROGRESS
+        // ==========================================
+        const setButtons = document.querySelectorAll(".set-check-btn");
+        const liveSetsCounter = document.getElementById("liveSetsCounter");
+        const liveProgressPercent = document.getElementById("liveProgressPercent");
+        const liveProgressBar = document.getElementById("liveProgressBar");
+        const totalSets = setButtons.length;
+
+        function updateSetsProgress() {
+            const checkedCount = document.querySelectorAll(".set-check-btn.checked").length;
+            if (liveSetsCounter) liveSetsCounter.textContent = checkedCount + " of " + totalSets;
+            const percent = totalSets > 0 ? Math.round((checkedCount / totalSets) * 100) : 0;
+            if (liveProgressPercent) liveProgressPercent.textContent = percent + "%";
+            if (liveProgressBar) liveProgressBar.style.width = percent + "%";
+        }
+
+        setButtons.forEach(btn => {
+            btn.addEventListener("click", function () {
+                this.classList.toggle("checked");
+                updateSetsProgress();
+                // trigger rest interval on set check
+                if (this.classList.contains("checked")) {
+                    startRestTimer();
+                }
+            });
+        });
+
+        // Finish Live Workout Button
+        const btnFinishLiveWorkout = document.getElementById("btnFinishLiveWorkout");
+        if (btnFinishLiveWorkout) {
+            btnFinishLiveWorkout.addEventListener("click", function () {
+                pauseStopwatch();
+                const elapsedMins = Math.max(5, Math.round(stopwatchSeconds / 60));
+                const modalDuration = document.getElementById("modalDurationMinutes");
+                if (modalDuration) modalDuration.value = elapsedMins;
+
+                const completeModal = new bootstrap.Modal(document.getElementById("completeWorkoutModal"));
+                completeModal.show();
+            });
+        }
+
+        // ==========================================
+        // 4. RPE EXERTION BUTTONS INTERACTION
+        // ==========================================
+        const rpeButtons = document.querySelectorAll(".rpe-select-btn");
+        const inputRpe = document.getElementById("inputPerceivedExertion");
+        const rpeBadge = document.getElementById("rpeValueBadge");
+
+        const rpeLabels = {
+            1: "Very Light (Warm-up pace)",
+            2: "Light (Easy breathing)",
+            3: "Moderate (Comfortable pace)",
+            4: "Somewhat Hard (Sweating lightly)",
+            5: "Challenging (Noticeable effort)",
+            6: "Hard (Speaking in short sentences)",
+            7: "Vigorous Effort (Heavy breathing)",
+            8: "Very Hard (High fatigue, strong push)",
+            9: "Extremely Hard (Near exhaustion)",
+            10: "Maximum Effort / All-Out Limit!"
+        };
+
+        rpeButtons.forEach(btn => {
+            btn.addEventListener("click", function () {
+                rpeButtons.forEach(b => b.classList.remove("active"));
+                this.classList.add("active");
+                const val = this.getAttribute("data-rpe");
+                if (inputRpe) inputRpe.value = val;
+                if (rpeBadge) rpeBadge.textContent = val + " / 10 | " + (rpeLabels[val] || "Effort");
+            });
+        });
+
+        // ==========================================
+        // 5. EXERCISE TECHNIQUE MODAL (AJAX GET)
+        // ==========================================
+        const techButtons = document.querySelectorAll(".btn-view-technique");
+        const techniqueModal = new bootstrap.Modal(document.getElementById("exerciseTechniqueModal"));
+
+        techButtons.forEach(btn => {
+            btn.addEventListener("click", function () {
+                const exId = this.getAttribute("data-exercise-id");
+                fetch('@Url.Action("GetExerciseDetails", "Workout", new { area = "Client" })/' + exId)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.getElementById("techModalExerciseName").textContent = data.name;
+                            document.getElementById("techModalCategory").textContent = data.category + " | Target: " + data.targetMuscle;
+                            document.getElementById("techModalTargetMuscle").textContent = "Target: " + data.targetMuscle;
+                            document.getElementById("techModalSecondaryMuscles").textContent = "Secondary: " + (data.secondaryMuscles || "None");
+                            document.getElementById("techModalEquipment").textContent = "Equipment: " + (data.equipment || "Standard");
+                            document.getElementById("techModalDifficulty").textContent = "Difficulty: " + data.difficulty;
+                            
+                            document.getElementById("techModalGuidance").textContent = data.keyGuidance || data.movementPattern || "Execute with controlled tempo.";
+                            document.getElementById("techModalInstructions").textContent = data.instructions || data.description || "Follow coach prescribed form.";
+                            document.getElementById("techModalTips").textContent = data.tips || "Maintain core tension and neutral spine.";
+
+                            const startImg = document.getElementById("techModalStartImg");
+                            const moveImg = document.getElementById("techModalMoveImg");
+
+                            const defaultPlaceholder = '@Url.Content("~/Content/images/exercises/placeholder-exercise.png")';
+                            const basePath = '@Url.Content("~/")';
+                            startImg.src = data.startImage ? (basePath + data.startImage.replace(/^\/+/, '')) : defaultPlaceholder;
+                            if (data.movementImage) {
+                                moveImg.src = basePath + data.movementImage.replace(/^\/+/, '');
+                            } else if (data.imagePath) {
+                                moveImg.src = basePath + data.imagePath.replace(/^\/+/, '');
+                            } else {
+                                moveImg.src = defaultPlaceholder;
+                            }
+
+                            techniqueModal.show();
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Could not load exercise details", err);
+                    });
+            });
+        });
+
+    });
+</script>
+}

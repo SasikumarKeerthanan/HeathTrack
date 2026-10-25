@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@(ViewBag.Title ?? "HealthTrack") - HealthTrack</title>
+    <link rel="icon" type="image/png" href="@Url.Content("~/Content/images/logo.png")" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    @Styles.Render("~/Content/css")
+</head>
+<body>
+
+    @{
+        var area = ViewContext.RouteData.DataTokens["area"] != null ? ViewContext.RouteData.DataTokens["area"].ToString() : "";
+        var isTrainer = string.IsNullOrEmpty(area) || area.Equals("Trainer", StringComparison.OrdinalIgnoreCase);
+        var isAdmin = area.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+        var isClient = area.Equals("Client", StringComparison.OrdinalIgnoreCase);
+
+        List<HealthTrack.Areas.Client.ViewModels.ClientNotificationItem> clientNotifications = null;
+        int unreadNotificationsCount = 0;
+        if (isClient)
+        {
+            var currentClientId = Session["CurrentClientId"] as string ?? HealthTrack.Helpers.SessionHelper.GetCurrentClientId(Session);
+            if (!string.IsNullOrEmpty(currentClientId))
+            {
+                try
+                {
+                    using (var dbNotif = new HealthTrack.Models.HealthTrackEntities())
+                    {
+                        clientNotifications = HealthTrack.Helpers.NotificationHelper.GetClientNotifications(dbNotif, currentClientId, Session);
+                        unreadNotificationsCount = clientNotifications.Count(n => !n.IsRead);
+                    }
+                }
+                catch
+                {
+                    clientNotifications = new List<HealthTrack.Areas.Client.ViewModels.ClientNotificationItem>();
+                    unreadNotificationsCount = 0;
+                }
+            }
+        }
+
+        List<HealthTrack.Areas.Admin.ViewModels.AdminNotificationItemViewModel> adminNotifications = null;
+        int adminUnreadCount = 0;
+        if (isAdmin)
+        {
+            try
+            {
+                using (var dbAdminNotif = new HealthTrack.Models.HealthTrackEntities())
+                {
+                    adminNotifications = HealthTrack.Helpers.NotificationHelper.GetAdminNotifications(dbAdminNotif, Session);
+                    adminUnreadCount = adminNotifications.Count(n => !n.IsRead);
+                }
+            }
+            catch
+            {
+                adminNotifications = new List<HealthTrack.Areas.Admin.ViewModels.AdminNotificationItemViewModel>();
+                adminUnreadCount = 0;
+            }
+        }
+
+        List<HealthTrack.Areas.Trainer.ViewModels.TrainerNotificationItem> trainerNotifications = null;
+        int trainerUnreadCount = 0;
+        if (isTrainer)
+        {
+            var currentTrainerId = Session["CurrentTrainerId"] as string ?? HealthTrack.Helpers.SessionHelper.GetCurrentTrainerId(Session);
+            if (!string.IsNullOrEmpty(currentTrainerId))
+            {
+                try
+                {
+                    using (var dbTrainerNotif = new HealthTrack.Models.HealthTrackEntities())
+                    {
+                        trainerNotifications = HealthTrack.Helpers.NotificationHelper.GetTrainerNotifications(dbTrainerNotif, currentTrainerId, Session);
+                        trainerUnreadCount = trainerNotifications.Count(n => !n.IsRead);
+                    }
+                }
+                catch
+                {
+                    trainerNotifications = new List<HealthTrack.Areas.Trainer.ViewModels.TrainerNotificationItem>();
+                    trainerUnreadCount = 0;
+                }
+            }
+        }
+    }
+
+    <div class="app-container">
+
+        <aside class="desktop-sidebar">
+            @if (isTrainer)
+            {
+                @Html.Partial("~/Areas/Trainer/Views/Shared/_Sidebar.cshtml")
+            }
+            else if (isAdmin)
+            {
+                @Html.Partial("~/Areas/Admin/Views/Shared/_AdminSidebar.cshtml")
+            }
+            else if (isClient)
+            {
+                @Html.Partial("~/Areas/Client/Views/Shared/_ClientSidebar.cshtml")
+            }
+        </aside>
+
+        <!-- ========================================================
+             MAIN CONTENT WRAPPER (Sits to the right of Sidebar)
+             ======================================================== -->
+        <div class="main-content-wrapper">
+
+            <!-- Top Header Bar -->
+            <header class="top-app-header d-flex align-items-center justify-content-between px-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="@(isAdmin ? Url.Action("Index", "Dashboard", new { area = "Admin" }) : (isClient ? Url.Action("Index", "Dashboard", new { area = "Client" }) : Url.Action("Index", "Dashboard", new { area = "Trainer" })))" class="d-flex align-items-center gap-2 text-decoration-none">
+                            <img src="@Url.Content("~/Content/images/logo.png")" alt="HealthTrack" class="rounded-2 flex-shrink-0" style="width: 28px; height: 28px; object-fit: contain;" />
+                            <div class="d-flex flex-column" style="line-height: 1;">
+                                <span class="fw-bold tracking-tight" style="font-size: 1.08rem; color: #00A3FF; font-weight: 800; letter-spacing: -0.2px;">HealthTrack</span>
+                                <span class="text-uppercase fw-bold" style="font-size: 0.52rem; letter-spacing: 0.8px; color: #22C55E;">WORKOUT &amp; NUTRITION</span>
+                            </div>
+                        </a>
+                        <span class="text-muted ms-1">/</span>
+                        @if (isAdmin)
+                        {
+                            <span class="badge border" style="background-color: rgba(0, 163, 255, 0.1); color: #0284c7; border-color: rgba(0, 163, 255, 0.25) !important;">System Administration</span>
+                        }
+                        else if (isClient)
+                        {
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">Client / Member Portal</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Fitness &amp; Workout Management</span>
+                        }
+                    </div>
+                </div>
+
+                <!-- Right Header Actions & User Profile -->
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-success-subtle text-success border border-success-subtle d-none d-md-inline-flex align-items-center gap-1">
+                        <span class="spinner-grow spinner-grow-sm" style="width: 0.35rem; height: 0.35rem;"></span> Active Session
+                    </span>
+
+                    @if (isAdmin)
+                    {
+                        <!-- Top-bar Notification Bell Trigger for Admin Modal -->
+                        <button type="button" class="btn btn-light rounded-circle position-relative p-2 d-flex align-items-center justify-content-center shadow-sm" 
+                                id="adminNotificationBellBtn"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#adminNotificationsModal" 
+                                style="width: 38px; height: 38px; border: 1px solid rgba(0,0,0,0.08);" 
+                                title="System Notifications & Alerts">
+                            <i class="bi bi-bell-fill fs-6" style="color: #00A3FF;"></i>
+                            @if (adminUnreadCount > 0)
+                            {
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-white" style="font-size: 0.65rem; padding: 0.2em 0.45em;">
+                                    @adminUnreadCount
+                                </span>
+                            }
+                        </button>
+                    }
+                    else if (isClient)
+                    {
+                        <!-- Top-bar Notification Bell Trigger for Client Modal -->
+                        <button type="button" class="btn btn-light rounded-circle position-relative p-2 d-flex align-items-center justify-content-center shadow-sm" 
+                                id="clientNotificationBellBtn"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#clientNotificationsModal" 
+                                style="width: 38px; height: 38px; border: 1px solid rgba(0,0,0,0.08);" 
+                                title="Notifications">
+                            <i class="bi bi-bell-fill fs-6 text-primary"></i>
+                            @if (unreadNotificationsCount > 0)
+                            {
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-white" style="font-size: 0.65rem; padding: 0.2em 0.45em;">
+                                    @unreadNotificationsCount
+                                </span>
+                            }
+                        </button>
+                    }
+                    else if (isTrainer)
+                    {
+                        <!-- Top-bar Notification Bell Trigger for Trainer Modal -->
+                        <button type="button" class="btn btn-light rounded-circle position-relative p-2 d-flex align-items-center justify-content-center shadow-sm" 
+                                id="trainerNotificationBellBtn"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#trainerNotificationsModal" 
+                                style="width: 38px; height: 38px; border: 1px solid rgba(0,0,0,0.08);" 
+                                title="Trainer Notifications">
+                            <i class="bi bi-bell-fill fs-6" style="color: #009dff;"></i>
+                            @if (trainerUnreadCount > 0)
+                            {
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-white" style="font-size: 0.65rem; padding: 0.2em 0.45em;">
+                                    @trainerUnreadCount
+                                </span>
+                            }
+                        </button>
+                    }
+                    
+                    <div class="d-flex align-items-center gap-2 ps-3 border-start">
+                        @if (isAdmin)
+                        {
+                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 36px; height: 36px; background: linear-gradient(135deg, rgba(0, 163, 255, 0.15) 0%, rgba(34, 197, 94, 0.15) 100%); color: #0284c7; border: 1px solid rgba(0, 163, 255, 0.3);">
+                                <i class="bi bi-shield-lock-fill fs-6"></i>
+                            </div>
+                            <div class="d-flex flex-column text-start" style="line-height: 1.2;">
+                                <div class="d-flex align-items-center gap-1">
+                                    <span class="small fw-bold text-dark">System Administrator</span>
+                                    <span class="badge rounded-pill" style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background-color: rgba(0, 163, 255, 0.12); color: #0284c7; border: 1px solid rgba(0, 163, 255, 0.25);">Admin</span>
+                                </div>
+                                <span class="text-muted" style="font-size: 0.72rem;">Full System Access</span>
+                            </div>
+                        }
+                        else if (isClient)
+                        {
+                            var clientDisplayName = Session["CurrentClientName"] as string ?? (ViewBag.ClientName as string ?? (Session["CurrentClientEmail"] as string ?? "Client"));
+                            var clientEmail = Session["CurrentClientEmail"] as string ?? (ViewBag.ClientEmail as string ?? string.Empty);
+                            var clientAvatar = Session["CurrentClientAvatar"] as string;
+                            <a href="@Url.Action("Index", "Profile", new { area = "Client" })" class="d-flex align-items-center gap-2 text-decoration-none px-2 py-1 rounded-3 hover-profile-chip" title="My Profile">
+                                @if (!string.IsNullOrEmpty(clientAvatar))
+                                {
+                                    <img src="@Url.Content(clientAvatar)" alt="Profile" class="rounded-circle flex-shrink-0 shadow-sm" style="width: 36px; height: 36px; object-fit: cover; border: 1px solid rgba(34, 197, 94, 0.4);" />
+                                }
+                                else
+                                {
+                                    <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 36px; height: 36px; border: 1px solid rgba(34, 197, 94, 0.3);">
+                                        <i class="bi bi-person-check-fill fs-6"></i>
+                                    </div>
+                                }
+                                <div class="d-flex flex-column text-start" style="line-height: 1.2;">
+                                    <div class="d-flex align-items-center gap-1">
+                                        <span class="small fw-bold text-dark">@clientDisplayName</span>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill" style="font-size: 0.65rem; padding: 0.15rem 0.4rem;">Member</span>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(clientEmail))
+                                    {
+                                        <span class="text-muted text-truncate" style="font-size: 0.72rem; max-width: 150px;">@clientEmail</span>
+                                    }
+                                </div>
+                            </a>
+                        }
+                        else
+                        {
+                            var trainerDisplayName = Session["CurrentTrainerName"] as string ?? (Session["TrainerName"] as string ?? (ViewBag.TrainerName as string ?? (Session["CurrentTrainerEmail"] as string ?? "Coach")));
+                            if (!string.IsNullOrEmpty(trainerDisplayName) && !trainerDisplayName.StartsWith("Coach", StringComparison.OrdinalIgnoreCase) && !trainerDisplayName.Contains("@"))
+                            {
+                                trainerDisplayName = "Coach " + trainerDisplayName;
+                            }
+                            var trainerSpecialization = Session["CurrentTrainerSpecialization"] as string ?? "Fitness Coach";
+                            var trainerAvatar = Session["CurrentTrainerAvatar"] as string;
+                            <a href="@Url.Action("Index", "Profile", new { area = "Trainer" })" class="d-flex align-items-center gap-2 text-decoration-none px-2 py-1 rounded-3 hover-profile-chip" title="Coach Profile">
+                                @if (!string.IsNullOrEmpty(trainerAvatar))
+                                {
+                                    <img src="@Url.Content(trainerAvatar)" alt="Coach" class="rounded-circle flex-shrink-0 shadow-sm" style="width: 36px; height: 36px; object-fit: cover; border: 1px solid rgba(13, 110, 253, 0.4);" />
+                                }
+                                else
+                                {
+                                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 36px; height: 36px; border: 1px solid rgba(13, 110, 253, 0.3);">
+                                        <i class="bi bi-person-badge-fill fs-6"></i>
+                                    </div>
+                                }
+                                <div class="d-flex flex-column text-start" style="line-height: 1.2;">
+                                    <div class="d-flex align-items-center gap-1">
+                                        <span class="small fw-bold text-dark">@trainerDisplayName</span>
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill" style="font-size: 0.65rem; padding: 0.15rem 0.4rem;">Trainer</span>
+                                    </div>
+                                    <span class="text-muted" style="font-size: 0.72rem;">@trainerSpecialization</span>
+                                </div>
+                            </a>
+                            <a href="@Url.Action("Logout", "Account", new { area = "Trainer" })" class="btn btn-sm btn-outline-danger p-1 rounded-2 ms-1" title="Sign Out">
+                                <i class="bi bi-box-arrow-right"></i>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Body Content -->
+            <main role="main" class="flex-grow-1 py-2" style="overflow-x: hidden;">
+                @RenderBody()
+            </main>
+
+        </div>
+
+    </div>
+
+    @if (isAdmin)
+    {
+        <!-- Admin Notifications Modal -->
+        <div class="modal fade" id="adminNotificationsModal" tabindex="-1" aria-labelledby="adminNotificationsModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+                <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+                    <!-- Modal Header -->
+                    <div class="modal-header bg-dark text-white p-3 border-0">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; background-color: rgba(0, 163, 255, 0.2); color: #38bdf8;">
+                                <i class="bi bi-bell-fill fs-6" style="color: #38bdf8;"></i>
+                            </div>
+                            <div>
+                                <h6 class="modal-title fw-bold text-white mb-0" id="adminNotificationsModalLabel">System Notifications &amp; Alerts</h6>
+                                <span class="text-white-50 small" style="font-size: 0.75rem;">Support tickets, coach reassignments &amp; security events</span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            @if (adminUnreadCount > 0)
+                            {
+                                <span class="badge bg-danger rounded-pill px-2 py-1 small">@adminUnreadCount Unread</span>
+                                using (Html.BeginForm("MarkAllAsRead", "Notifications", new { area = "Admin" }, FormMethod.Post, new { @class = "d-inline" }))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="returnUrl" value="@Request.RawUrl" />
+                                    <button type="submit" class="btn btn-sm btn-outline-light rounded-pill px-2 py-1 small" style="font-size: 0.75rem;">
+                                        <i class="bi bi-check2-all me-1"></i> Mark All as Read
+                                    </button>
+                                }
+                            }
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="modal-body p-3 bg-light">
+                        @if (adminNotifications != null && adminNotifications.Any())
+                        {
+                            <div class="d-flex flex-column gap-2">
+                                @foreach (var item in adminNotifications)
+                                {
+                                    string cardBg = item.IsRead ? "bg-white border" : "bg-white border-start border-4 border-danger shadow-sm";
+                                    <div class="card rounded-3 @cardBg p-3">
+                                        <div class="d-flex align-items-start gap-3">
+                                            <div class="rounded-circle bg-@item.Color bg-opacity-10 text-@item.Color p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
+                                                <i class="bi @item.Icon fs-6"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex flex-wrap align-items-center justify-content-between gap-1 mb-1">
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <span class="fw-bold text-dark small">@item.Title</span>
+                                                        <span class="badge bg-secondary-subtle text-secondary rounded-pill" style="font-size: 0.65rem;">@item.Category</span>
+                                                        @if (!item.IsRead)
+                                                        {
+                                                            <span class="badge bg-danger rounded-pill" style="font-size: 0.6rem;">NEW</span>
+                                                        }
+                                                    </div>
+                                                    <span class="text-muted" style="font-size: 0.72rem;">@item.TimeAgo</span>
+                                                </div>
+                                                <p class="text-secondary small mb-2" style="line-height: 1.35;">@item.Message</p>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    @if (!string.IsNullOrEmpty(item.ActionUrl))
+                                                    {
+                                                        <a href="@item.ActionUrl" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-0" style="font-size: 0.75rem;">
+                                                            View Details <i class="bi bi-arrow-right ms-1"></i>
+                                                        </a>
+                                                    }
+                                                    @if (!item.IsRead)
+                                                    {
+                                                        using (Html.BeginForm("MarkAsRead", "Notifications", new { area = "Admin" }, FormMethod.Post, new { @class = "d-inline" }))
+                                                        {
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@item.Id" />
+                                                            <input type="hidden" name="returnUrl" value="@Request.RawUrl" />
+                                                            <button type="submit" class="btn btn-sm btn-link text-muted text-decoration-none p-0" style="font-size: 0.75rem;">
+                                                                <i class="bi bi-check2 me-1"></i>Mark as Read
+                                                            </button>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted" style="font-size: 0.72rem;">
+                                                            <i class="bi bi-check2-all text-success me-1"></i>Read
+                                                        </span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <div class="rounded-circle bg-white text-muted d-inline-flex align-items-center justify-content-center mb-2 shadow-sm" style="width: 48px; height: 48px;">
+                                    <i class="bi bi-bell-slash fs-4"></i>
+                                </div>
+                                <h6 class="fw-bold text-dark mb-1">No System Notifications</h6>
+                                <p class="text-muted small mb-0">All system requests, support tickets and alerts are up to date.</p>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="modal-footer p-2 bg-white d-flex align-items-center justify-content-between border-top">
+                        <a href="@Url.Action("Index", "Notifications", new { area = "Admin" })" class="btn btn-sm btn-link text-danger text-decoration-none fw-semibold">
+                            Open Full Notification Center <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                        <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (isClient)
+    {
+        <!-- Client Notifications Modal -->
+        <div class="modal fade" id="clientNotificationsModal" tabindex="-1" aria-labelledby="clientNotificationsModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+                <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+                    <!-- Modal Header -->
+                    <div class="modal-header bg-dark text-white p-3 border-0">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle bg-primary bg-opacity-25 text-primary p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                <i class="bi bi-bell-fill fs-6 text-warning"></i>
+                            </div>
+                            <div>
+                                <h6 class="modal-title fw-bold text-white mb-0" id="clientNotificationsModalLabel">My Notifications &amp; Activity</h6>
+                                <span class="text-white-50 small" style="font-size: 0.75rem;">Updates from your coach, routines &amp; appointments</span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            @if (unreadNotificationsCount > 0)
+                            {
+                                <span class="badge bg-danger rounded-pill px-2 py-1 small">@unreadNotificationsCount Unread</span>
+                                using (Html.BeginForm("MarkAllAsRead", "Notifications", new { area = "Client" }, FormMethod.Post, new { @class = "d-inline" }))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="returnUrl" value="@Request.RawUrl" />
+                                    <button type="submit" class="btn btn-sm btn-outline-light rounded-pill px-2 py-1 small" style="font-size: 0.75rem;">
+                                        <i class="bi bi-check2-all me-1"></i> Mark All as Read
+                                    </button>
+                                }
+                            }
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="modal-body p-3 bg-light">
+                        @if (clientNotifications != null && clientNotifications.Any())
+                        {
+                            <div class="d-flex flex-column gap-2">
+                                @foreach (var item in clientNotifications)
+                                {
+                                    string cardBg = item.IsRead ? "bg-white border" : "bg-white border-start border-4 border-primary shadow-sm";
+                                    <div class="card rounded-3 @cardBg p-3">
+                                        <div class="d-flex align-items-start gap-3">
+                                            <div class="rounded-circle bg-@item.Color bg-opacity-10 text-@item.Color p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
+                                                <i class="bi @item.Icon fs-6"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex flex-wrap align-items-center justify-content-between gap-1 mb-1">
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <span class="fw-bold text-dark small">@item.Title</span>
+                                                        <span class="badge bg-secondary-subtle text-secondary rounded-pill" style="font-size: 0.65rem;">@item.Category</span>
+                                                        @if (!item.IsRead)
+                                                        {
+                                                            <span class="badge bg-danger rounded-pill" style="font-size: 0.6rem;">NEW</span>
+                                                        }
+                                                    </div>
+                                                    <span class="text-muted" style="font-size: 0.72rem;">@item.TimeAgo</span>
+                                                </div>
+                                                <p class="text-secondary small mb-2" style="line-height: 1.35;">@item.Message</p>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <a href="@item.Url" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-0" style="font-size: 0.75rem;">
+                                                        View Details <i class="bi bi-arrow-right ms-1"></i>
+                                                    </a>
+                                                    @if (!item.IsRead)
+                                                    {
+                                                        using (Html.BeginForm("MarkAsRead", "Notifications", new { area = "Client" }, FormMethod.Post, new { @class = "d-inline" }))
+                                                        {
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@item.Id" />
+                                                            <input type="hidden" name="returnUrl" value="@Request.RawUrl" />
+                                                            <button type="submit" class="btn btn-sm btn-link text-muted text-decoration-none p-0" style="font-size: 0.75rem;">
+                                                                <i class="bi bi-check2 me-1"></i>Mark as Read
+                                                            </button>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted" style="font-size: 0.72rem;">
+                                                            <i class="bi bi-check2-all text-success me-1"></i>Read
+                                                        </span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <div class="rounded-circle bg-white text-muted d-inline-flex align-items-center justify-content-center mb-2 shadow-sm" style="width: 48px; height: 48px;">
+                                    <i class="bi bi-bell-slash fs-4"></i>
+                                </div>
+                                <h6 class="fw-bold text-dark mb-1">No Notifications</h6>
+                                <p class="text-muted small mb-0">You're completely caught up with your training routines.</p>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="modal-footer p-2 bg-white d-flex align-items-center justify-content-between border-top">
+                        <a href="@Url.Action("Index", "Notifications", new { area = "Client" })" class="btn btn-sm btn-link text-primary text-decoration-none fw-semibold">
+                            View All Activity <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                        <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (isTrainer)
+    {
+        <!-- Trainer Notifications Modal -->
+        <div class="modal fade" id="trainerNotificationsModal" tabindex="-1" aria-labelledby="trainerNotificationsModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+                <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+                    <!-- Modal Header -->
+                    <div class="modal-header bg-dark text-white p-3 border-0">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; background-color: rgba(0, 157, 255, 0.2); color: #009dff;">
+                                <i class="bi bi-bell-fill fs-6" style="color: #009dff;"></i>
+                            </div>
+                            <div>
+                                <h6 class="modal-title fw-bold text-white mb-0" id="trainerNotificationsModalLabel">Trainer Notifications &amp; Activity</h6>
+                                <span class="text-white-50 small" style="font-size: 0.75rem;">Appointments, client workout logs &amp; roster updates</span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            @if (trainerUnreadCount > 0)
+                            {
+                                <span class="badge bg-danger rounded-pill px-2 py-1 small">@trainerUnreadCount Unread</span>
+                                using (Html.BeginForm("MarkAllAsRead", "Notifications", new { area = "Trainer" }, FormMethod.Post, new { @class = "d-inline" }))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="returnUrl" value="@Request.RawUrl" />
+                                    <button type="submit" class="btn btn-sm btn-outline-light rounded-pill px-2 py-1 small" style="font-size: 0.75rem;">
+                                        <i class="bi bi-check2-all me-1"></i> Mark All as Read
+                                    </button>
+                                }
+                            }
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="modal-body p-3 bg-light">
+                        @if (trainerNotifications != null && trainerNotifications.Any())
+                        {
+                            <div class="d-flex flex-column gap-2">
+                                @foreach (var item in trainerNotifications)
+                                {
+                                    string cardBg = item.IsRead ? "bg-white border" : "bg-white border-start border-4 border-primary shadow-sm";
+                                    <div class="card rounded-3 @cardBg p-3">
+                                        <div class="d-flex align-items-start gap-3">
+                                            <div class="rounded-circle bg-@item.Color bg-opacity-10 text-@item.Color p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
+                                                <i class="bi @item.Icon fs-6"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex flex-wrap align-items-center justify-content-between gap-1 mb-1">
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <span class="fw-bold text-dark small">@item.Title</span>
+                                                        <span class="badge bg-secondary-subtle text-secondary rounded-pill" style="font-size: 0.65rem;">@item.Category</span>
+                                                        @if (!item.IsRead)
+                                                        {
+                                                            <span class="badge bg-primary rounded-pill" style="font-size: 0.6rem;">NEW</span>
+                                                        }
+                                                    </div>
+                                                    <span class="text-muted" style="font-size: 0.72rem;">@item.TimeAgo</span>
+                                                </div>
+                                                <p class="text-secondary small mb-2" style="line-height: 1.35;">@item.Message</p>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    @if (!string.IsNullOrEmpty(item.ActionUrl))
+                                                    {
+                                                        <a href="@item.ActionUrl" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-0" style="font-size: 0.75rem;">
+                                                            View Details <i class="bi bi-arrow-right ms-1"></i>
+                                                        </a>
+                                                    }
+                                                    @if (!item.IsRead)
+                                                    {
+                                                        using (Html.BeginForm("MarkAsRead", "Notifications", new { area = "Trainer" }, FormMethod.Post, new { @class = "d-inline" }))
+                                                        {
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@item.Id" />
+                                                            <input type="hidden" name="returnUrl" value="@Request.RawUrl" />
+                                                            <button type="submit" class="btn btn-sm btn-link text-muted text-decoration-none p-0" style="font-size: 0.75rem;">
+                                                                <i class="bi bi-check2 me-1"></i>Mark as Read
+                                                            </button>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted" style="font-size: 0.72rem;">
+                                                            <i class="bi bi-check2-all text-success me-1"></i>Read
+                                                        </span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <div class="rounded-circle bg-white text-muted d-inline-flex align-items-center justify-content-center mb-2 shadow-sm" style="width: 48px; height: 48px;">
+                                    <i class="bi bi-bell-slash fs-4"></i>
+                                </div>
+                                <h6 class="fw-bold text-dark mb-1">No Trainer Notifications</h6>
+                                <p class="text-muted small mb-0">You're all caught up on appointments and client check-ins.</p>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="modal-footer p-2 bg-white d-flex align-items-center justify-content-between border-top">
+                        <span class="text-muted small ps-2">
+                            <i class="bi bi-info-circle me-1"></i>Shows latest bookings, client check-ins and session updates.
+                        </span>
+                        <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @Scripts.Render("~/bundles/site")
+    @RenderSection("Scripts", required: false)
+
+    @if (isTrainer || isClient)
+    {
+        @Html.Partial("~/Views/Shared/_ChatWidget.cshtml")
+    }
+</body>
+</html>

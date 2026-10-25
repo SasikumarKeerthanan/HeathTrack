@@ -1,0 +1,321 @@
+@model HealthTrack.Areas.Admin.ViewModels.AdminProfileViewModel
+@{
+    ViewBag.Title = "Administrator Profile";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid py-4 px-md-4">
+
+    <!-- ALERTS -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center shadow-sm rounded-3 mb-4" role="alert">
+            <i class="bi bi-check-circle-fill fs-5 me-2"></i>
+            <div>@TempData["SuccessMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center shadow-sm rounded-3 mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+            <div>@TempData["ErrorMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- PAGE HEADER -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <h2 class="h3 fw-bold text-dark mb-1">
+                <i class="bi bi-person-circle me-2" style="color: #00A3FF;"></i>Administrator Profile
+            </h2>
+            <p class="text-muted small mb-0">
+                View and manage your administrator account information and login security.
+            </p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="@Url.Action("CreateAdmin", "Profile", new { area = "Admin" })" class="btn btn-primary rounded-pill px-3 btn-sm d-inline-flex align-items-center gap-1 shadow-sm" style="background: linear-gradient(135deg, #00A3FF 0%, #0284c7 100%); border: none;">
+                <i class="bi bi-person-plus-fill"></i> Add Administrator
+            </a>
+            <a href="@Url.Action("Index", "Dashboard", new { area = "Admin" })" class="btn btn-outline-secondary rounded-pill px-3 btn-sm">
+                <i class="bi bi-speedometer2 me-1"></i> Dashboard
+            </a>
+            <a href="@Url.Action("Index", "Notifications", new { area = "Admin" })" class="btn btn-outline-primary rounded-pill px-3 btn-sm">
+                <i class="bi bi-bell-fill me-1"></i> System Alerts
+            </a>
+        </div>
+    </div>
+
+    <!-- PROFILE OVERVIEW CARD -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white overflow-hidden">
+        <div class="card-body p-4">
+            <div class="row align-items-center g-3">
+                <div class="col-md-auto text-center text-md-start">
+                    <div class="rounded-circle text-white d-inline-flex align-items-center justify-content-center shadow-sm" style="width: 72px; height: 72px; font-size: 2rem; background: linear-gradient(135deg, #00A3FF 0%, #22C55E 100%);">
+                        <i class="bi bi-shield-lock-fill"></i>
+                    </div>
+                </div>
+                <div class="col-md">
+                    <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                        <h4 class="fw-bold mb-0 text-dark">@Model.FullName</h4>
+                        <span class="badge rounded-pill px-3 py-1" style="background-color: rgba(0, 163, 255, 0.15); color: #0284c7; border: 1px solid rgba(0, 163, 255, 0.3);">@Model.Role</span>
+                        <span class="badge bg-light text-secondary border">@Model.AdminId</span>
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">
+                                <i class="bi bi-check-circle-fill me-1"></i>Active Account
+                            </span>
+                        }
+                    </div>
+                    <div class="text-muted small d-flex flex-wrap gap-3 mt-1">
+                        <span><i class="bi bi-envelope me-1" style="color: #00A3FF;"></i>@Model.Email</span>
+                        <span><i class="bi bi-telephone me-1" style="color: #22C55E;"></i>@(string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "Not Provided" : Model.PhoneNumber)</span>
+                        <span><i class="bi bi-calendar-check me-1 text-secondary"></i>Member Since @Model.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</span>
+                    </div>
+                </div>
+                <div class="col-md-auto">
+                    <div class="d-flex gap-2 flex-wrap justify-content-md-end">
+                        <div class="p-2 px-3 bg-light rounded-3 text-center border">
+                            <div class="text-muted" style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Clients</div>
+                            <div class="h5 fw-bold mb-0 text-dark">@Model.TotalClientsCount</div>
+                        </div>
+                        <div class="p-2 px-3 bg-light rounded-3 text-center border">
+                            <div class="text-muted" style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Trainers</div>
+                            <div class="h5 fw-bold mb-0 text-success">@Model.TotalTrainersCount</div>
+                        </div>
+                        <div class="p-2 px-3 bg-light rounded-3 text-center border">
+                            <div class="text-muted" style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Support Tickets</div>
+                            <div class="h5 fw-bold mb-0 text-primary">@Model.TotalTicketsCount</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FORMS SECTION -->
+    <div class="row g-4">
+
+        <!-- 1. Edit Profile Form -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 bg-white h-100">
+                <div class="card-header bg-white py-3 px-4 border-bottom">
+                    <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                        <i class="bi bi-person-lines-fill" style="color: #00A3FF;"></i>
+                        <span>Account Information</span>
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" action="@Url.Action("UpdateProfile", "Profile", new { area = "Admin" })">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark small">Administrator ID</label>
+                            <input type="text" class="form-control bg-light" value="@Model.AdminId" readonly />
+                            <div class="form-text text-muted">Unique database identifier for this administrator.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark small">Full Name <span class="text-danger">*</span></label>
+                            <input type="text" name="FullName" class="form-control" value="@Model.FullName" required maxlength="100" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark small">Email Address <span class="text-danger">*</span></label>
+                            <input type="email" name="Email" class="form-control" value="@Model.Email" required maxlength="150" />
+                            <div class="form-text text-muted">Login email address stored in the Admins table.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark small">Phone Number</label>
+                            <input type="tel" name="PhoneNumber" class="form-control" value="@Model.PhoneNumber" placeholder="+1 (555) 000-0000" maxlength="20" />
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-sm-6">
+                                <label class="form-label fw-bold text-dark small">Assigned Role</label>
+                                <input type="text" class="form-control bg-light" value="@Model.Role" readonly />
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label fw-bold text-dark small">Account Status</label>
+                                <input type="text" class="form-control bg-light" value="@(Model.IsActive ? "Active" : "Inactive")" readonly />
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary px-4 rounded-pill shadow-sm" style="background: linear-gradient(135deg, #00A3FF 0%, #0284c7 100%); border: none;">
+                            <i class="bi bi-check2-circle me-1"></i> Save Changes
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Change Password Form -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 bg-white h-100">
+                <div class="card-header bg-white py-3 px-4 border-bottom">
+                    <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                        <i class="bi bi-shield-lock-fill" style="color: #00A3FF;"></i>
+                        <span>Security &amp; Password</span>
+                    </h5>
+                </div>
+                <div class="card-body p-4 d-flex flex-column justify-content-between">
+                    <form method="post" action="@Url.Action("ChangePassword", "Profile", new { area = "Admin" })">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark small">Current Password <span class="text-danger">*</span></label>
+                            <input type="password" name="CurrentPassword" class="form-control" placeholder="Enter current password" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark small">New Password <span class="text-danger">*</span></label>
+                            <input type="password" name="NewPassword" class="form-control" placeholder="Minimum 6 characters" required minlength="6" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark small">Confirm New Password <span class="text-danger">*</span></label>
+                            <input type="password" name="ConfirmPassword" class="form-control" placeholder="Re-enter new password" required minlength="6" />
+                        </div>
+
+                        <button type="submit" class="btn btn-outline-primary px-4 rounded-pill">
+                            <i class="bi bi-key me-1"></i> Update Password
+                        </button>
+                    </form>
+
+                    <div class="mt-4 pt-3 border-top">
+                        <div class="small text-muted mb-2">
+                            <i class="bi bi-info-circle me-1"></i> Passwords are protected using industry-standard salted PBKDF2 cryptography.
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="@Url.Action("Index", "AuditLogs", new { area = "Admin" })" class="btn btn-sm btn-light border text-secondary flex-grow-1">
+                                <i class="bi bi-journal-text me-1"></i> Audit Logs
+                            </a>
+                            <a href="@Url.Action("Index", "Support", new { area = "Admin" })" class="btn btn-sm btn-light border text-secondary flex-grow-1">
+                                <i class="bi bi-headset me-1"></i> Support Tickets
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 3. SYSTEM ADMINISTRATOR ACCOUNTS ROSTER (FR-A-09) -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white mt-4 overflow-hidden">
+        <div class="card-header bg-white py-3 px-4 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div class="d-flex align-items-center gap-2">
+                <div class="rounded-3 p-2 d-flex align-items-center justify-content-center" style="background-color: rgba(0, 163, 255, 0.1); color: #00A3FF; width: 36px; height: 36px;">
+                    <i class="bi bi-people-fill fs-6"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold mb-0 text-dark">System Administrator Accounts</h5>
+                    <div class="text-muted small">Registered administrators with management access to HealthTrack.</div>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge rounded-pill px-3 py-2 text-dark bg-light border">
+                    <strong class="text-primary">@(Model.Administrators != null ? Model.Administrators.Count : 0)</strong> Total Accounts
+                </span>
+                <a href="@Url.Action("CreateAdmin", "Profile", new { area = "Admin" })" class="btn btn-primary btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-1 shadow-sm" style="background: linear-gradient(135deg, #00A3FF 0%, #0284c7 100%); border: none;">
+                    <i class="bi bi-person-plus-fill"></i> Add Administrator
+                </a>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-muted small text-uppercase">
+                    <tr>
+                        <th class="ps-4 py-3" style="font-size: 0.75rem;">Admin ID</th>
+                        <th class="py-3" style="font-size: 0.75rem;">Administrator</th>
+                        <th class="py-3" style="font-size: 0.75rem;">Phone Number</th>
+                        <th class="py-3" style="font-size: 0.75rem;">Role</th>
+                        <th class="py-3" style="font-size: 0.75rem;">Account Status</th>
+                        <th class="py-3" style="font-size: 0.75rem;">Date Created</th>
+                        <th class="pe-4 py-3" style="font-size: 0.75rem;">Last Login</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Administrators != null && Model.Administrators.Any())
+                    {
+                        foreach (var adminItem in Model.Administrators)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <span class="badge bg-light text-secondary border font-monospace">@adminItem.AdminId</span>
+                                    @if (adminItem.IsCurrentAdmin)
+                                    {
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill ms-1 small" style="font-size: 0.7rem;">You</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle text-white d-inline-flex align-items-center justify-content-center shadow-xs flex-shrink-0" style="width: 34px; height: 34px; font-size: 0.9rem; background: linear-gradient(135deg, #00A3FF 0%, #0284c7 100%);">
+                                            <i class="bi bi-person-badge"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold text-dark">@adminItem.FullName</div>
+                                            <div class="text-muted small font-monospace">@adminItem.Email</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="small text-muted">
+                                        @(string.IsNullOrWhiteSpace(adminItem.PhoneNumber) ? "Not Provided" : adminItem.PhoneNumber)
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge rounded-pill px-3 py-1" style="background-color: rgba(0, 163, 255, 0.12); color: #0284c7; border: 1px solid rgba(0, 163, 255, 0.25);">
+                                        <i class="bi bi-shield-lock-fill me-1"></i>@adminItem.Role
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (adminItem.IsActive)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">
+                                            <i class="bi bi-check-circle-fill me-1"></i>Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-1">
+                                            <i class="bi bi-dash-circle-fill me-1"></i>Deactivated
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="small text-muted">@adminItem.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</span>
+                                </td>
+                                <td class="pe-4">
+                                    <span class="small text-muted">
+                                        @(adminItem.LastLoginAt.HasValue ? adminItem.LastLoginAt.Value.ToLocalTime().ToString("MMM dd, yyyy hh:mm tt") : "Never")
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted small">
+                                No additional administrator accounts registered.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer bg-light bg-opacity-50 py-3 px-4 border-top text-muted small d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+                <i class="bi bi-shield-check text-success me-1"></i>
+                Authorized Administrators can create additional accounts. Passwords are saved with salted PBKDF2 hashing.
+            </div>
+            <a href="@Url.Action("CreateAdmin", "Profile", new { area = "Admin" })" class="fw-semibold text-primary text-decoration-none">
+                + Provision New Administrator
+            </a>
+        </div>
+    </div>
+
+</div>

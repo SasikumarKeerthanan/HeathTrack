@@ -1,0 +1,672 @@
+@model HealthTrack.Areas.Client.ViewModels.ClientProgressReportViewModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HealthTrack Progress & Plans Report - @Model.ClientName</title>
+    <!-- Google Fonts & Bootstrap Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #0f172a;
+            font-size: 13px;
+            line-height: 1.5;
+            padding: 24px;
+        }
+
+        /* Screen Toolbar */
+        .toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 12px 24px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .btn {
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-print {
+            background: #22c55e;
+            color: #ffffff;
+        }
+        .btn-print:hover {
+            background: #16a34a;
+        }
+        .btn-back {
+            background: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+        }
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Paper Report Container */
+        .paper-report {
+            max-width: 960px;
+            margin: 0 auto;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 36px 42px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        }
+
+        /* Header */
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #009dff;
+            margin-bottom: 24px;
+        }
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .brand-logo img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+        }
+        .brand-name {
+            font-size: 22px;
+            font-weight: 800;
+            color: #009dff;
+            line-height: 1.1;
+        }
+        .brand-sub {
+            font-size: 10px;
+            font-weight: 700;
+            color: #22c55e;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .report-meta {
+            text-align: right;
+            font-size: 12px;
+            color: #64748b;
+        }
+        .report-meta strong {
+            color: #0f172a;
+        }
+
+        /* Dossier Details */
+        .dossier-box {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            background: #f1f5f9;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+        .dossier-col div {
+            margin-bottom: 4px;
+        }
+
+        /* Section Headings */
+        .section-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #0f172a;
+            border-left: 4px solid #009dff;
+            padding-left: 10px;
+            margin-bottom: 14px;
+            margin-top: 24px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* KPI Tiles Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .kpi-tile {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 12px 14px;
+        }
+        .kpi-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+        .kpi-val {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .kpi-sub {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 18px;
+            font-size: 12px;
+        }
+        th {
+            background: #f1f5f9;
+            color: #475569;
+            text-align: left;
+            padding: 8px 12px;
+            font-weight: 600;
+            border-bottom: 2px solid #cbd5e1;
+        }
+        td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+        .text-right {
+            text-align: right;
+        }
+
+        /* Plan Cards */
+        .plan-summary {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 14px 18px;
+            margin-bottom: 16px;
+        }
+        .plan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 8px;
+        }
+        .badge {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+        .badge-blue {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+        .badge-green {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        /* Evaluation */
+        .eval-box {
+            background: #f8fafc;
+            border-left: 4px solid #22c55e;
+            padding: 14px 18px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 20px;
+            margin-bottom: 24px;
+        }
+
+        /* Footer */
+        .report-footer {
+            border-top: 1px solid #cbd5e1;
+            padding-top: 14px;
+            text-align: center;
+            color: #64748b;
+            font-size: 11px;
+            margin-top: 32px;
+        }
+
+        /* Media Print */
+        @@media print {
+            body {
+                background: #ffffff !important;
+                padding: 0 !important;
+            }
+            .toolbar {
+                display: none !important;
+            }
+            .paper-report {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                max-width: 100% !important;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+            tr {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- On-Screen Action Toolbar -->
+    <div class="toolbar">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="bi bi-file-earmark-pdf-fill" style="color: #22c55e; font-size: 18px;"></i>
+            <strong>HealthTrack — Client Progress &amp; Plans Report View</strong>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button id="btnDownloadDocPdf" onclick="downloadDocPdf()" class="btn btn-print">
+                <i class="bi bi-file-earmark-arrow-down-fill"></i> Download PDF File
+            </button>
+            <button onclick="window.print()" class="btn btn-back">
+                <i class="bi bi-printer-fill"></i> Print Dialog
+            </button>
+            <a href="@Url.Action("Index", "Progress", new { area = "Client" })" class="btn btn-back">
+                <i class="bi bi-arrow-left"></i> Back to Report View
+            </a>
+            <a href="@Url.Action("Index", "Dashboard", new { area = "Client" })" class="btn btn-back">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Official Paper Format Document -->
+    <div class="paper-report">
+
+        <!-- Report Header -->
+        <div class="report-header">
+            <div class="brand-logo">
+                <img src="@Url.Content("~/Content/images/logo.png")" alt="HealthTrack Logo" />
+                <div>
+                    <div class="brand-name">HealthTrack</div>
+                    <div class="brand-sub">Workout &amp; Nutrition System</div>
+                </div>
+            </div>
+            <div class="report-meta">
+                <div>Report ID: <strong>@Model.ReportId</strong></div>
+                <div>Generated: <strong>@Model.GeneratedAt.ToString("MMMM dd, yyyy")</strong></div>
+                <div>Period: <strong>@Model.FromDate.ToString("MMM dd, yyyy") - @Model.ToDate.ToString("MMM dd, yyyy")</strong></div>
+            </div>
+        </div>
+
+        <!-- Client & Coach Information Dossier -->
+        <div class="dossier-box">
+            <div class="dossier-col">
+                <div><strong>Client Name:</strong> @Model.ClientName (ID: @Model.ClientId)</div>
+                <div><strong>Email:</strong> @Model.ClientEmail</div>
+                <div><strong>Primary Goal:</strong> <span class="badge badge-blue">@Model.PrimaryGoal</span></div>
+                <div><strong>Medical / Allergies:</strong> @Model.MedicalConditions • @Model.Allergies</div>
+            </div>
+            <div class="dossier-col">
+                <div><strong>Assigned Coach:</strong> @Model.TrainerName</div>
+                <div><strong>Specialization:</strong> @Model.TrainerSpecialization</div>
+                <div><strong>Coach Contact:</strong> @Model.TrainerEmail</div>
+                <div><strong>Evaluation Status:</strong> <span class="badge badge-green">Active Progress</span></div>
+            </div>
+        </div>
+
+        <!-- 1. Executive Biometric Progress Metrics -->
+        <div class="section-title">
+            <i class="bi bi-speedometer2"></i> 1. Health &amp; Biometrics Summary
+        </div>
+        <div class="kpi-grid">
+            <div class="kpi-tile">
+                <div class="kpi-label">Current Weight</div>
+                <div class="kpi-val">@Model.CurrentWeightKg.ToString("0.0") kg</div>
+                <div class="kpi-sub">
+                    Baseline: @Model.BaselineWeightKg.ToString("0.0") kg 
+                    (@(Model.WeightChangeKg > 0 ? "+" + Model.WeightChangeKg : Model.WeightChangeKg.ToString()) kg)
+                </div>
+            </div>
+            <div class="kpi-tile">
+                <div class="kpi-label">Body Mass Index (BMI)</div>
+                <div class="kpi-val">@(Model.CurrentBmi > 0 ? Model.CurrentBmi.ToString("0.0") : "N/A")</div>
+                <div class="kpi-sub">Category: <strong>@Model.BmiCategory</strong> (Height: @Model.HeightCm cm)</div>
+            </div>
+            <div class="kpi-tile">
+                <div class="kpi-label">Workout Adherence</div>
+                <div class="kpi-val">@Model.WorkoutAdherencePct%</div>
+                <div class="kpi-sub">@Model.TotalWorkoutsCompleted completed • @Model.TotalExerciseMinutes mins</div>
+            </div>
+            <div class="kpi-tile">
+                <div class="kpi-label">Daily Nutrition Target</div>
+                <div class="kpi-val">@Model.PrescribedDailyCalories kcal</div>
+                <div class="kpi-sub">Avg: @Model.AverageDailyCaloriesConsumed kcal • @Model.PrescribedWaterLiters L Water</div>
+            </div>
+        </div>
+
+        <!-- 2. Active Health Goals -->
+        @if (Model.Goals != null && Model.Goals.Any())
+        {
+            <div class="section-title">
+                <i class="bi bi-flag-fill"></i> 2. Tracked Health Goals &amp; Milestone Progress
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Goal Description</th>
+                        <th>Category</th>
+                        <th>Baseline</th>
+                        <th>Current</th>
+                        <th>Target</th>
+                        <th>Progress</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var g in Model.Goals)
+                    {
+                        <tr>
+                            <td><strong>@g.GoalName</strong></td>
+                            <td>@g.Category</td>
+                            <td>@g.BaselineValue @g.Unit</td>
+                            <td><strong>@g.CurrentValue @g.Unit</strong></td>
+                            <td>@g.TargetValue @g.Unit</td>
+                            <td><strong>@g.ProgressPercentage%</strong></td>
+                            <td>@(g.IsAchieved ? "Achieved" : g.StatusMessage)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <!-- 3. Prescribed Workout Routine (Their Plans) -->
+        <div class="section-title">
+            <i class="bi bi-lightning-charge-fill"></i> 3. Prescribed Workout Routine Blueprint
+        </div>
+        @if (Model.HasActiveWorkoutPlan)
+        {
+            <div class="plan-summary">
+                <div class="plan-header">
+                    <div>@Model.WorkoutPlanName</div>
+                    <div>
+                        <span class="badge badge-blue">@Model.WorkoutDifficulty</span>
+                        <span class="badge badge-blue">@Model.WorkoutDurationWeeks Weeks</span>
+                    </div>
+                </div>
+                <div style="font-size: 12px; color: #475569; margin-bottom: 8px;">
+                    <strong>Objective:</strong> @Model.WorkoutObjective
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.WorkoutProgressionStrategy))
+                {
+                    <div style="font-size: 11px; color: #64748b;">
+                        <strong>Progression Strategy:</strong> @Model.WorkoutProgressionStrategy
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 12px; margin-bottom: 12px; color: #64748b; font-size: 11px;">
+                No active workout plan currently assigned. Your coach will publish your personalized exercise split here.
+            </div>
+        }
+
+        @if (Model.WorkoutDays != null && Model.WorkoutDays.Any())
+        {
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 120px;">Day</th>
+                        <th>Exercise Name</th>
+                        <th>Sets × Reps / Duration</th>
+                        <th>Rest</th>
+                        <th>Target Muscle</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var day in Model.WorkoutDays)
+                    {
+                        foreach (var ex in day.Exercises)
+                        {
+                            <tr>
+                                <td><strong>@day.DayOfWeek</strong></td>
+                                <td><strong>@ex.Name</strong></td>
+                                <td>@ex.Sets sets @(ex.Reps.HasValue ? "× " + ex.Reps.Value + " reps" : (ex.DurationMinutes.HasValue ? "× " + ex.DurationMinutes.Value + " mins" : ""))</td>
+                                <td>@ex.RestSeconds s</td>
+                                <td>@ex.TargetMuscle</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        }
+
+        <!-- 4. Prescribed Nutrition & Diet Plan (Their Plans) -->
+        <div class="section-title">
+            <i class="bi bi-egg-fried"></i> 4. Prescribed Nutrition &amp; Meal Schedule
+        </div>
+        @if (Model.HasActiveDietPlan)
+        {
+            <div class="plan-summary">
+                <div class="plan-header">
+                    <div>@Model.DietPlanName</div>
+                    <div>
+                        <span class="badge badge-green">@Model.PrescribedDailyCalories kcal</span>
+                        <span class="badge badge-green">@Model.PrescribedWaterLiters L Water</span>
+                    </div>
+                </div>
+                <div style="font-size: 12px; color: #475569; margin-bottom: 6px;">
+                    <strong>Macronutrients:</strong> Protein: @Model.TargetProteinGrams g | Carbs: @Model.TargetCarbsGrams g | Healthy Fats: @Model.TargetFatsGrams g
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.DietSpecialInstructions))
+                {
+                    <div style="font-size: 11px; color: #64748b;">
+                        <strong>Special Instructions:</strong> @Model.DietSpecialInstructions
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 12px; margin-bottom: 12px; color: #64748b; font-size: 11px;">
+                No active nutrition plan currently assigned. Your coach will publish your meal schedule and macro targets here.
+            </div>
+        }
+
+        @if (Model.ScheduledMeals != null && Model.ScheduledMeals.Any())
+        {
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 90px;">Time</th>
+                        <th style="width: 80px;">Category</th>
+                        <th>Meal Name</th>
+                        <th>Ingredients &amp; Portions</th>
+                        <th class="text-right">Calories</th>
+                        <th class="text-right">Protein</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var meal in Model.ScheduledMeals)
+                    {
+                        <tr>
+                            <td>@meal.ScheduledTime</td>
+                            <td>@meal.MealType</td>
+                            <td><strong>@meal.MealName</strong></td>
+                            <td style="color: #64748b;">@meal.IngredientsAndPortion</td>
+                            <td class="text-right"><strong>@meal.Calories kcal</strong></td>
+                            <td class="text-right">@meal.ProteinGrams g</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <!-- 5. Recent Activity Logs & Weigh-Ins -->
+        <div class="section-title">
+            <i class="bi bi-clock-history"></i> 5. Recent Activity Logs &amp; Biometric Weigh-Ins
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div>
+                <strong>Recent Workout Sessions</strong>
+                <table style="margin-top: 8px;">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Routine</th>
+                            <th>Duration</th>
+                            <th class="text-right">Burned</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.RecentWorkoutLogs != null && Model.RecentWorkoutLogs.Any())
+                        {
+                            foreach (var w in Model.RecentWorkoutLogs.Take(6))
+                            {
+                                <tr>
+                                    <td>@w.Date.ToString("MMM dd")</td>
+                                    <td>@w.RoutineName</td>
+                                    <td>@w.DurationMinutes m</td>
+                                    <td class="text-right">@w.CaloriesBurned kcal</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="4" style="text-align: center; color: #94a3b8;">No recent logs.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div>
+                <strong>Recent Weigh-Ins</strong>
+                <table style="margin-top: 8px;">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Weight</th>
+                            <th>BMI</th>
+                            <th class="text-right">Burned</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.BiometricHistory != null && Model.BiometricHistory.Any())
+                        {
+                            foreach (var b in Model.BiometricHistory.Take(6))
+                            {
+                                <tr>
+                                    <td>@b.RecordedDate.ToString("MMM dd")</td>
+                                    <td><strong>@b.WeightKg.ToString("0.0") kg</strong></td>
+                                    <td>@(b.Bmi.HasValue ? b.Bmi.Value.ToString("0.0") : "-")</td>
+                                    <td class="text-right">@b.CaloriesBurned kcal</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="4" style="text-align: center; color: #94a3b8;">No recent weigh-ins.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 6. Coach Clinical Evaluation & Recommendations -->
+        <div class="section-title">
+            <i class="bi bi-chat-heart-fill"></i> 6. Coach Performance Assessment &amp; Next Steps
+        </div>
+        <div class="eval-box">
+            <div style="margin-bottom: 6px;">
+                <strong>Clinical Notes from Coach @(string.IsNullOrWhiteSpace(Model.TrainerName) || Model.TrainerName == "Not Assigned" ? "HealthTrack Coaching Team" : Model.TrainerName):</strong>
+            </div>
+            <p style="margin-bottom: 8px; color: #334155;">@(!string.IsNullOrWhiteSpace(Model.CoachEvaluationNotes) ? Model.CoachEvaluationNotes : "No specific evaluation notes recorded for this period yet.")</p>
+            <div>
+                <strong>Next Phase Strategy:</strong>
+                <span style="color: #334155;">@(!string.IsNullOrWhiteSpace(Model.NextPhaseRecommendations) ? Model.NextPhaseRecommendations : "Continue following your prescribed workout and nutrition schedule.")</span>
+            </div>
+        </div>
+
+        <!-- Report Footer -->
+        <div class="report-footer">
+            <div>HealthTrack Digital Platform — Official Client Progress &amp; Prescription Report</div>
+            <div>Report ID: @Model.ReportId • Verified on @Model.GeneratedAt.ToString("yyyy-MM-dd HH:mm")</div>
+        </div>
+
+    </div>
+
+    <!-- html2pdf.bundle.min.js for Client-Side Direct PDF Download -->
+    <script src="@Url.Content("~/Scripts/html2pdf.bundle.min.js")"></script>
+    <script>
+        function downloadDocPdf() {
+            var btn = document.getElementById('btnDownloadDocPdf');
+            var originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Generating PDF...';
+
+            var reportElement = document.querySelector('.paper-report');
+            var cleanClientName = '@(Model.ClientName ?? "Client")'.replace(/[^a-zA-Z0-9]/g, '_');
+            var reportFileName = 'HealthTrack_Report_' + cleanClientName + '_@Model.ReportId' + '.pdf';
+
+            var opt = {
+                margin: [8, 8, 8, 8],
+                filename: reportFileName,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    letterRendering: true,
+                    backgroundColor: '#ffffff'
+                },
+                jsPDF: {
+                    unit: 'mm',
+                    format: 'a4',
+                    orientation: 'portrait'
+                },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+
+            html2pdf().set(opt).from(reportElement).save().then(function () {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }).catch(function (error) {
+                console.error('PDF generation error:', error);
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                window.print();
+            });
+        }
+    </script>
+</body>
+</html>

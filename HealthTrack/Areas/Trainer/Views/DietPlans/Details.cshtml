@@ -1,0 +1,528 @@
+@model HealthTrack.Models.DietPlans
+
+@{
+    ViewBag.Title = (Model.Clients != null ? Model.Clients.FullName : "Client") + " - Diet Plan Details";
+    int totalProteinCal = Model.TargetProteinGrams * 4;
+    int totalCarbCal = Model.TargetCarbsGrams * 4;
+    int totalFatCal = Model.TargetFatsGrams * 9;
+    int calculatedTotalCal = totalProteinCal + totalCarbCal + totalFatCal;
+    if (calculatedTotalCal == 0) { calculatedTotalCal = 2000; }
+
+    int proteinPct = (int)Math.Round((double)totalProteinCal / calculatedTotalCal * 100);
+    int carbPct = (int)Math.Round((double)totalCarbCal / calculatedTotalCal * 100);
+    int fatPct = 100 - proteinPct - carbPct;
+    if (fatPct < 0) { fatPct = 0; }
+    int totalPlannedMealCalories = Model.DietMeals == null ? 0 : Model.DietMeals.Sum(meal => meal.Calories);
+    int plannedProteinGrams = Model.DietMeals == null ? 0 : Model.DietMeals.Sum(meal => meal.ProteinGrams ?? 0);
+    int plannedCarbsGrams = Model.DietMeals == null ? 0 : Model.DietMeals.Sum(meal => meal.CarbsGrams ?? 0);
+    int plannedFatsGrams = Model.DietMeals == null ? 0 : Model.DietMeals.Sum(meal => meal.FatsGrams ?? 0);
+    int remainingCalories = Model.DailyCalorieTarget - totalPlannedMealCalories;
+    int plannedPercent = Model.DailyCalorieTarget > 0 ? (int)Math.Round((double)totalPlannedMealCalories / Model.DailyCalorieTarget * 100) : 0;
+}
+
+<div class="container-fluid px-4 py-3">
+
+    <!-- Breadcrumb & Header -->
+    <nav aria-label="breadcrumb" class="mb-2">
+        <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a href="@Url.Action("Index", "DietPlans")" class="text-decoration-none">Diet Plans</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@(Model.Clients != null ? Model.Clients.FullName : "Client")</li>
+        </ol>
+    </nav>
+
+    <!-- Header Actions -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                @if (Model.IsActive)
+                {
+                    <span class="badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1">
+                        <span class="spinner-grow spinner-grow-sm" style="width: 0.35rem; height: 0.35rem;"></span> Active Nutrition Plan
+                    </span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                        Archived / Completed
+                    </span>
+                }
+                <span class="badge bg-warning-subtle text-dark border border-warning-subtle">
+                    <i class="bi bi-egg-fried me-1"></i>@Model.DietaryPreference
+                </span>
+                <span class="badge bg-light text-dark border">
+                    @Model.DurationWeeks Weeks Duration
+                </span>
+            </div>
+            <h2 class="h3 fw-bold mb-0 text-dark">@Model.Title</h2>
+            <p class="text-muted small mb-0">Personalized nutrition plan for <strong>@(Model.Clients != null ? Model.Clients.FullName : "Client")</strong> (@(Model.Clients != null ? Model.Clients.Email : "")) &bull; Coach: @(Model.Trainers != null ? Model.Trainers.FullName : "Trainer")</p>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+            <a href="@Url.Action("Edit", "DietPlans", new { id = Model.DietPlanId })" class="btn btn-warning text-dark fw-semibold d-inline-flex align-items-center gap-1 shadow-sm">
+                <i class="bi bi-pencil-square"></i> Edit Plan
+            </a>
+
+            <!-- Toggle Status -->
+            <form action="@Url.Action("ToggleStatus", "DietPlans", new { id = Model.DietPlanId })" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn @(Model.IsActive ? "btn-outline-warning text-dark" : "btn-outline-success")"
+                        onclick="return confirm('Change status of this diet plan for @(Model.Clients != null ? Model.Clients.FullName : "Client")?');">
+                    <i class="bi @(Model.IsActive ? "bi-pause-circle" : "bi-play-circle") me-1"></i>
+                    @(Model.IsActive ? "Archive Plan" : "Reactivate")
+                </button>
+            </form>
+
+            <a href="@Url.Action("Index", "DietPlans")" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Plans
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+            <div>@TempData["SuccessMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Top Specifications & Macro Distribution -->
+    <div class="row g-4 mb-4">
+        <!-- Overview & Nutrition Strategy -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold text-dark mb-2">Nutritional Strategy & Guidelines</h5>
+                    <p class="text-secondary mb-4" style="line-height: 1.6;">
+                        @Model.Description
+                    </p>
+
+                    <!-- Macro Target Cards -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-3">
+                            <div class="p-3 bg-light rounded-3 text-center border">
+                                <span class="text-muted small fw-semibold text-uppercase">Daily Calories</span>
+                                <div class="fs-4 fw-bold text-danger mt-1">@Model.DailyCalorieTarget</div>
+                                <div class="x-small text-muted">kcal / day</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-3 bg-light rounded-3 text-center border">
+                                <span class="text-muted small fw-semibold text-uppercase">Protein Target</span>
+                                <div class="fs-4 fw-bold text-primary mt-1">@Model.TargetProteinGrams g</div>
+                                <div class="x-small text-muted">~@proteinPct% calories</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-3 bg-light rounded-3 text-center border">
+                                <span class="text-muted small fw-semibold text-uppercase">Carbs Target</span>
+                                <div class="fs-4 fw-bold text-success mt-1">@Model.TargetCarbsGrams g</div>
+                                <div class="x-small text-muted">~@carbPct% calories</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-3 bg-light rounded-3 text-center border">
+                                <span class="text-muted small fw-semibold text-uppercase">Fats Target</span>
+                                <div class="fs-4 fw-bold text-warning mt-1">@Model.TargetFatsGrams g</div>
+                                <div class="x-small text-muted">~@fatPct% calories</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Macro Distribution Bar -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between small text-muted mb-1">
+                            <span>Macronutrient Ratio</span>
+                            <span>Protein @proteinPct% &bull; Carbs @carbPct% &bull; Fats @fatPct%</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: @proteinPct%" title="Protein: @proteinPct%"></div>
+                            <div class="progress-bar bg-success" role="progressbar" style="width: @carbPct%" title="Carbs: @carbPct%"></div>
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: @fatPct%" title="Fats: @fatPct%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Planned Intake vs Daily Budget Progress -->
+                    <div class="p-3 bg-light rounded-3 border">
+                        <div class="row align-items-center g-3">
+                            <div class="col-md-5 border-end">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small text-muted fw-semibold">Planned Intake</span>
+                                    <span class="badge @(plannedPercent <= 100 ? "bg-success-subtle text-success border border-success-subtle" : "bg-danger-subtle text-danger border border-danger-subtle") small">@plannedPercent% Planned</span>
+                                </div>
+                                <div class="fs-4 fw-bold text-dark">
+                                    @totalPlannedMealCalories <span class="fs-6 fw-normal text-muted">/ @Model.DailyCalorieTarget kcal</span>
+                                </div>
+                                <div class="progress my-2" style="height: 6px;">
+                                    <div class="progress-bar @(plannedPercent <= 100 ? "bg-success" : "bg-danger")" role="progressbar" style="width: @(Math.Min(plannedPercent, 100))%"></div>
+                                </div>
+                                <div class="small fw-semibold @(remainingCalories >= 0 ? "text-success" : "text-danger")">
+                                    <i class="bi @(remainingCalories >= 0 ? "bi-check2-circle text-success" : "bi-exclamation-triangle text-danger") me-1"></i>
+                                    @(remainingCalories >= 0 
+                                        ? $"{remainingCalories} kcal budget remaining" 
+                                        : $"{Math.Abs(remainingCalories)} kcal surplus")
+                                </div>
+                            </div>
+                            <div class="col-md-7">
+                                <div class="small text-muted fw-semibold mb-2">Macro Fulfillment from Planned Meals</div>
+                                <div class="row g-2 text-center x-small">
+                                    <div class="col-4">
+                                        <div class="p-2 bg-white rounded-2 border">
+                                            <span class="text-muted d-block">Protein</span>
+                                            <strong class="text-primary fs-6">@plannedProteinGrams</strong><span class="text-muted">/@Model.TargetProteinGrams g</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="p-2 bg-white rounded-2 border">
+                                            <span class="text-muted d-block">Carbs</span>
+                                            <strong class="text-success fs-6">@plannedCarbsGrams</strong><span class="text-muted">/@Model.TargetCarbsGrams g</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="p-2 bg-white rounded-2 border">
+                                            <span class="text-muted d-block">Fats</span>
+                                            <strong class="text-warning text-dark fs-6">@plannedFatsGrams</strong><span class="text-muted">/@Model.TargetFatsGrams g</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.SpecialInstructions))
+                    {
+                        <div class="mt-3 p-3 bg-light rounded-3 border-start border-4 border-warning">
+                            <div class="fw-semibold small text-dark mb-1"><i class="bi bi-chat-quote-fill me-1 text-warning"></i>Coaching Instructions & Meal Rules:</div>
+                            <div class="small text-muted fst-italic">@Model.SpecialInstructions</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Client & Schedule Specs -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="fw-bold mb-0 text-dark">Schedule & Hydration</h5>
+                </div>
+                <div class="card-body p-4">
+                    <ul class="list-unstyled mb-0 d-flex flex-column gap-3 small">
+                        <li class="d-flex justify-content-between align-items-center pb-2 border-bottom">
+                            <span class="text-muted">Client Name:</span>
+                            <span class="fw-bold text-dark">@(Model.Clients != null ? Model.Clients.FullName : "Client")</span>
+                        </li>
+                        <li class="d-flex justify-content-between align-items-center pb-2 border-bottom">
+                            <span class="text-muted">Client Identifier:</span>
+                            <span class="font-monospace text-secondary">@Model.ClientId</span>
+                        </li>
+                        <li class="d-flex justify-content-between align-items-center pb-2 border-bottom">
+                            <span class="text-muted">Daily Water Target:</span>
+                            @if (Model.WaterIntakeLiters.HasValue && Model.WaterIntakeLiters.Value > 0)
+                            {
+                                <span class="fw-bold text-info"><i class="bi bi-droplet-fill me-1"></i>@Model.WaterIntakeLiters.Value.ToString("0.0") Liters</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-light text-muted border fw-normal">Not set</span>
+                            }
+                        </li>
+                        <li class="d-flex justify-content-between align-items-center pb-2 border-bottom">
+                            <span class="text-muted">Dietary Style:</span>
+                            <span class="badge bg-light text-dark border">@Model.DietaryPreference</span>
+                        </li>
+                        <li class="d-flex justify-content-between align-items-center pb-2 border-bottom">
+                            <span class="text-muted">Food Allergies:</span>
+                            @if (!string.IsNullOrWhiteSpace((Model.Clients != null && Model.Clients.ClientHealthProfile.FirstOrDefault() != null ? Model.Clients.ClientHealthProfile.FirstOrDefault().Allergies : "None")) && !(Model.Clients != null && Model.Clients.ClientHealthProfile.FirstOrDefault() != null ? Model.Clients.ClientHealthProfile.FirstOrDefault().Allergies : "None").ToLower().Contains("none"))
+                            {
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                    <i class="bi bi-exclamation-octagon-fill me-1"></i>@(Model.Clients != null && Model.Clients.ClientHealthProfile.FirstOrDefault() != null ? Model.Clients.ClientHealthProfile.FirstOrDefault().Allergies : "None")
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                    <i class="bi bi-check-circle-fill me-1"></i>None Reported
+                                </span>
+                            }
+                        </li>
+                        <li class="d-flex justify-content-between align-items-center pb-2 border-bottom">
+                            <span class="text-muted">Medical Conditions:</span>
+                            @if (!string.IsNullOrWhiteSpace((Model.Clients != null && Model.Clients.ClientHealthProfile.FirstOrDefault() != null ? Model.Clients.ClientHealthProfile.FirstOrDefault().MedicalConditions : "None")) && !(Model.Clients != null && Model.Clients.ClientHealthProfile.FirstOrDefault() != null ? Model.Clients.ClientHealthProfile.FirstOrDefault().MedicalConditions : "None").ToLower().Contains("none"))
+                            {
+                                <span class="badge bg-warning-subtle text-dark border border-warning">
+                                    <i class="bi bi-shield-exclamation me-1"></i>@(Model.Clients != null && Model.Clients.ClientHealthProfile.FirstOrDefault() != null ? Model.Clients.ClientHealthProfile.FirstOrDefault().MedicalConditions : "None")
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-light text-muted border">None</span>
+                            }
+                        </li>
+                        <li class="d-flex justify-content-between align-items-center pb-2 border-bottom">
+                            <span class="text-muted">Schedule Dates:</span>
+                            <span class="fw-semibold text-dark">@Model.StartDate.ToString("MMM dd") - @Model.EndDate.ToString("MMM dd, yyyy")</span>
+                        </li>
+                        <li class="d-flex justify-content-between align-items-center pb-2 border-bottom">
+                            <span class="text-muted">Assigned Coach:</span>
+                            <span class="text-dark">@(Model.Trainers != null ? Model.Trainers.FullName : "Trainer")</span>
+                        </li>
+                        <li class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Created On:</span>
+                            <span class="text-dark">@Model.CreatedAt.ToString("MMM dd, yyyy")</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scheduled Daily Meals Section -->
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-calendar-heart text-warning"></i> Scheduled Daily Meals
+                </h5>
+                <small class="text-muted">Breakfast, Lunch, Dinner, and Snack schedules with calorie and portion breakdowns</small>
+            </div>
+            <span class="badge bg-light text-dark border px-3 py-2">
+                @Model.DietMeals.Count Planned Meals
+            </span>
+        </div>
+
+        <div class="card-body p-4">
+            @if (!Model.DietMeals.Any())
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-egg-fried display-4 text-muted mb-3 d-block"></i>
+                    <h5 class="fw-semibold text-dark">No Meals Added Yet</h5>
+                    <p class="text-muted mb-3">Add breakfast, lunch, dinner, or snack meals to complete this diet plan.</p>
+                    <a href="@Url.Action("Edit", "DietPlans", new { id = Model.DietPlanId })" class="btn btn-warning text-dark fw-semibold">
+                        <i class="bi bi-plus-circle me-1"></i> Add Meals to Plan
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="row g-4">
+                    @foreach (var meal in Model.DietMeals.OrderBy(m => m.OrderIndex))
+                    {
+                        string badgeClass = "bg-secondary text-white";
+                        string iconClass = "bi-egg-fried";
+                        switch (meal.MealType)
+                        {
+                            case "Breakfast":
+                                badgeClass = "bg-warning text-dark";
+                                iconClass = "bi-cup-hot-fill";
+                                break;
+                            case "Lunch":
+                                badgeClass = "bg-success text-white";
+                                iconClass = "bi-sun-fill";
+                                break;
+                            case "Dinner":
+                                badgeClass = "bg-primary text-white";
+                                iconClass = "bi-moon-stars-fill";
+                                break;
+                            case "Snack":
+                                badgeClass = "bg-info text-dark";
+                                iconClass = "bi-apple";
+                                break;
+                        }
+
+                        var mealImgUrl = !string.IsNullOrWhiteSpace(meal.ImagePath) 
+                            ? Url.Content(meal.ImagePath) 
+                            : Url.Content("~/Content/images/meals/placeholder-meal.png");
+
+                        var servingLabel = !string.IsNullOrWhiteSpace(meal.ServingSize) 
+                            ? meal.ServingSize 
+                            : (!string.IsNullOrWhiteSpace(meal.IngredientsAndPortion) ? meal.IngredientsAndPortion : "1 Serving");
+
+                        var ingredientsText = !string.IsNullOrWhiteSpace(meal.Ingredients) 
+                            ? meal.Ingredients 
+                            : meal.IngredientsAndPortion;
+
+                        var clientAllergies = (Model.Clients != null && Model.Clients.ClientHealthProfile.FirstOrDefault() != null)
+                            ? (Model.Clients.ClientHealthProfile.FirstOrDefault().Allergies ?? "")
+                            : "";
+                        bool hasAllergyWarning = !string.IsNullOrWhiteSpace(clientAllergies) 
+                            && !clientAllergies.ToLower().Contains("none") 
+                            && !string.IsNullOrWhiteSpace(meal.Allergens)
+                            && clientAllergies.Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                                .Any(a => a.Length > 2 && meal.Allergens.IndexOf(a, StringComparison.OrdinalIgnoreCase) >= 0);
+
+                        <div class="col-md-6 col-xl-6">
+                            <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden bg-white hover-shadow transition">
+                                <!-- Meal Image Header with Overlays -->
+                                <div class="position-relative" style="height: 200px; background-color: #f1f5f9; overflow: hidden;">
+                                    <img src="@mealImgUrl" alt="@meal.MealName" 
+                                         class="w-100 h-100" 
+                                         style="object-fit: cover; transition: transform 0.3s ease;"
+                                         onerror="this.onerror=null; this.src='@Url.Content("~/Content/images/meals/placeholder-meal.png")';" />
+                                    
+                                    <!-- Meal Type Badge (Top-Left) -->
+                                    <div class="position-absolute top-0 start-0 m-3">
+                                        <span class="badge @badgeClass shadow-sm px-2.5 py-1.5 fw-semibold d-inline-flex align-items-center gap-1">
+                                            <i class="bi @iconClass"></i> @meal.MealType
+                                        </span>
+                                    </div>
+
+                                    <!-- Scheduled Time Badge (Top-Right) -->
+                                    <div class="position-absolute top-0 end-0 m-3">
+                                        <span class="badge bg-dark bg-opacity-75 text-white backdrop-blur shadow-sm px-2.5 py-1.5 font-monospace">
+                                            <i class="bi bi-clock me-1"></i>@(string.IsNullOrWhiteSpace(meal.ScheduledTime) ? "Anytime" : meal.ScheduledTime)
+                                        </span>
+                                    </div>
+
+                                    <!-- Calorie Pill (Bottom-Right) -->
+                                    <div class="position-absolute bottom-0 end-0 m-3">
+                                        <span class="badge bg-danger shadow-sm px-3 py-1.5 fw-bold fs-6">
+                                            <i class="bi bi-fire me-1"></i>@meal.Calories kcal
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Card Body -->
+                                <div class="card-body p-4 d-flex flex-column">
+                                    <!-- Title & Portion Size Row -->
+                                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+                                        <div>
+                                            <h5 class="fw-bold text-dark mb-1">@meal.MealName</h5>
+                                            @if (!string.IsNullOrWhiteSpace(meal.DayOfWeek))
+                                            {
+                                                <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>@meal.DayOfWeek</small>
+                                            }
+                                        </div>
+                                        <span class="badge bg-warning-subtle text-dark border border-warning-subtle px-2.5 py-1.5">
+                                            <i class="bi bi-box-seam me-1 text-warning-emphasis"></i>@servingLabel
+                                        </span>
+                                    </div>
+
+                                    <!-- Dietary Tags -->
+                                    @if (!string.IsNullOrWhiteSpace(meal.DietaryInfo))
+                                    {
+                                        <div class="d-flex flex-wrap gap-1 mb-2">
+                                            @foreach (var tag in meal.DietaryInfo.Split(new[] { "•", ",", ";" }, StringSplitOptions.RemoveEmptyEntries))
+                                            {
+                                                <span class="badge bg-light text-secondary border x-small">
+                                                    @tag.Trim()
+                                                </span>
+                                            }
+                                        </div>
+                                    }
+
+                                    <!-- Description -->
+                                    @if (!string.IsNullOrWhiteSpace(meal.Description))
+                                    {
+                                        <p class="text-secondary small mb-3" style="line-height: 1.55;">
+                                            @meal.Description
+                                        </p>
+                                    }
+
+                                    <!-- Ingredients & Portions Box -->
+                                    @if (!string.IsNullOrWhiteSpace(ingredientsText))
+                                    {
+                                        <div class="p-3 bg-light rounded-3 border mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span class="fw-semibold x-small text-uppercase text-secondary">
+                                                    <i class="bi bi-basket-fill text-warning me-1"></i>Ingredients & Assigned Portions
+                                                </span>
+                                                <span class="x-small text-muted font-monospace">Precise Measure</span>
+                                            </div>
+                                            <div class="small text-dark fw-medium" style="line-height: 1.45;">
+                                                @ingredientsText
+                                            </div>
+                                        </div>
+                                    }
+
+                                    <!-- Nutritional Values for that Portion -->
+                                    <div class="row g-2 mb-3 text-center">
+                                        <div class="col-3">
+                                            <div class="p-2 rounded-2 bg-danger-subtle text-danger border border-danger-subtle">
+                                                <div class="x-small text-uppercase fw-semibold">Calories</div>
+                                                <div class="fw-bold fs-6">@meal.Calories</div>
+                                                <div class="x-small">kcal</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-3">
+                                            <div class="p-2 rounded-2 bg-primary-subtle text-primary border border-primary-subtle">
+                                                <div class="x-small text-uppercase fw-semibold">Protein</div>
+                                                <div class="fw-bold fs-6">@(meal.ProteinGrams.HasValue ? meal.ProteinGrams.Value.ToString() : "--")</div>
+                                                <div class="x-small">grams</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-3">
+                                            <div class="p-2 rounded-2 bg-success-subtle text-success border border-success-subtle">
+                                                <div class="x-small text-uppercase fw-semibold">Carbs</div>
+                                                <div class="fw-bold fs-6">@(meal.CarbsGrams.HasValue ? meal.CarbsGrams.Value.ToString() : "--")</div>
+                                                <div class="x-small">grams</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-3">
+                                            <div class="p-2 rounded-2 bg-warning-subtle text-dark border border-warning-subtle">
+                                                <div class="x-small text-uppercase fw-semibold">Fats</div>
+                                                <div class="fw-bold fs-6">@(meal.FatsGrams.HasValue ? meal.FatsGrams.Value.ToString() : "--")</div>
+                                                <div class="x-small">grams</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Allergens Safety Check -->
+                                    @if (!string.IsNullOrWhiteSpace(meal.Allergens))
+                                    {
+                                        <div class="mb-3">
+                                            @if (hasAllergyWarning)
+                                            {
+                                                <div class="p-2 rounded-2 bg-danger-subtle text-danger border border-danger small d-flex align-items-center gap-2">
+                                                    <i class="bi bi-exclamation-octagon-fill fs-5 text-danger"></i>
+                                                    <div>
+                                                        <strong class="d-block text-uppercase x-small">Allergy Alert Match!</strong>
+                                                        Contains: @meal.Allergens (Client reports: @clientAllergies)
+                                                    </div>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary-subtle text-dark border x-small">
+                                                    <i class="bi bi-shield-check text-success me-1"></i>Allergens: @meal.Allergens
+                                                </span>
+                                            }
+                                        </div>
+                                    }
+
+                                    <!-- Trainer Coaching Notes / Instructions -->
+                                    <div class="mt-auto pt-2">
+                                        @if (!string.IsNullOrWhiteSpace(meal.TrainerNotes))
+                                        {
+                                            <div class="p-2.5 rounded-3 bg-light border-start border-4 border-warning small">
+                                                <div class="fw-bold x-small text-uppercase text-warning-emphasis mb-1 d-flex align-items-center gap-1">
+                                                    <i class="bi bi-chat-left-quote-fill text-warning"></i> Trainer's Note & Guidance:
+                                                </div>
+                                                <div class="text-secondary fst-italic" style="line-height: 1.45;">
+                                                    "@meal.TrainerNotes"
+                                                </div>
+                                            </div>
+                                        }
+
+                                        @if (!string.IsNullOrWhiteSpace(meal.Instructions) && meal.Instructions != meal.TrainerNotes)
+                                        {
+                                            <div class="p-2 rounded-2 bg-light border small text-muted mt-2">
+                                                <div class="fw-semibold x-small text-uppercase text-secondary mb-0.5">
+                                                    <i class="bi bi-fire me-1"></i>Prep / Cooking Instructions:
+                                                </div>
+                                                <div style="line-height: 1.4;">@meal.Instructions</div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+</div>

@@ -1,0 +1,1053 @@
+@model HealthTrack.Areas.Trainer.ViewModels.TrainerAppointmentIndexViewModel
+
+@{
+    ViewBag.Title = "Appointments & Availability";
+}
+
+<div class="container-fluid px-4 py-3">
+    <!-- Header Row -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom gap-2">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                    <i class="bi bi-calendar2-check me-1"></i>Consultation Management
+                </span>
+                <span class="badge bg-warning-subtle text-dark border border-warning-subtle px-2 py-1">
+                    <i class="bi bi-clock-history me-1"></i>1-on-1 Sessions
+                </span>
+            </div>
+            <h2 class="h3 fw-bold mb-0 text-dark">Client Appointments &amp; Availability</h2>
+            <p class="text-muted small mb-0">Post open availability slots, review client booking requests, and record post-consultation coaching notes.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("ActivityReport")" class="btn btn-outline-primary d-inline-flex align-items-center gap-1 shadow-sm">
+                <i class="bi bi-calendar2-range"></i>
+                <span>Activity Report</span>
+            </a>
+            <button type="button" class="btn btn-warning text-dark fw-semibold d-inline-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#addSlotModal">
+                <i class="bi bi-plus-circle-fill"></i>
+                <span>Add Open Time Slot</span>
+            </button>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show border-0 rounded-4 shadow-sm py-3 px-4 mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+            <span>@TempData["SuccessMessage"]</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show border-0 rounded-4 shadow-sm py-3 px-4 mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+            <span>@TempData["ErrorMessage"]</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (Model.RescheduleRequestsCount > 0)
+    {
+        <div class="alert alert-info border-0 rounded-4 shadow-sm py-3 px-4 mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3" role="alert">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-info bg-opacity-25 text-info p-2 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+                    <i class="bi bi-arrow-repeat fs-4"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold text-dark mb-0">You have @Model.RescheduleRequestsCount pending appointment rescheduling request@(Model.RescheduleRequestsCount > 1 ? "s" : "")</h6>
+                    <span class="small text-muted">Clients have requested a new time slot for their existing sessions. Review and approve or decline.</span>
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-info text-dark fw-semibold rounded-pill px-3 shadow-sm" onclick="$('#reschedule-tab').trigger('click');">
+                Review Reschedule Requests <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+        </div>
+    }
+
+    <!-- KPI Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="x-small text-uppercase fw-bold text-muted">Pending Requests</span>
+                    <div class="rounded-3 bg-warning bg-opacity-10 text-warning p-2">
+                        <i class="bi bi-hourglass-split fs-5"></i>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-warning mb-0">@Model.PendingCount</h3>
+                <span class="x-small text-muted">Awaiting your confirmation</span>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="x-small text-uppercase fw-bold text-muted">Confirmed Upcoming</span>
+                    <div class="rounded-3 bg-success bg-opacity-10 text-success p-2">
+                        <i class="bi bi-calendar-check-fill fs-5"></i>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-success mb-0">@Model.ApprovedCount</h3>
+                <span class="x-small text-muted">Ready on schedule</span>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="x-small text-uppercase fw-bold text-muted">Total Schedule Slots</span>
+                    <div class="rounded-3 bg-primary bg-opacity-10 text-primary p-2">
+                        <i class="bi bi-calendar-plus fs-5"></i>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-primary mb-0">@Model.TotalSlotsCount</h3>
+                <span class="x-small text-muted">@Model.OpenSlotsCount open &bull; @(Model.TotalSlotsCount - Model.OpenSlotsCount) booked</span>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="x-small text-uppercase fw-bold text-muted">Completed Sessions</span>
+                    <div class="rounded-3 bg-info bg-opacity-10 text-info p-2">
+                        <i class="bi bi-journal-check fs-5"></i>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-dark mb-0">@Model.CompletedCount</h3>
+                <span class="x-small text-muted">Consultations completed</span>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Modern Tab Navigation for Trainer Appointments */
+        #trainerAptTabs {
+            border-bottom: 2px solid #f1f5f9;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+        }
+        #trainerAptTabs .nav-link {
+            color: #475569;
+            background: transparent !important;
+            border: none !important;
+            border-bottom: 3px solid transparent !important;
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 1rem 1.25rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            position: relative;
+            bottom: -2px;
+        }
+        #trainerAptTabs .nav-link:hover {
+            color: #0f172a;
+            background: #f8fafc !important;
+            border-radius: 8px 8px 0 0;
+        }
+        #trainerAptTabs .nav-link.active {
+            color: #0d6efd !important;
+            border-bottom: 3px solid #ffc107 !important;
+            font-weight: 700 !important;
+            background: transparent !important;
+        }
+    </style>
+
+    <!-- Main Navigation Tabs -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4">
+        <div class="card-header bg-white border-bottom p-0 px-4">
+            <ul class="nav nav-tabs border-0" id="trainerAptTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pendingTab" type="button" role="tab" aria-controls="pendingTab" aria-selected="true">
+                        <i class="bi bi-bell-fill text-warning me-1"></i> Pending Requests
+                        @if (Model.PendingCount > 0)
+                        {
+                            <span class="badge bg-warning text-dark ms-1">@Model.PendingCount</span>
+                        }
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="reschedule-tab" data-bs-toggle="tab" data-bs-target="#rescheduleTab" type="button" role="tab" aria-controls="rescheduleTab" aria-selected="false">
+                        <i class="bi bi-arrow-repeat text-info me-1"></i> Reschedule Requests
+                        @if (Model.RescheduleRequestsCount > 0)
+                        {
+                            <span class="badge bg-info text-dark ms-1">@Model.RescheduleRequestsCount</span>
+                        }
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="approved-tab" data-bs-toggle="tab" data-bs-target="#approvedTab" type="button" role="tab" aria-controls="approvedTab" aria-selected="false">
+                        <i class="bi bi-calendar2-check-fill text-success me-1"></i> Confirmed Sessions
+                        <span class="badge bg-success ms-1">@Model.ApprovedCount</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#historyTab" type="button" role="tab" aria-controls="historyTab" aria-selected="false">
+                        <i class="bi bi-check2-all text-info me-1"></i> Session History
+                        <span class="badge bg-secondary ms-1">@Model.CompletedCount</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="slots-tab" data-bs-toggle="tab" data-bs-target="#slotsTab" type="button" role="tab" aria-controls="slotsTab" aria-selected="false">
+                        <i class="bi bi-clock-fill text-primary me-1"></i> Manage Availability Slots
+                        <span class="badge bg-primary ms-1">@Model.TotalSlotsCount</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card-body p-4">
+            <div class="tab-content" id="trainerAptTabsContent">
+                
+                <!-- TAB 1: PENDING REQUESTS -->
+                <div class="tab-pane fade show active" id="pendingTab" role="tabpanel">
+                    @if (Model.PendingRequests != null && Model.PendingRequests.Any())
+                    {
+                        <div class="row g-3">
+                            @foreach (var req in Model.PendingRequests)
+                            {
+                                <div class="col-lg-6 col-12">
+                                    <div class="card border rounded-4 p-3 shadow-none bg-warning bg-opacity-10 border-warning-subtle">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="badge bg-warning text-dark fw-bold">@req.AppointmentCode</span>
+                                                <span class="small fw-bold text-dark">@req.ClientName</span>
+                                            </div>
+                                            <span class="badge bg-white text-dark border">
+                                                <i class="bi bi-calendar me-1"></i>@req.AppointmentDate.ToString("ddd, MMM dd, yyyy")
+                                            </span>
+                                        </div>
+
+                                        <h5 class="fw-bold text-dark mb-1">@req.Title</h5>
+                                        <div class="small text-muted mb-2">
+                                            <i class="bi bi-clock me-1 text-primary"></i>
+                                            <strong>@DateTime.Today.Add(req.StartTime).ToString("hh:mm tt")</strong> - <strong>@DateTime.Today.Add(req.EndTime).ToString("hh:mm tt")</strong>
+                                            &bull; Requested: @req.CreatedAt.ToString("MMM dd, hh:mm tt")
+                                        </div>
+
+                                        @if (!string.IsNullOrWhiteSpace(req.ClientNotes))
+                                        {
+                                            <div class="p-2 rounded-3 bg-white border small text-muted mb-3">
+                                                <span class="fw-semibold text-dark">Client Goals:</span> @req.ClientNotes
+                                            </div>
+                                        }
+
+                                        @if (req.HasActiveProposal)
+                                        {
+                                            <div class="alert alert-info py-2 px-3 mb-3 small rounded-3 border">
+                                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                                    <span class="fw-bold text-dark"><i class="bi bi-clock-history me-1 text-primary"></i>Alternative Proposed</span>
+                                                    <span class="badge bg-primary">Awaiting Client Confirmation</span>
+                                                </div>
+                                                <div class="text-primary fw-semibold">@req.ProposedDisplayDateTime</div>
+                                                @if (!string.IsNullOrWhiteSpace(req.TrainerProposalMessage))
+                                                {
+                                                    <div class="text-muted small mt-1 fst-italic">"@req.TrainerProposalMessage"</div>
+                                                }
+                                            </div>
+                                        }
+
+                                        <!-- Actions -->
+                                        <div class="d-flex gap-2 justify-content-end pt-2 border-top flex-wrap">
+                                            @if (req.CanProposeAlternative && !req.HasActiveProposal)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3"
+                                                        onclick="openProposeAlternativeModal(@req.AppointmentId, '@req.AppointmentCode', '@Html.Raw(HttpUtility.JavaScriptStringEncode(req.ClientName))', '@req.AppointmentDate.ToString("yyyy-MM-dd")', '@req.AppointmentDate.ToString("ddd, MMM dd, yyyy")', '@DateTime.Today.Add(req.StartTime).ToString("hh:mm tt") - @DateTime.Today.Add(req.EndTime).ToString("hh:mm tt")')">
+                                                    <i class="bi bi-calendar-event me-1"></i> Propose Alternative
+                                                </button>
+                                            }
+                                            <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                                                    onclick="openRejectModal(@req.AppointmentId, '@req.AppointmentCode', '@Html.Raw(HttpUtility.JavaScriptStringEncode(req.ClientName))')">
+                                                <i class="bi bi-x-circle me-1"></i> Decline
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-success rounded-pill px-4 fw-semibold shadow-sm"
+                                                    onclick="openApproveModal(@req.AppointmentId, '@req.AppointmentCode', '@Html.Raw(HttpUtility.JavaScriptStringEncode(req.ClientName))')">
+                                                <i class="bi bi-check-circle-fill me-1"></i> Confirm &amp; Approve
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox text-muted fs-1 mb-2"></i>
+                            <h5 class="fw-bold text-dark">No Pending Requests</h5>
+                            <p class="text-muted small mb-0">All client consultation requests have been addressed.</p>
+                        </div>
+                    }
+                </div>
+
+                <!-- TAB 2: CONFIRMED SESSIONS -->
+                <div class="tab-pane fade" id="approvedTab" role="tabpanel">
+                    @if (Model.ApprovedUpcoming != null && Model.ApprovedUpcoming.Any())
+                    {
+                        <div class="row g-3">
+                            @foreach (var apt in Model.ApprovedUpcoming)
+                            {
+                                <div class="col-lg-6 col-12">
+                                    <div class="card border rounded-4 p-3 shadow-none bg-light">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div>
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold me-1">@apt.AppointmentCode</span>
+                                                <span class="fw-bold text-dark">@apt.ClientName</span>
+                                            </div>
+                                            <span class="small fw-semibold text-primary">
+                                                @apt.AppointmentDate.ToString("ddd, MMM dd, yyyy")
+                                            </span>
+                                        </div>
+
+                                        <h5 class="fw-bold text-dark mb-1">@apt.Title</h5>
+                                        <div class="small text-muted mb-2">
+                                            <i class="bi bi-clock me-1 text-info"></i>
+                                            @DateTime.Today.Add(apt.StartTime).ToString("hh:mm tt") - @DateTime.Today.Add(apt.EndTime).ToString("hh:mm tt")
+                                        </div>
+
+                                        @if (!string.IsNullOrWhiteSpace(apt.MeetingLocation))
+                                        {
+                                            <div class="small text-dark mb-2">
+                                                <i class="bi bi-geo-alt-fill text-danger me-1"></i>Location: <strong>@apt.MeetingLocation</strong>
+                                            </div>
+                                        }
+
+                                        @if (!string.IsNullOrWhiteSpace(apt.ClientNotes))
+                                        {
+                                            <div class="p-2 rounded-3 bg-white border small text-muted mb-3">
+                                                <span class="fw-semibold text-dark">Client Focus:</span> @apt.ClientNotes
+                                            </div>
+                                        }
+
+                                        @if (apt.HasActiveProposal)
+                                        {
+                                            <div class="alert alert-info py-2 px-3 mb-3 small rounded-3 border">
+                                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                                    <span class="fw-bold text-dark"><i class="bi bi-clock-history me-1 text-primary"></i>Alternative Proposed</span>
+                                                    <span class="badge bg-primary">Awaiting Client Confirmation</span>
+                                                </div>
+                                                <div class="text-primary fw-semibold">@apt.ProposedDisplayDateTime</div>
+                                                @if (!string.IsNullOrWhiteSpace(apt.TrainerProposalMessage))
+                                                {
+                                                    <div class="text-muted small mt-1 fst-italic">"@apt.TrainerProposalMessage"</div>
+                                                }
+                                            </div>
+                                        }
+
+                                        <!-- Completion / Cancellation Actions -->
+                                        <div class="mt-auto pt-2 border-top d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                            <div class="d-flex gap-2 flex-wrap">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                                                        onclick="openCancelTrainerModal(@apt.AppointmentId, '@apt.AppointmentCode', '@Html.Raw(HttpUtility.JavaScriptStringEncode(apt.ClientName))')">
+                                                    <i class="bi bi-x-circle me-1"></i> Cancel Session
+                                                </button>
+                                                @if (apt.CanProposeAlternative && !apt.HasActiveProposal)
+                                                {
+                                                    <button type="button" class="btn btn-sm btn-outline-info rounded-pill px-3"
+                                                            onclick="openProposeAlternativeModal(@apt.AppointmentId, '@apt.AppointmentCode', '@Html.Raw(HttpUtility.JavaScriptStringEncode(apt.ClientName))', '@apt.AppointmentDate.ToString("yyyy-MM-dd")', '@apt.AppointmentDate.ToString("ddd, MMM dd, yyyy")', '@DateTime.Today.Add(apt.StartTime).ToString("hh:mm tt") - @DateTime.Today.Add(apt.EndTime).ToString("hh:mm tt")')">
+                                                        <i class="bi bi-calendar-event me-1"></i> Propose Alternative
+                                                    </button>
+                                                }
+                                            </div>
+
+                                            @if (apt.CanBeCompleted)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-primary rounded-pill px-4 fw-semibold shadow-sm"
+                                                        onclick="openCompleteModal(@apt.AppointmentId, '@apt.AppointmentCode', '@Html.Raw(HttpUtility.JavaScriptStringEncode(apt.ClientName))')">
+                                                    <i class="bi bi-journal-check me-1"></i> Complete Session &amp; Add Notes
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-4"
+                                                        onclick="openCompleteModal(@apt.AppointmentId, '@apt.AppointmentCode', '@Html.Raw(HttpUtility.JavaScriptStringEncode(apt.ClientName))')">
+                                                    <i class="bi bi-journal-text me-1"></i> Session Notes
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-calendar2-x text-muted fs-1 mb-2"></i>
+                            <h5 class="fw-bold text-dark">No Confirmed Upcoming Sessions</h5>
+                            <p class="text-muted small mb-0">Confirmed client consultations will appear here.</p>
+                        </div>
+                    }
+                </div>
+
+                <!-- TAB 3: SESSION HISTORY & COMPLETED -->
+                <div class="tab-pane fade" id="historyTab" role="tabpanel">
+                    @if (Model.CompletedHistory != null && Model.CompletedHistory.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light small text-uppercase fw-bold text-muted">
+                                    <tr>
+                                        <th>Date &amp; Time</th>
+                                        <th>Session Code</th>
+                                        <th>Client</th>
+                                        <th>Topic</th>
+                                        <th>Status</th>
+                                        <th>Recorded Coaching Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var c in Model.CompletedHistory)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="fw-semibold text-dark">@c.AppointmentDate.ToString("MMM dd, yyyy")</div>
+                                                <div class="x-small text-muted">@DateTime.Today.Add(c.StartTime).ToString("hh:mm tt") - @DateTime.Today.Add(c.EndTime).ToString("hh:mm tt")</div>
+                                            </td>
+                                            <td><span class="badge bg-light text-dark border">@c.AppointmentCode</span></td>
+                                            <td><strong class="text-dark">@c.ClientName</strong></td>
+                                            <td>@c.Title</td>
+                                            <td>
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">Completed</span>
+                                            </td>
+                                            <td>
+                                                @if (!string.IsNullOrWhiteSpace(c.TrainerNotes))
+                                                {
+                                                    <span class="small text-dark">@c.TrainerNotes</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="x-small text-muted">No notes recorded</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-clock-history text-muted fs-1 mb-2"></i>
+                            <h5 class="fw-bold text-dark">No Completed Consultations Yet</h5>
+                            <p class="text-muted small mb-0">Completed sessions with coaching summaries will be archived here.</p>
+                        </div>
+                    }
+                </div>
+
+                <!-- TAB 4: MANAGE AVAILABILITY SLOTS -->
+                <div class="tab-pane fade" id="slotsTab" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h6 class="fw-bold text-dark mb-0">Your Open Schedule Slots</h6>
+                            <small class="text-muted">Clients can only request appointments during these posted open slots.</small>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold" data-bs-toggle="modal" data-bs-target="#addSlotModal">
+                            <i class="bi bi-plus-lg me-1"></i> Add Availability
+                        </button>
+                    </div>
+
+                    @if (Model.OpenAvailabilitySlots != null && Model.OpenAvailabilitySlots.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light small text-uppercase fw-bold text-muted">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Time Slot</th>
+                                        <th>Booking Status</th>
+                                        <th>Reserved By</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var slot in Model.OpenAvailabilitySlots)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="fw-bold text-dark">@slot.AvailableDate.ToString("ddd, MMM dd, yyyy")</div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-light text-primary border fw-bold px-2 py-1">
+                                                    @DateTime.Today.Add(slot.StartTime).ToString("hh:mm tt") - @DateTime.Today.Add(slot.EndTime).ToString("hh:mm tt")
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @if (slot.IsBooked)
+                                                {
+                                                    <span class="badge bg-warning-subtle text-dark border border-warning-subtle">
+                                                        <i class="bi bi-lock-fill me-1"></i> Booked
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                                        <i class="bi bi-check-circle-fill me-1"></i> Open for Booking
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (slot.IsBooked && !string.IsNullOrEmpty(slot.BookedClientName))
+                                                {
+                                                    <span class="small fw-semibold text-dark">@slot.BookedClientName (@slot.BookedAppointmentCode)</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="x-small text-muted">--</span>
+                                                }
+                                            </td>
+                                            <td class="text-end">
+                                                @if (slot.CanDelete)
+                                                {
+                                                    using (Html.BeginForm("DeleteAvailability", "Appointments", new { area = "Trainer" }, FormMethod.Post, new { @class = "d-inline" }))
+                                                    {
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@slot.AvailabilityId" />
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1" onclick="return confirm('Remove this availability slot?');" title="Delete slot">
+                                                            <i class="bi bi-trash"></i> Remove
+                                                        </button>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <span class="x-small text-muted" title="Booked slots cannot be deleted directly">In Use</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-calendar-plus text-muted fs-1 mb-2"></i>
+                            <h5 class="fw-bold text-dark">No Availability Slots Posted</h5>
+                            <p class="text-muted small mb-3">Add open dates and times so your assigned clients can book sessions with you.</p>
+                            <button type="button" class="btn btn-primary rounded-pill px-4 fw-semibold" data-bs-toggle="modal" data-bs-target="#addSlotModal">
+                                <i class="bi bi-plus-circle me-1"></i> Add First Time Slot
+                            </button>
+                        </div>
+                    }
+                </div>
+
+                <!-- TAB 5: RESCHEDULE REQUESTS (FR-C-45) -->
+                <div class="tab-pane fade" id="rescheduleTab" role="tabpanel">
+                    @if (Model.RescheduleRequests != null && Model.RescheduleRequests.Any())
+                    {
+                        <div class="row g-3">
+                            @foreach (var req in Model.RescheduleRequests)
+                            {
+                                <div class="col-lg-6 col-12">
+                                    <div class="card border rounded-4 p-3 shadow-none bg-info bg-opacity-10 border-info-subtle">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="badge bg-info text-dark fw-bold">@req.AppointmentCode</span>
+                                                <span class="small fw-bold text-dark">@req.ClientName</span>
+                                            </div>
+                                            <span class="badge bg-white text-info border border-info-subtle">
+                                                <i class="bi bi-clock-history me-1"></i>Requested @req.RequestedAt.ToString("MMM dd, hh:mm tt")
+                                            </span>
+                                        </div>
+
+                                        <h5 class="fw-bold text-dark mb-2">@req.Title</h5>
+
+                                        <!-- Comparison: Original Schedule vs Requested Schedule -->
+                                        <div class="p-3 bg-white rounded-3 border mb-3">
+                                            <div class="row g-2 align-items-center">
+                                                <div class="col-sm-5 col-12">
+                                                    <span class="x-small text-uppercase fw-bold text-muted d-block">Current Schedule</span>
+                                                    <div class="small fw-bold text-secondary text-decoration-line-through">
+                                                        <i class="bi bi-calendar-event me-1"></i>@req.OriginalDisplayDateTime
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-2 col-12 text-center text-primary d-none d-sm-block">
+                                                    <i class="bi bi-arrow-right-circle-fill fs-4"></i>
+                                                </div>
+                                                <div class="col-sm-5 col-12">
+                                                    <span class="x-small text-uppercase fw-bold text-success d-block">Requested New Slot</span>
+                                                    <div class="small fw-bold text-success">
+                                                        <i class="bi bi-calendar-check-fill me-1"></i>@req.RequestedDisplayDateTime
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        @if (!string.IsNullOrWhiteSpace(req.Reason))
+                                        {
+                                            <div class="p-2 rounded-3 bg-white border small text-muted mb-3">
+                                                <span class="fw-semibold text-dark">Client Reason:</span> @req.Reason
+                                            </div>
+                                        }
+
+                                        <!-- Actions -->
+                                        <div class="d-flex gap-2 justify-content-end pt-2 border-top">
+                                            <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                                                    onclick="openRejectRescheduleModal(@req.RescheduleRequestId, '@req.AppointmentCode', '@Html.Raw(HttpUtility.JavaScriptStringEncode(req.ClientName))', '@Html.Raw(HttpUtility.JavaScriptStringEncode(req.RequestedDisplayDateTime))')">
+                                                <i class="bi bi-x-circle me-1"></i> Decline
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-success rounded-pill px-4 fw-semibold shadow-sm"
+                                                    onclick="openApproveRescheduleModal(@req.RescheduleRequestId, '@req.AppointmentCode', '@Html.Raw(HttpUtility.JavaScriptStringEncode(req.ClientName))', '@Html.Raw(HttpUtility.JavaScriptStringEncode(req.RequestedDisplayDateTime))', '@Html.Raw(HttpUtility.JavaScriptStringEncode(req.MeetingLocation ?? ""))')">
+                                                <i class="bi bi-check-circle-fill me-1"></i> Approve Reschedule
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-calendar2-check text-muted fs-1 mb-2"></i>
+                            <h5 class="fw-bold text-dark">No Pending Rescheduling Requests</h5>
+                            <p class="text-muted small mb-0">Clients' rescheduling requests for sessions will be listed here for your approval.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     MODAL 1: ADD AVAILABILITY SLOT
+     ========================================================================= -->
+<div class="modal fade" id="addSlotModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            @using (Html.BeginForm("AddAvailability", "Appointments", new { area = "Trainer" }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="modal-header border-0 pb-0 px-4 pt-4">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="bi bi-calendar-plus-fill text-primary me-2"></i>Post New Availability Slot
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Available Date <span class="text-danger">*</span></label>
+                        <input type="date" name="AvailableDate" class="form-control" value="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")" min="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-muted">Start Time <span class="text-danger">*</span></label>
+                            <input type="time" name="StartTimeString" class="form-control" value="09:00" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-muted">End Time <span class="text-danger">*</span></label>
+                            <input type="time" name="EndTimeString" class="form-control" value="10:00" required />
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info py-2 px-3 small rounded-3 mb-0">
+                        <i class="bi bi-info-circle-fill me-1"></i>
+                        Clients assigned to you will be able to select and request consultations for this time slot.
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm">Save Availability</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     MODAL 2: APPROVE APPOINTMENT
+     ========================================================================= -->
+<div class="modal fade" id="approveModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            @using (Html.BeginForm("Approve", "Appointments", new { area = "Trainer" }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="AppointmentId" id="approveAptId" />
+
+                <div class="modal-header border-0 pb-0 px-4 pt-4">
+                    <h5 class="modal-title fw-bold text-success">
+                        <i class="bi bi-check-circle-fill me-2"></i>Confirm Appointment
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="small text-muted mb-3">
+                        Confirming session <strong id="approveAptCode" class="text-dark"></strong> with <strong id="approveClientName" class="text-dark"></strong>.
+                    </p>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Meeting Location or Video Link</label>
+                        <input type="text" name="MeetingLocation" class="form-control" value="Fitness Center - Consultation Desk" placeholder="e.g. Main Gym Floor, Zoom Link, or Google Meet URL" maxlength="250" />
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold">Approve &amp; Notify Client</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     MODAL 3: DECLINE / REJECT APPOINTMENT
+     ========================================================================= -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            @using (Html.BeginForm("Reject", "Appointments", new { area = "Trainer" }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="AppointmentId" id="rejectAptId" />
+
+                <div class="modal-header border-0 pb-0 px-4 pt-4">
+                    <h5 class="modal-title fw-bold text-danger">
+                        <i class="bi bi-x-circle-fill me-2"></i>Decline Appointment Request
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="small text-muted mb-3">
+                        Decline session request from <strong id="rejectClientName" class="text-dark"></strong>.
+                    </p>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Reason for Declining <span class="text-danger">*</span></label>
+                        <textarea name="Reason" class="form-control" rows="3" placeholder="Please provide a brief reason so the client can pick another time..." required maxlength="500"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold">Decline Request</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     MODAL 4: COMPLETE SESSION & NOTES
+     ========================================================================= -->
+<div class="modal fade" id="completeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            @using (Html.BeginForm("Complete", "Appointments", new { area = "Trainer" }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="AppointmentId" id="completeAptId" />
+
+                <div class="modal-header border-0 pb-0 px-4 pt-4">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="bi bi-journal-check text-primary me-2"></i>Record Consultation Summary
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="small text-muted mb-3">
+                        Marking consultation completed for <strong id="completeClientName" class="text-dark"></strong>.
+                    </p>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Consultation Notes &amp; Action Plan <span class="text-danger">*</span></label>
+                        <textarea name="TrainerNotes" class="form-control" rows="4" placeholder="Document what was covered: exercise form feedback, posture corrections, nutrition adjustments, and next milestones..." required maxlength="1000"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm">Save Notes &amp; Mark Completed</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     MODAL 5: CANCEL APPOINTMENT (TRAINER)
+     ========================================================================= -->
+<div class="modal fade" id="cancelTrainerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            @using (Html.BeginForm("Cancel", "Appointments", new { area = "Trainer" }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="AppointmentId" id="cancelTrainerAptId" />
+
+                <div class="modal-header border-0 pb-0 px-4 pt-4">
+                    <h5 class="modal-title fw-bold text-danger">
+                        <i class="bi bi-x-circle-fill me-2"></i>Cancel Confirmed Session
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="small text-muted mb-3">
+                        Cancel session with <strong id="cancelTrainerClientName" class="text-dark"></strong>.
+                    </p>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Reason for Cancellation <span class="text-danger">*</span></label>
+                        <textarea name="Reason" class="form-control" rows="3" placeholder="Explain reason for cancellation..." required maxlength="500"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Keep Session</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold">Cancel Appointment</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     MODAL 6: APPROVE RESCHEDULE REQUEST (FR-C-45)
+     ========================================================================= -->
+<div class="modal fade" id="approveRescheduleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            @using (Html.BeginForm("ApproveReschedule", "Appointments", new { area = "Trainer" }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="RescheduleRequestId" id="approveRescheduleReqId" />
+
+                <div class="modal-header border-0 pb-0 px-4 pt-4">
+                    <h5 class="modal-title fw-bold text-success">
+                        <i class="bi bi-check-circle-fill me-2"></i>Approve Appointment Reschedule
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="small text-muted mb-3">
+                        Approve rescheduling for appointment <strong id="approveRescheduleAptCode" class="text-dark"></strong> with <strong id="approveRescheduleClientName" class="text-dark"></strong>.
+                    </p>
+
+                    <div class="alert alert-success py-2 px-3 small rounded-3 mb-3 border-0 bg-success bg-opacity-10 text-dark">
+                        <i class="bi bi-calendar-check-fill text-success me-1"></i>
+                        New Session Time: <strong id="approveRescheduleNewSlot"></strong>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Meeting Location or Video Call Link (Optional)</label>
+                        <input type="text" name="MeetingLocation" id="approveRescheduleLocation" class="form-control" placeholder="e.g. Main Gym Floor, Zoom Link, or Google Meet URL" maxlength="250" />
+                    </div>
+
+                    <div class="alert alert-info py-2 px-3 small rounded-3 mb-0">
+                        <i class="bi bi-info-circle-fill me-1"></i>
+                        Approving this request will update the session date and time, reserve the new slot, and release the previous slot back to your schedule.
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold shadow-sm">Confirm Reschedule</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     MODAL 7: DECLINE RESCHEDULE REQUEST (FR-C-45)
+     ========================================================================= -->
+<div class="modal fade" id="rejectRescheduleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            @using (Html.BeginForm("RejectReschedule", "Appointments", new { area = "Trainer" }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="RescheduleRequestId" id="rejectRescheduleReqId" />
+
+                <div class="modal-header border-0 pb-0 px-4 pt-4">
+                    <h5 class="modal-title fw-bold text-danger">
+                        <i class="bi bi-x-circle-fill me-2"></i>Decline Rescheduling Request
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="small text-muted mb-3">
+                        Decline request for appointment <strong id="rejectRescheduleAptCode" class="text-dark"></strong> from <strong id="rejectRescheduleClientName" class="text-dark"></strong> for slot <strong id="rejectRescheduleSlot"></strong>.
+                    </p>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Reason for Declining <span class="text-danger">*</span></label>
+                        <textarea name="Reason" class="form-control" rows="3" placeholder="Please state why this requested time cannot be accommodated so the client can select another slot..." required maxlength="500"></textarea>
+                    </div>
+
+                    <div class="alert alert-warning py-2 px-3 small rounded-3 mb-0">
+                        <i class="bi bi-shield-exclamation me-1"></i>
+                        Note: Declining this request keeps the client's original appointment date and time active.
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold">Decline Request</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Propose Alternative Time (FR-T-38) -->
+<div class="modal fade" id="proposeAlternativeModal" tabindex="-1" aria-labelledby="proposeAlternativeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            @using (Html.BeginForm("ProposeAlternative", "Appointments", new { area = "Trainer" }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="AppointmentId" id="proposeAltAppointmentId" />
+
+                <div class="modal-header bg-light border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="proposeAlternativeModalLabel">
+                        <i class="bi bi-calendar-event text-primary me-2"></i>Propose Alternative Time
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <p class="text-muted small mb-3">
+                        Select one of your available published slots to propose to <strong id="proposeAltClientName" class="text-dark"></strong> for consultation <strong id="proposeAltCode" class="text-primary"></strong>. The current schedule will remain active until the client confirms.
+                    </p>
+
+                    <div class="p-3 bg-light rounded-3 mb-3 border small">
+                        <div class="text-muted mb-1"><i class="bi bi-calendar-check me-1"></i><strong>Current Schedule:</strong></div>
+                        <div id="proposeAltCurrentSchedule" class="fw-semibold text-dark"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Select Alternative Available Slot <span class="text-danger">*</span></label>
+                        @if (Model.FutureUnbookedSlots != null && Model.FutureUnbookedSlots.Any())
+                        {
+                            <select name="AvailabilityId" id="proposeAltAvailabilityId" class="form-select" required>
+                                <option value="">-- Choose an open slot --</option>
+                                @foreach (var slot in Model.FutureUnbookedSlots)
+                                {
+                                    <option value="@slot.AvailabilityId" data-date="@slot.SlotDate.ToString("yyyy-MM-dd")">
+                                        @slot.DisplayText
+                                    </option>
+                                }
+                            </select>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning small mb-0">
+                                <i class="bi bi-exclamation-triangle me-1"></i> You currently have no unbooked future availability slots published. Please add available slots in your schedule first.
+                            </div>
+                        }
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold small text-dark">Message to Client (Optional)</label>
+                        <textarea name="TrainerMessage" id="proposeAltTrainerMessage" class="form-control" rows="3" maxlength="500" placeholder="e.g., I have an earlier opening this Friday if that works better for your fitness schedule..."></textarea>
+                        <div class="form-text small">Explain why this alternative time is recommended (max 500 characters).</div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold" @(Model.FutureUnbookedSlots == null || !Model.FutureUnbookedSlots.Any() ? "disabled" : "")>
+                        <i class="bi bi-send me-1"></i> Send Proposal
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        $(document).ready(function () {
+            // Robust tab switching for trainer appointment tabs
+            $('#trainerAptTabs button[data-bs-toggle="tab"]').on('click', function (e) {
+                e.preventDefault();
+                var target = $(this).attr('data-bs-target');
+
+                // Update active tab buttons
+                $('#trainerAptTabs button').removeClass('active').attr('aria-selected', 'false');
+                $(this).addClass('active').attr('aria-selected', 'true');
+
+                // Switch visible pane
+                $('#trainerAptTabsContent .tab-pane').removeClass('show active');
+                $(target).addClass('show active');
+
+                // Remember active tab in browser URL hash
+                if (history.replaceState) {
+                    history.replaceState(null, null, target);
+                }
+            });
+
+            // Activate tab from URL hash if present
+            var currentHash = window.location.hash;
+            if (currentHash) {
+                var targetBtn = $('#trainerAptTabs button[data-bs-target="' + currentHash + '"]');
+                if (targetBtn.length) {
+                    targetBtn.trigger('click');
+                }
+            }
+        });
+
+        function openApproveModal(id, code, clientName) {
+            $('#approveAptId').val(id);
+            $('#approveAptCode').text(code);
+            $('#approveClientName').text(clientName);
+            var m = new bootstrap.Modal(document.getElementById('approveModal'));
+            m.show();
+        }
+
+        function openRejectModal(id, code, clientName) {
+            $('#rejectAptId').val(id);
+            $('#rejectClientName').text(clientName + ' (' + code + ')');
+            var m = new bootstrap.Modal(document.getElementById('rejectModal'));
+            m.show();
+        }
+
+        function openCompleteModal(id, code, clientName) {
+            $('#completeAptId').val(id);
+            $('#completeClientName').text(clientName + ' (' + code + ')');
+            var m = new bootstrap.Modal(document.getElementById('completeModal'));
+            m.show();
+        }
+
+        function openCancelTrainerModal(id, code, clientName) {
+            $('#cancelTrainerAptId').val(id);
+            $('#cancelTrainerClientName').text(clientName + ' (' + code + ')');
+            var m = new bootstrap.Modal(document.getElementById('cancelTrainerModal'));
+            m.show();
+        }
+
+        function openApproveRescheduleModal(reqId, code, clientName, newSlot, location) {
+            $('#approveRescheduleReqId').val(reqId);
+            $('#approveRescheduleAptCode').text(code);
+            $('#approveRescheduleClientName').text(clientName);
+            $('#approveRescheduleNewSlot').text(newSlot);
+            $('#approveRescheduleLocation').val(location || 'Main Fitness Center - Floor Consult Desk');
+            var m = new bootstrap.Modal(document.getElementById('approveRescheduleModal'));
+            m.show();
+        }
+
+        function openRejectRescheduleModal(reqId, code, clientName, slot) {
+            $('#rejectRescheduleReqId').val(reqId);
+            $('#rejectRescheduleAptCode').text(code);
+            $('#rejectRescheduleClientName').text(clientName);
+            $('#rejectRescheduleSlot').text(slot);
+            var m = new bootstrap.Modal(document.getElementById('rejectRescheduleModal'));
+            m.show();
+        }
+
+        function openProposeAlternativeModal(id, code, clientName, dateStr, displayDate, timeStr) {
+            $('#proposeAltAppointmentId').val(id);
+            $('#proposeAltCode').text(code);
+            $('#proposeAltClientName').text(clientName);
+            $('#proposeAltCurrentSchedule').text(displayDate + ' (' + timeStr + ')');
+            $('#proposeAltTrainerMessage').val('');
+            $('#proposeAltAvailabilityId').val('');
+            var m = new bootstrap.Modal(document.getElementById('proposeAlternativeModal'));
+            m.show();
+        }
+    </script>
+}

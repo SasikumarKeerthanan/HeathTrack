@@ -1,0 +1,168 @@
+@{
+    var currentController = ViewContext.RouteData.Values["controller"] != null ? ViewContext.RouteData.Values["controller"].ToString() : "";
+    var currentAction = ViewContext.RouteData.Values["action"] != null ? ViewContext.RouteData.Values["action"].ToString() : "";
+}
+
+<div class="d-flex flex-column h-100 p-2 text-white bg-dark sidebar-inner">
+    <!-- Brand / Client Portal Header -->
+    <a href="@Url.Action("Index", "Dashboard", new { area = "Client" })" class="d-flex align-items-center mb-1 text-white text-decoration-none px-2 py-1 rounded-3 brand-header-link">
+        <img src="@Url.Content("~/Content/images/logo.png")" alt="HealthTrack Logo" class="rounded-2 me-2 shadow-sm flex-shrink-0" style="width: 32px; height: 32px; object-fit: contain;" />
+        <div class="d-flex flex-column justify-content-center" style="min-width: 0;">
+            <div class="fw-bold tracking-tight" style="font-size: 1.15rem; line-height: 1.1; color: #009dff; letter-spacing: -0.3px;">HealthTrack</div>
+            <div class="text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.7px; line-height: 1.1; color: #22c55e; margin-top: 1px; white-space: nowrap;">Workout &amp; Nutrition</div>
+        </div>
+    </a>
+
+    <!-- Nav Links (Scrollable Container) -->
+    <div class="sidebar-nav-container">
+        <!-- 1. MAIN OVERVIEW (Member 1) -->
+        <div class="nav-section-title">
+            <i class="bi bi-grid-fill me-1 text-primary"></i> Main Overview
+        </div>
+        <ul class="nav nav-pills flex-column mb-1 gap-1">
+            <li class="nav-item">
+                <a href="@Url.Action("Index", "Dashboard", new { area = "Client" })" 
+                   class="nav-link text-white @(currentController == "Dashboard" ? "active" : "")">
+                    <i class="bi bi-speedometer2 me-2 fs-6 text-primary"></i>
+                    <span>Client Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="@Url.Action("Index", "Goals", new { area = "Client" })" 
+                   class="nav-link text-white @(currentController == "Goals" ? "active" : "")">
+                    <i class="bi bi-flag-fill me-2 fs-6 text-warning"></i>
+                    <span>Health Goals &amp; Charts</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="@Url.Action("Index", "Tracking", new { area = "Client" })" 
+                   class="nav-link text-white @(currentController == "Tracking" ? "active" : "")">
+                    <i class="bi bi-droplet-half me-2 fs-6 text-info"></i>
+                    <span>Water &amp; Sleep Habits</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="@Url.Action("Index", "Progress", new { area = "Client" })" 
+                   class="nav-link text-white @(currentController == "Progress" ? "active" : "")">
+                    <i class="bi bi-file-earmark-medical-fill me-2 fs-6 text-success"></i>
+                    <span>Progress &amp; Plans Report</span>
+                </a>
+            </li>
+        </ul>
+
+        <!-- 2. TRAINING & ROUTINES (Member 2) -->
+        <div class="nav-section-title">
+            <i class="bi bi-fire me-1 text-warning"></i> Training &amp; Routines
+        </div>
+        <ul class="nav nav-pills flex-column mb-1 gap-1">
+            <li class="nav-item">
+                <a href="@Url.Action("Index", "Workout", new { area = "Client" })" 
+                   class="nav-link text-white @(currentController == "Workout" && currentAction == "Index" ? "active" : "")">
+                    <i class="bi bi-lightning-charge me-2 fs-6 text-warning"></i>
+                    <span>Workout Hub</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="@Url.Action("Plan", "Workout", new { area = "Client" })" 
+                   class="nav-link text-white @(currentController == "Workout" && currentAction == "Plan" ? "active" : "")">
+                    <i class="bi bi-card-checklist me-2 fs-6 text-primary"></i>
+                    <span>My Workout Routine</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="@Url.Action("Calendar", "Workout", new { area = "Client" })" 
+                   class="nav-link text-white @(currentController == "Workout" && currentAction == "Calendar" ? "active" : "")">
+                    <i class="bi bi-calendar3 me-2 fs-6 text-info"></i>
+                    <span>Workout Calendar</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="@Url.Action("History", "Workout", new { area = "Client" })" 
+                   class="nav-link text-white @(currentController == "Workout" && currentAction == "History" ? "active" : "")">
+                    <i class="bi bi-clock-history me-2 fs-6 text-secondary"></i>
+                    <span>Workout History</span>
+                </a>
+            </li>
+        </ul>
+
+        <!-- 3. NUTRITION & DIET (Member 2) -->
+        <div class="nav-section-title">
+            <i class="bi bi-egg-fried me-1 text-success"></i> Nutrition &amp; Diet
+        </div>
+        <ul class="nav nav-pills flex-column mb-1 gap-1">
+            <li class="nav-item">
+                <a href="@Url.Action("Index", "Diet", new { area = "Client" })" 
+                   class="nav-link text-white @(currentController == "Diet" && currentAction == "Index" ? "active" : "")">
+                    <i class="bi bi-pie-chart me-2 fs-6 text-success"></i>
+                    <span>Diet Hub</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="@Url.Action("Plan", "Diet", new { area = "Client" })" 
+                   class="nav-link text-white @(currentController == "Diet" && currentAction == "Plan" ? "active" : "")">
+                    <i class="bi bi-journal-text me-2 fs-6 text-success"></i>
+                    <span>My Diet Plan</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="@Url.Action("Calendar", "Diet", new { area = "Client" })" 
+                   class="nav-link text-white @(currentController == "Diet" && (currentAction == "Calendar" || currentAction == "History") ? "active" : "")">
+                    <i class="bi bi-calendar-check me-2 fs-6 text-success"></i>
+                    <span>Meal Calendar &amp; History</span>
+                </a>
+            </li>
+        </ul>
+
+        <!-- 4. COACH FEEDBACK (Member 3) -->
+        <div class="nav-section-title">
+            <i class="bi bi-chat-heart me-1" style="color: #a855f7;"></i> Coach &amp; Appointments
+        </div>
+        <ul class="nav nav-pills flex-column mb-1 gap-1">
+            <li class="nav-item">
+                <a href="@Url.Action("Index", "Appointments", new { area = "Client" })" 
+                   class="nav-link text-white @(currentController == "Appointments" ? "active" : "")">
+                    <i class="bi bi-calendar2-check-fill me-2 fs-6" style="color: #38bdf8;"></i>
+                    <span>Consultations &amp; Slots</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="@Url.Action("Index", "Feedback", new { area = "Client" })" 
+                   class="nav-link text-white @(currentController == "Feedback" ? "active" : "")">
+                    <i class="bi bi-chat-square-quote me-2 fs-6 text-info"></i>
+                    <span>Trainer Feedback</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="@Url.Action("Index", "TrainerChange", new { area = "Client" })" 
+                   class="nav-link text-white @(currentController == "TrainerChange" ? "active" : "")">
+                    <i class="bi bi-arrow-repeat me-2 fs-6 text-warning"></i>
+                    <span>Change Coach</span>
+                </a>
+            </li>
+        </ul>
+
+        <!-- 5. HELP & ASSISTANCE -->
+        <div class="nav-section-title">
+            <i class="bi bi-question-circle me-1 text-info"></i> Assistance
+        </div>
+        <ul class="nav nav-pills flex-column mb-1 gap-1">
+            <li class="nav-item">
+                <a href="@Url.Action("Index", "Support", new { area = "Client" })" 
+                   class="nav-link text-white @(currentController == "Support" ? "active" : "")">
+                    <i class="bi bi-headset me-2 fs-6 text-info"></i>
+                    <span>Help &amp; Support</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- User / Logout Footer -->
+    <div class="pt-2 mt-auto border-top border-secondary border-opacity-25 px-2">
+        <a href="@Url.Action("Logout", "Account", new { area = "Client" })" 
+           class="nav-link text-danger d-flex align-items-center gap-2 py-2 px-2 rounded-2"
+           style="transition: background-color 0.2s;">
+            <i class="bi bi-box-arrow-right fs-6"></i>
+            <span>Sign Out</span>
+        </a>
+    </div>
+</div>

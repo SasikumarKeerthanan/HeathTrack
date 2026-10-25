@@ -1,0 +1,745 @@
+/* =========================================================================
+   HealthTrack - Twilight Dark Theme for Authentication
+   (Client Login & Registration)
+   Works in synergy with Bootstrap 5
+   ========================================================================= */
+
+/* --- Base Body & Full-Height Container --- */
+html, body {
+    background-color: #363445 !important;
+    background: #363445 !important;
+    background-image: none !important;
+    color: #f1f5f9;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.auth-container {
+    padding: 2rem 1.5rem !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+}
+
+.auth-footer {
+    color: #8b899e !important;
+}
+
+/* =========================================================================
+   1. Split-Screen Card (Login Page)
+   ========================================================================= */
+.split-auth-card {
+    background-color: #191826;
+    border-radius: 28px;
+    box-shadow: 0 35px 80px rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    width: 100%;
+    max-width: 980px;
+    min-height: 520px;
+    overflow: hidden;
+    padding: 14px;
+    margin: auto;
+}
+
+/* Left Hero Visual Column */
+.hero-panel {
+    flex: 1;
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 2.5rem 2.25rem;
+    background: #1b1736;
+    min-height: 480px;
+}
+
+/* Atmospheric Twilight Landscape Background */
+.hero-bg-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: 
+        linear-gradient(180deg, rgba(32, 27, 65, 0.2) 0%, rgba(18, 16, 36, 0.85) 65%, #131124 100%),
+        radial-gradient(circle at 75% 25%, #4c3d82 0%, #241d4a 45%, #13102b 100%);
+}
+
+.hero-bg-svg {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+    opacity: 0.95;
+}
+
+.hero-content-top {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.hero-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+}
+
+.hero-brand-img {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+    border-radius: 8px;
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
+}
+
+.hero-brand-name {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 1.3rem;
+    letter-spacing: -0.5px;
+}
+
+.back-website-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 1rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.back-website-btn:hover {
+    background: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+    transform: translateX(-1px);
+}
+
+.hero-content-bottom {
+    position: relative;
+    z-index: 2;
+    margin-top: auto;
+}
+
+.hero-headline {
+    color: #ffffff;
+    font-size: 1.85rem;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.5px;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+.hero-indicators {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.hero-indicator-dash {
+    height: 4px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.25);
+    transition: all 0.3s ease;
+}
+
+.hero-indicator-dash.active {
+    width: 32px;
+    background: #ffffff;
+}
+
+.hero-indicator-dash.inactive {
+    width: 18px;
+}
+
+/* Right Form Column */
+.form-panel {
+    flex: 1.15;
+    padding: 2.75rem 3.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #191826;
+}
+
+.form-wrapper {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.form-header {
+    margin-bottom: 2rem;
+}
+
+.form-title {
+    color: #ffffff;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 0;
+    line-height: 1.2;
+}
+
+.dark-signup-prompt {
+    color: #8b899e;
+    font-size: 0.92rem;
+    margin-bottom: 1.75rem;
+    line-height: 1.4;
+}
+
+.dark-signup-prompt a {
+    color: #9d8df1;
+    font-weight: 600;
+    text-decoration: none;
+    margin-left: 0.25rem;
+    transition: color 0.15s ease;
+}
+
+.dark-signup-prompt a:hover {
+    color: #b7a9ff;
+    text-decoration: underline;
+}
+
+/* =========================================================================
+   2. Registration Card
+   ========================================================================= */
+.reg-card {
+    background-color: #191826;
+    border-radius: 24px;
+    box-shadow: 0 35px 80px rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    width: 100%;
+    max-width: 720px;
+    margin: auto;
+}
+
+.section-card-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 0.25rem;
+}
+
+/* =========================================================================
+   3. Inputs & Form Controls (Dark Theme)
+   ========================================================================= */
+.dark-form-group {
+    margin-bottom: 1.25rem;
+    position: relative;
+}
+
+.dark-input {
+    background-color: #262438 !important;
+    border: 1px solid #37344c !important;
+    border-radius: 12px !important;
+    color: #ffffff !important;
+    height: 52px !important;
+    padding: 0 1.25rem !important;
+    font-size: 0.95rem !important;
+    width: 100%;
+    transition: all 0.2s ease;
+}
+
+.dark-input::placeholder {
+    color: #6d6b82 !important;
+    font-size: 0.92rem;
+}
+
+.dark-input:focus {
+    background-color: #2b283d !important;
+    border-color: #6d54d1 !important;
+    box-shadow: 0 0 0 3px rgba(109, 84, 209, 0.25) !important;
+    outline: none !important;
+}
+
+.dark-form-control, .dark-form-select {
+    background-color: #282737 !important;
+    border: 1px solid #37354a !important;
+    border-radius: 10px !important;
+    color: #ffffff !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.92rem !important;
+    transition: all 0.2s ease;
+}
+
+.dark-form-control:focus, .dark-form-select:focus {
+    background-color: #2c2b3d !important;
+    border-color: #6d54d1 !important;
+    box-shadow: 0 0 0 3px rgba(109, 84, 209, 0.25) !important;
+    outline: none !important;
+}
+
+.dark-input-group-text {
+    background-color: #222030 !important;
+    border: 1px solid #37354a !important;
+    color: #7b7894 !important;
+    border-radius: 10px 0 0 10px !important;
+}
+
+.dark-btn-addon {
+    background-color: #222030 !important;
+    border: 1px solid #37354a !important;
+    color: #7b7894 !important;
+    border-radius: 0 10px 10px 0 !important;
+}
+
+.dark-btn-addon:hover {
+    color: #ffffff !important;
+}
+
+/* Password Input Wrapper & Toggle Button */
+.password-input-wrapper {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-wrapper .dark-input {
+    padding-right: 48px !important;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #7b7894;
+    cursor: pointer;
+    padding: 0;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    line-height: 1;
+    border-radius: 8px;
+    transition: color 0.15s ease, background-color 0.15s ease;
+    z-index: 5;
+}
+
+.dark-form-group > label ~ .password-toggle-btn {
+    top: calc(50% + 12px);
+}
+
+.password-input-wrapper .password-toggle-btn {
+    top: 50% !important;
+}
+
+.password-toggle-btn:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+.password-toggle-btn:focus {
+    outline: none;
+    color: #a894ff;
+}
+
+.password-toggle-btn i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    pointer-events: none;
+}
+
+/* Custom Checkbox Row */
+.dark-checkbox-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.15rem;
+    margin-bottom: 1.15rem;
+}
+
+.dark-form-check {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.dark-form-check input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    background-color: #262438;
+    border: 1px solid #434159;
+    accent-color: #6d54d1;
+    cursor: pointer;
+}
+
+.dark-form-check label {
+    color: #8b899e;
+    font-size: 0.9rem;
+    cursor: pointer;
+    margin: 0;
+    user-select: none;
+}
+
+.forgot-password-link {
+    color: #8b899e;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.forgot-password-link:hover {
+    color: #9d8df1;
+    text-decoration: underline;
+}
+
+/* =========================================================================
+   4. Buttons
+   ========================================================================= */
+.btn-submit-purple {
+    background-color: #6d54d1;
+    border: none;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 1rem;
+    height: 52px;
+    padding: 0 1.5rem;
+    border-radius: 12px;
+    width: 100%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 18px rgba(109, 84, 209, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-submit-purple:hover {
+    background-color: #7c62e3;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(109, 84, 209, 0.45);
+}
+
+.btn-purple {
+    background-color: #6d54d1;
+    border: none;
+    color: #ffffff;
+    font-weight: 600;
+    padding: 0.7rem 1.4rem;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.btn-purple:hover {
+    background-color: #7c62e3;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(109, 84, 209, 0.35);
+}
+
+.btn-dark-outline {
+    background-color: transparent;
+    border: 1px solid #3d3b52;
+    color: #a5a2bf;
+    font-weight: 600;
+    padding: 0.7rem 1.4rem;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.btn-dark-outline:hover {
+    background-color: #282737;
+    color: #ffffff;
+    border-color: #555270;
+}
+
+/* =========================================================================
+   5. Step Wizard Indicator (Registration Wizard)
+   ========================================================================= */
+.step-wizard {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+.step-wizard::before {
+    content: '';
+    position: absolute;
+    top: 18px;
+    left: 30px;
+    right: 30px;
+    height: 2px;
+    background-color: #4b4860;
+    z-index: 1;
+}
+
+.step-item {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    flex: 1;
+}
+
+.step-circle {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background-color: #282737;
+    color: #9490af;
+    border: 2px solid #434158;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    transition: all 0.25s ease;
+}
+
+.step-item.active .step-circle {
+    background-color: #6d54d1;
+    color: #ffffff;
+    border-color: #6d54d1;
+    box-shadow: 0 0 0 4px rgba(109, 84, 209, 0.25);
+}
+
+.step-item.completed .step-circle {
+    background-color: #10b981;
+    color: #ffffff;
+    border-color: #10b981;
+}
+
+.step-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #9490af;
+    margin-top: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.step-item.active .step-label {
+    color: #b7a9ff;
+}
+
+/* =========================================================================
+   6. Alerts, Validation Badges & Shake Animations
+   ========================================================================= */
+.dark-alert-error {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: 12px;
+    color: #fca5a5;
+    padding: 0.85rem 1rem;
+    font-size: 0.88rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    animation: slideDownAlert 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.15);
+}
+
+.dark-alert-content {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex: 1;
+}
+
+.dark-alert-close {
+    background: transparent;
+    border: none;
+    color: #fca5a5;
+    opacity: 0.7;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 4px;
+    transition: opacity 0.15s ease;
+}
+
+.dark-alert-close:hover {
+    opacity: 1;
+}
+
+.dark-alert-success {
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    border-radius: 12px;
+    color: #6ee7b7;
+    padding: 0.85rem 1rem;
+    font-size: 0.88rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    animation: slideDownAlert 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.15);
+}
+
+.dark-alert-warning {
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: 12px;
+    color: #fcd34d;
+    padding: 0.85rem 1rem;
+    font-size: 0.88rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    animation: slideDownAlert 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.15);
+}
+
+.dark-alert-info {
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    border-radius: 12px;
+    color: #93c5fd;
+    padding: 0.85rem 1rem;
+    font-size: 0.88rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    animation: slideDownAlert 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15);
+}
+
+.field-validation-error, .ui-field-error {
+    color: #f87171 !important;
+    font-size: 0.8rem;
+    margin-top: 0.35rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    animation: slideDownAlert 0.2s ease-in-out;
+}
+
+.input-validation-error {
+    border-color: #ef4444 !important;
+    background-color: rgba(239, 68, 68, 0.08) !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+}
+
+.shake-field {
+    animation: fieldShake 0.3s ease-in-out;
+}
+
+/* =========================================================================
+   7. In-UI Modals (Forgot Password)
+   ========================================================================= */
+.auth-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 9, 18, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 1.5rem;
+    animation: fadeInOverlay 0.2s ease-out;
+}
+
+.auth-modal-content {
+    background-color: #1f1d2e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65);
+    max-width: 420px;
+    width: 100%;
+    padding: 2rem;
+    animation: scaleUpModal 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* =========================================================================
+   8. Keyframe Animations
+   ========================================================================= */
+@keyframes slideDownAlert {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fieldShake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
+}
+
+@keyframes fadeInOverlay {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes scaleUpModal {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes fadeInError {
+    from { opacity: 0; transform: translateY(-3px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* =========================================================================
+   9. Responsive Breakpoints
+   ========================================================================= */
+@media (max-width: 900px) {
+    .split-auth-card {
+        flex-direction: column;
+        max-width: 460px;
+        min-height: auto;
+    }
+
+    .hero-panel {
+        min-height: 240px;
+        padding: 2rem 1.5rem;
+    }
+
+    .form-panel {
+        padding: 2.25rem 1.75rem;
+    }
+
+    .hero-headline {
+        font-size: 1.45rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .form-title {
+        font-size: 1.75rem;
+    }
+
+    .form-header {
+        margin-bottom: 1.5rem;
+    }
+}

@@ -1,0 +1,420 @@
+@* =========================================================================
+   HEALTH TRACK: TRAINER-CLIENT FLOATING MESSAGING WIDGET
+   Matches exact reference design: Round floating trigger & dark sleek chat box
+   ========================================================================= *@
+@{
+    var isClient = HealthTrack.Helpers.SessionHelper.IsClient(Session);
+    var isTrainer = HealthTrack.Helpers.SessionHelper.IsTrainer(Session);
+}
+
+@if (isClient || isTrainer)
+{
+    <!-- FLOATING CHAT TRIGGER BUTTON (Bottom-Right) -->
+    <div id="htChatFloatingWrapper" style="position: fixed; bottom: 24px; right: 24px; z-index: 1060; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+        <button type="button" id="htChatToggleBtn" 
+                class="btn rounded-circle d-flex align-items-center justify-content-center shadow-lg position-relative"
+                style="width: 58px; height: 58px; background-color: #1a1d21; border: 2px solid rgba(16, 185, 129, 0.35); box-shadow: 0 10px 28px rgba(0,0,0,0.45); cursor: pointer; transition: all 0.25s ease;"
+                title="Open Messaging">
+            
+            <!-- Default Speech Bubble Icon (Closed State) -->
+            <span id="htChatIconClosed" class="d-flex align-items-center justify-content-center">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    <circle cx="8" cy="10" r="1" fill="#10b981"></circle>
+                    <circle cx="12" cy="10" r="1" fill="#10b981"></circle>
+                    <circle cx="16" cy="10" r="1" fill="#10b981"></circle>
+                </svg>
+            </span>
+
+            <!-- Close 'X' Icon (Open State) -->
+            <span id="htChatIconOpen" class="d-none d-flex align-items-center justify-content-center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </span>
+
+            <!-- Red Unread Counter Badge -->
+            <span id="htChatUnreadBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-dark d-none" 
+                  style="font-size: 0.68rem; padding: 0.3em 0.55em;">
+                0
+            </span>
+        </button>
+    </div>
+
+    <!-- FLOATING CHAT MODAL WINDOW (Anchored above button) -->
+    <div id="htChatBox" class="d-none"
+         style="position: fixed; bottom: 94px; right: 24px; width: 360px; max-width: calc(100vw - 32px); height: 530px; max-height: calc(100vh - 120px); 
+                background-color: #16181d; border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; 
+                box-shadow: 0 16px 48px rgba(0,0,0,0.6); z-index: 1060; display: flex; flex-direction: column; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        
+        <!-- HEADER: Emerald Green Gradient -->
+        <div class="px-3 py-2 d-flex align-items-center justify-content-between text-white" 
+             style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); min-height: 60px;">
+            
+            <div class="d-flex align-items-center gap-2" style="min-width: 0;">
+                <div class="rounded-circle bg-white text-dark d-flex align-items-center justify-content-center fw-bold shadow-sm flex-shrink-0" 
+                     id="htChatPartnerAvatar" style="width: 38px; height: 38px; font-size: 0.9rem; border: 2px solid rgba(255,255,255,0.4);">
+                    <i class="bi bi-person-fill fs-5 text-success"></i>
+                </div>
+                <div class="d-flex flex-column" style="min-width: 0; line-height: 1.2;">
+                    <span id="htChatPartnerName" class="fw-bold text-truncate text-white" style="font-size: 0.95rem;">
+                        Connecting...
+                    </span>
+                    <span id="htChatPartnerSubtitle" class="text-white-50 small text-truncate" style="font-size: 0.72rem;">
+                        HealthTrack Direct Chat
+                    </span>
+                </div>
+            </div>
+
+            <!-- Header Right: Client Switcher (for Trainer) or Close button -->
+            <div class="d-flex align-items-center gap-1">
+                @if (isTrainer)
+                {
+                    <select id="htChatClientSelect" class="form-select form-select-sm bg-dark text-white border-0 py-1 px-2 d-none" 
+                            style="font-size: 0.75rem; width: auto; max-width: 140px; border-radius: 12px; background-color: rgba(0,0,0,0.3) !important;">
+                    </select>
+                }
+                <button type="button" id="htChatCloseHeaderBtn" class="btn btn-sm text-white p-1 rounded-circle" style="opacity: 0.85;" title="Minimize">
+                    <i class="bi bi-dash-lg fs-5"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- NOTICE / EMPTY STATE (e.g. unassigned coach) -->
+        <div id="htChatNoticeBox" class="p-4 text-center my-auto d-none">
+            <div class="rounded-circle bg-dark text-warning d-inline-flex align-items-center justify-content-center mb-3 shadow" style="width: 56px; height: 56px; border: 1px solid rgba(245, 158, 11, 0.3);">
+                <i class="bi bi-exclamation-triangle-fill fs-3"></i>
+            </div>
+            <h6 class="text-white fw-bold mb-1">Chat Not Configured</h6>
+            <p id="htChatNoticeText" class="text-muted small mb-0 px-2" style="font-size: 0.82rem; line-height: 1.4;">
+                You do not have an assigned coach yet.
+            </p>
+        </div>
+
+        <!-- MESSAGES BODY (Scrollable Container) -->
+        <div id="htChatMessagesContainer" class="p-3 d-flex flex-column gap-3 flex-grow-1" 
+             style="overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; background-color: #16181d;">
+            <!-- Message bubbles rendered dynamically via JavaScript -->
+        </div>
+
+        <!-- FOOTER: Dark Pill Message Input Bar -->
+        <div id="htChatFooter" class="p-2 border-top" style="background-color: #1a1d22; border-color: rgba(255,255,255,0.06) !important;">
+            <form id="htChatForm" class="d-flex align-items-center gap-2 m-0" onsubmit="return false;">
+                @Html.AntiForgeryToken()
+                <div class="d-flex align-items-center flex-grow-1 px-3 py-1 rounded-pill" 
+                     style="background-color: #23272e; border: 1px solid rgba(255,255,255,0.12);">
+                    <input type="text" id="htChatMessageInput" 
+                           class="form-control border-0 p-0 text-white shadow-none" 
+                           style="background: transparent; font-size: 0.88rem;" 
+                           placeholder="Enter your Message..." 
+                           autocomplete="off" 
+                           maxlength="2000" />
+                </div>
+                <button type="button" id="htChatSendBtn" 
+                        class="btn rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm"
+                        style="width: 40px; height: 40px; background-color: #10b981; color: white; border: none;"
+                        title="Send Message">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- CHAT SCRIPT -->
+    <script>
+        (function () {
+            // Configuration & State
+            var isOpen = false;
+            var activeClientId = null;
+            var isTrainerRole = @(isTrainer ? "true" : "false");
+            var pollInterval = null;
+            var unreadPollInterval = null;
+            var isSending = false;
+
+            // DOM elements
+            var toggleBtn = document.getElementById("htChatToggleBtn");
+            var iconClosed = document.getElementById("htChatIconClosed");
+            var iconOpen = document.getElementById("htChatIconOpen");
+            var unreadBadge = document.getElementById("htChatUnreadBadge");
+            var chatBox = document.getElementById("htChatBox");
+            var closeHeaderBtn = document.getElementById("htChatCloseHeaderBtn");
+            var partnerName = document.getElementById("htChatPartnerName");
+            var partnerSubtitle = document.getElementById("htChatPartnerSubtitle");
+            var partnerAvatar = document.getElementById("htChatPartnerAvatar");
+            var clientSelect = document.getElementById("htChatClientSelect");
+            var noticeBox = document.getElementById("htChatNoticeBox");
+            var noticeText = document.getElementById("htChatNoticeText");
+            var messagesContainer = document.getElementById("htChatMessagesContainer");
+            var footerBox = document.getElementById("htChatFooter");
+            var messageInput = document.getElementById("htChatMessageInput");
+            var sendBtn = document.getElementById("htChatSendBtn");
+
+            // Toggle Open / Close
+            function toggleChat() {
+                isOpen = !isOpen;
+                if (isOpen) {
+                    chatBox.classList.remove("d-none");
+                    iconClosed.classList.add("d-none");
+                    iconOpen.classList.remove("d-none");
+                    loadChatState();
+                    startActivePolling();
+                    setTimeout(function () { messageInput.focus(); }, 150);
+                } else {
+                    chatBox.classList.add("d-none");
+                    iconClosed.classList.remove("d-none");
+                    iconOpen.classList.add("d-none");
+                    stopActivePolling();
+                    checkUnreadCount();
+                }
+            }
+
+            toggleBtn.addEventListener("click", toggleChat);
+            if (closeHeaderBtn) {
+                closeHeaderBtn.addEventListener("click", toggleChat);
+            }
+
+            // Client selector changed (Trainer mode)
+            if (clientSelect) {
+                clientSelect.addEventListener("change", function () {
+                    activeClientId = this.value;
+                    loadChatState(true);
+                });
+            }
+
+            // Send message triggers
+            sendBtn.addEventListener("click", submitMessage);
+            messageInput.addEventListener("keydown", function (e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    submitMessage();
+                }
+            });
+
+            // Submit Message
+            function submitMessage() {
+                var text = messageInput.value ? messageInput.value.trim() : "";
+                if (!text || isSending) return;
+
+                isSending = true;
+                messageInput.disabled = true;
+                sendBtn.disabled = true;
+
+                var antiForgeryToken = $('#htChatForm input[name="__RequestVerificationToken"]').val() || $('input[name="__RequestVerificationToken"]').val();
+                var postData = {
+                    __RequestVerificationToken: antiForgeryToken,
+                    targetClientId: activeClientId,
+                    messageText: text
+                };
+
+                $.ajax({
+                    url: "/Chat/SendMessage",
+                    type: "POST",
+                    data: postData,
+                    success: function (res) {
+                        isSending = false;
+                        messageInput.disabled = false;
+                        sendBtn.disabled = false;
+                        if (res && res.success && res.message) {
+                            messageInput.value = "";
+                            appendSingleMessage(res.message);
+                            scrollToBottom();
+                            messageInput.focus();
+                        } else {
+                            alert(res.message || "Could not send message.");
+                        }
+                    },
+                    error: function () {
+                        isSending = false;
+                        messageInput.disabled = false;
+                        sendBtn.disabled = false;
+                        alert("Network error sending message.");
+                    }
+                });
+            }
+
+            // Load Chat State from Server
+            function loadChatState(keepScroll) {
+                var url = "/Chat/GetChatState";
+                if (activeClientId) {
+                    url += "?targetClientId=" + encodeURIComponent(activeClientId);
+                }
+
+                $.ajax({
+                    url: url,
+                    type: "GET",
+                    cache: false,
+                    success: function (res) {
+                        if (!res || !res.success || !res.state) return;
+                        var st = res.state;
+
+                        // Case: Chat not configured (e.g. no assigned trainer)
+                        if (!st.IsConfigured) {
+                            noticeText.innerText = st.NoticeMessage || "Chat not available.";
+                            noticeBox.classList.remove("d-none");
+                            messagesContainer.classList.add("d-none");
+                            footerBox.classList.add("d-none");
+                            partnerName.innerText = "HealthTrack Chat";
+                            partnerSubtitle.innerText = "Messaging";
+                            return;
+                        }
+
+                        // Configured chat
+                        noticeBox.classList.add("d-none");
+                        messagesContainer.classList.remove("d-none");
+                        footerBox.classList.remove("d-none");
+
+                        // Update Partner info in header
+                        if (st.ActivePartner) {
+                            partnerName.innerText = st.ActivePartner.Name || "User";
+                            partnerSubtitle.innerText = st.ActivePartner.Subtitle || (isTrainerRole ? "Assigned Member" : "Coach");
+                            
+                            // Avatar initials
+                            var initial = st.ActivePartner.Name ? st.ActivePartner.Name.charAt(0).toUpperCase() : "?";
+                            partnerAvatar.innerHTML = initial;
+                            activeClientId = isTrainerRole ? st.ActivePartner.Id : null;
+                        }
+
+                        // Populate Trainer's client dropdown
+                        if (isTrainerRole && clientSelect && st.AvailablePartners && st.AvailablePartners.length > 0) {
+                            clientSelect.innerHTML = "";
+                            st.AvailablePartners.forEach(function (p) {
+                                var opt = document.createElement("option");
+                                opt.value = p.Id;
+                                opt.text = p.Name;
+                                if (st.ActivePartner && p.Id === st.ActivePartner.Id) {
+                                    opt.selected = true;
+                                }
+                                clientSelect.appendChild(opt);
+                            });
+                            clientSelect.classList.remove("d-none");
+                        }
+
+                        // Render messages
+                        renderMessages(st.Messages || []);
+                        if (!keepScroll) {
+                            scrollToBottom();
+                        }
+
+                        // Update badge
+                        updateBadge(st.UnreadCount || 0);
+                    }
+                });
+            }
+
+            // Render Messages List
+            function renderMessages(messages) {
+                messagesContainer.innerHTML = "";
+                if (messages.length === 0) {
+                    messagesContainer.innerHTML = '<div class="text-center py-5 text-white-50 small"><i class="bi bi-chat-dots fs-3 d-block mb-1 text-muted"></i>No messages yet. Send a message to start the conversation!</div>';
+                    return;
+                }
+
+                messages.forEach(function (m) {
+                    appendSingleMessage(m);
+                });
+            }
+
+            // Append Single Message Bubble
+            function appendSingleMessage(m) {
+                var row = document.createElement("div");
+                row.className = "d-flex flex-column " + (m.IsMine ? "align-items-end" : "align-items-start");
+
+                var bubble = document.createElement("div");
+                bubble.className = "px-3 py-2 small shadow-sm text-break";
+                bubble.style.maxWidth = "80%";
+                bubble.style.lineHeight = "1.4";
+
+                if (m.IsMine) {
+                    // Outgoing: Dark Slate Bubble (#2b3038)
+                    bubble.style.backgroundColor = "#2b3038";
+                    bubble.style.color = "#f3f4f6";
+                    bubble.style.borderRadius = "16px 16px 4px 16px";
+                } else {
+                    // Incoming: Neon Emerald Bubble (#10b981)
+                    bubble.style.backgroundColor = "#10b981";
+                    bubble.style.color = "#ffffff";
+                    bubble.style.borderRadius = "16px 16px 16px 4px";
+                }
+
+                bubble.innerText = m.MessageText;
+
+                // Timestamp & read status
+                var meta = document.createElement("div");
+                meta.className = "text-muted small mt-1 px-1";
+                meta.style.fontSize = "0.68rem";
+                meta.style.color = "#9ca3af";
+
+                var timeStr = m.TimeAgo || "just now";
+                if (m.IsMine) {
+                    var statusStr = m.IsRead ? " · Read" : " · Sent";
+                    meta.innerText = timeStr + statusStr;
+                } else {
+                    meta.innerText = timeStr;
+                }
+
+                row.appendChild(bubble);
+                row.appendChild(meta);
+                messagesContainer.appendChild(row);
+            }
+
+            function scrollToBottom() {
+                setTimeout(function () {
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }, 50);
+            }
+
+            // Unread Count Check
+            function checkUnreadCount() {
+                $.ajax({
+                    url: "/Chat/GetUnreadCount",
+                    type: "GET",
+                    cache: false,
+                    success: function (res) {
+                        if (res && typeof res.unreadCount === "number") {
+                            updateBadge(res.unreadCount);
+                        }
+                    }
+                });
+            }
+
+            function updateBadge(count) {
+                if (count > 0 && !isOpen) {
+                    unreadBadge.innerText = count > 99 ? "99+" : count;
+                    unreadBadge.classList.remove("d-none");
+                } else {
+                    unreadBadge.classList.add("d-none");
+                }
+            }
+
+            // Polling
+            function startActivePolling() {
+                stopActivePolling();
+                pollInterval = setInterval(function () {
+                    if (isOpen) {
+                        loadChatState(true);
+                    }
+                }, 3500);
+            }
+
+            function stopActivePolling() {
+                if (pollInterval) {
+                    clearInterval(pollInterval);
+                    pollInterval = null;
+                }
+            }
+
+            // Background unread count check every 10 seconds
+            unreadPollInterval = setInterval(function () {
+                if (!isOpen) {
+                    checkUnreadCount();
+                }
+            }, 10000);
+
+            // Initial unread count on page load
+            checkUnreadCount();
+        })();
+    </script>
+}

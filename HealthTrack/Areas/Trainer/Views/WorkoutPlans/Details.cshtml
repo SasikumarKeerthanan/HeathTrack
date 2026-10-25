@@ -1,0 +1,559 @@
+@model HealthTrack.Models.WorkoutPlans
+
+@{
+    ViewBag.Title = (Model.Clients != null ? Model.Clients.FullName : "Client") + " - Workout Plan Details";
+}
+
+<div class="container-fluid px-4 py-3">
+
+    <!-- Breadcrumb & Header -->
+    <nav aria-label="breadcrumb" class="mb-2">
+        <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a href="@Url.Action("Index")" class="text-decoration-none">Client Plans</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@(Model.Clients != null ? Model.Clients.FullName : "Client")</li>
+        </ol>
+    </nav>
+
+    <!-- Header Actions -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                @if (Model.IsActive)
+                {
+                    <span class="badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1">
+                        <span class="spinner-grow spinner-grow-sm" style="width: 0.35rem; height: 0.35rem;"></span> Active Plan
+                    </span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                        Archived / Completed
+                    </span>
+                }
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                    <i class="bi bi-flag me-1"></i>@Model.Goal
+                </span>
+                <span class="badge bg-light text-dark border">
+                    @Model.DifficultyLevel
+                </span>
+            </div>
+            <h2 class="h3 fw-bold mb-0 text-dark">@Model.Title</h2>
+            <p class="text-muted small mb-0">Personalized routine for <strong>@(Model.Clients != null ? Model.Clients.FullName : "Client")</strong> &bull; Assigned by @(Model.Trainers != null ? Model.Trainers.FullName : "Trainer")</p>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+            <a href="@Url.Action("Edit", new { id = Model.WorkoutPlanId })" class="btn btn-primary d-inline-flex align-items-center gap-1 shadow-sm">
+                <i class="bi bi-pencil-square"></i> Edit Routine
+            </a>
+
+            <!-- Toggle Activate/Deactivate -->
+            <form action="@Url.Action("ToggleStatus", new { id = Model.WorkoutPlanId })" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn @(Model.IsActive ? "btn-outline-warning" : "btn-outline-success")"
+                        onclick="return confirm('Change status of this workout plan for @(Model.Clients != null ? Model.Clients.FullName : "Client")?');">
+                    <i class="bi @(Model.IsActive ? "bi-pause-circle" : "bi-play-circle") me-1"></i>
+                    @(Model.IsActive ? "Archive Routine" : "Reactivate")
+                </button>
+            </form>
+
+            <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Plans
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+            <div>@TempData["SuccessMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Client & Program Specifications Summary Card -->
+    <div class="row g-4 mb-4">
+        
+        <!-- Left: Client Profile Snapshot -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                        <i class="bi bi-person-circle text-primary"></i> Client Profile Snapshot
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3 mb-3 pb-3 border-bottom">
+                        <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-3 d-flex align-items-center justify-content-center" style="width: 54px; height: 54px;">
+                            <i class="bi bi-person-fill fs-3"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold text-dark mb-0">@(Model.Clients != null ? Model.Clients.FullName : "Client")</h5>
+                            <div class="text-muted small">@(Model.Clients != null ? Model.Clients.Email : "")</div>
+                            <span class="badge bg-light text-muted border font-monospace mt-1">@Model.ClientId</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-column gap-2 small">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Assigned Coach:</span>
+                            <span class="fw-semibold text-dark">@(Model.Trainers != null ? Model.Trainers.FullName : "Trainer")</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Target Goal:</span>
+                            <span class="fw-semibold text-dark">@Model.Goal</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Level:</span>
+                            <span class="fw-semibold text-dark">@Model.DifficultyLevel</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Medical Precaution:</span>
+                            @if (!string.IsNullOrWhiteSpace((Model.Clients != null && Model.Clients.ClientHealthProfile.FirstOrDefault() != null ? Model.Clients.ClientHealthProfile.FirstOrDefault().MedicalConditions : "None")) && !(Model.Clients != null && Model.Clients.ClientHealthProfile.FirstOrDefault() != null ? Model.Clients.ClientHealthProfile.FirstOrDefault().MedicalConditions : "None").ToLower().Contains("none"))
+                            {
+                                <span class="badge bg-warning-subtle text-dark border border-warning">
+                                    <i class="bi bi-shield-exclamation me-1"></i>@(Model.Clients != null && Model.Clients.ClientHealthProfile.FirstOrDefault() != null ? Model.Clients.ClientHealthProfile.FirstOrDefault().MedicalConditions : "None")
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                    <i class="bi bi-check-circle-fill me-1"></i>None Reported
+                                </span>
+                            }
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Diet & Allergies:</span>
+                            <span class="badge bg-light text-dark border">
+                                @(string.IsNullOrWhiteSpace((Model.Clients != null && Model.Clients.ClientHealthProfile.FirstOrDefault() != null ? Model.Clients.ClientHealthProfile.FirstOrDefault().DietaryRestrictions : "Balanced")) ? "Balanced" : (Model.Clients != null && Model.Clients.ClientHealthProfile.FirstOrDefault() != null ? Model.Clients.ClientHealthProfile.FirstOrDefault().DietaryRestrictions : "Balanced")) 
+                                @(!string.IsNullOrWhiteSpace((Model.Clients != null && Model.Clients.ClientHealthProfile.FirstOrDefault() != null ? Model.Clients.ClientHealthProfile.FirstOrDefault().Allergies : "None")) && !(Model.Clients != null && Model.Clients.ClientHealthProfile.FirstOrDefault() != null ? Model.Clients.ClientHealthProfile.FirstOrDefault().Allergies : "None").ToLower().Contains("none") ? $" • Allergies: {(Model.Clients != null && Model.Clients.ClientHealthProfile.FirstOrDefault() != null ? Model.Clients.ClientHealthProfile.FirstOrDefault().Allergies : "None")}" : "")
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Schedule:</span>
+                            <span class="fw-semibold text-dark">@Model.StartDate.ToString("MMM dd, yyyy") &rarr; @Model.EndDate.ToString("MMM dd, yyyy")</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Start Time:</span>
+                            <span class="fw-semibold text-dark">
+                                @(Model.ScheduledStartTime.HasValue ? DateTime.Today.Add(Model.ScheduledStartTime.Value).ToString("hh:mm tt") : "Not Set (No Reminders)")
+                            </span>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.TrainerNotes))
+                    {
+                        <div class="mt-4 p-3 bg-light rounded-3 border-start border-4 border-info">
+                            <div class="fw-bold text-dark small mb-1"><i class="bi bi-chat-quote-fill text-info me-1"></i>Trainer's Custom Notes:</div>
+                            <p class="text-muted small mb-0">@Model.TrainerNotes</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Routine Objectives & Specs -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                        <i class="bi bi-file-earmark-text text-success"></i> Program Overview & Strategy
+                    </h5>
+                </div>
+                <div class="card-body p-4 d-flex flex-column justify-content-between">
+                    <p class="text-secondary mb-3" style="line-height: 1.6;">
+                        @Model.Description
+                    </p>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.ProgressionStrategy) || !string.IsNullOrWhiteSpace(Model.RecoveryGuidelines))
+                    {
+                        <div class="row g-2 mb-3">
+                            @if (!string.IsNullOrWhiteSpace(Model.ProgressionStrategy))
+                            {
+                                <div class="col-md-6">
+                                    <div class="p-2 px-3 bg-primary bg-opacity-10 rounded-2 border border-primary-subtle text-dark x-small">
+                                        <strong class="text-primary"><i class="bi bi-graph-up-arrow me-1"></i>Progression:</strong> @Model.ProgressionStrategy
+                                    </div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.RecoveryGuidelines))
+                            {
+                                <div class="col-md-6">
+                                    <div class="p-2 px-3 bg-success bg-opacity-10 rounded-2 border border-success-subtle text-dark x-small">
+                                        <strong class="text-success"><i class="bi bi-heart-pulse me-1"></i>Recovery:</strong> @Model.RecoveryGuidelines
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    <div class="row g-3">
+                        <div class="col-4">
+                            <div class="p-3 bg-light rounded-3 text-center">
+                                <div class="text-muted small fw-semibold text-uppercase">Duration</div>
+                                <div class="fs-4 fw-bold text-primary">@Model.DurationWeeks</div>
+                                <div class="small text-muted">Weeks Total</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-3 bg-light rounded-3 text-center">
+                                <div class="text-muted small fw-semibold text-uppercase">Frequency</div>
+                                <div class="fs-4 fw-bold text-success">@Model.DaysPerWeek</div>
+                                <div class="small text-muted">Days / Week</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-3 bg-light rounded-3 text-center">
+                                <div class="text-muted small fw-semibold text-uppercase">Exercises</div>
+                                <div class="fs-4 fw-bold text-danger">@Model.WorkoutPlanExercises.Count</div>
+                                <div class="small text-muted">Scheduled Moves</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scheduled Exercises Breakdown by Day -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                <i class="bi bi-calendar-event text-primary"></i> Prescribed Routine Schedule for @(Model.Clients != null ? Model.Clients.FullName : "Client")
+            </h5>
+            <span class="badge bg-light text-dark border">
+                @Model.WorkoutPlanExercises.Select(e => e.DayOfWeek).Distinct().Count() Training Days
+            </span>
+        </div>
+        <div class="card-body p-4">
+            @if (!Model.WorkoutPlanExercises.Any())
+            {
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                    No exercises have been scheduled for this client yet.
+                    <div class="mt-2">
+                        <a href="@Url.Action("Edit", new { id = Model.WorkoutPlanId })" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i> Add Exercises Now
+                        </a>
+                    </div>
+                </div>
+            }
+            else
+            {
+                var groupedByDay = Model.WorkoutPlanExercises.GroupBy(e => e.DayOfWeek);
+
+                <div class="row g-4">
+                    @foreach (var dayGroup in groupedByDay)
+                    {
+                        <div class="col-4">
+                            <div class="border rounded-3 h-100 overflow-hidden bg-white shadow-sm">
+                                <div class="bg-primary bg-opacity-10 px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                                    <h6 class="fw-bold text-primary mb-0 d-flex align-items-center gap-2">
+                                        <i class="bi bi-clock-history"></i> @dayGroup.Key
+                                    </h6>
+                                    <span class="badge bg-primary">@dayGroup.Count() Moves</span>
+                                </div>
+                                <div class="p-3">
+                                    <div class="d-flex flex-column gap-3">
+                                        @foreach (var exerciseItem in dayGroup)
+                                        {
+                                            <div class="p-3 bg-light rounded-2 border-start border-3 border-primary">
+                                                <div class="d-flex align-items-center gap-3 mb-1">
+                                                    @if (exerciseItem.Exercises != null && !string.IsNullOrEmpty(exerciseItem.Exercises.ImagePath))
+                                                    {
+                                                        <img src="@Url.Content(exerciseItem.Exercises.ImagePath)" alt="@exerciseItem.Exercises.Name" class="rounded-2 border flex-shrink-0 object-fit-cover" style="width: 44px; height: 44px;" 
+                                                             onerror="this.onerror=null;this.src='@Url.Content("~/Content/images/exercises/placeholder-exercise.png")';" />
+                                                    }
+                                                    <div class="flex-grow-1">
+                                                        <div class="d-flex justify-content-between align-items-start">
+                                                            <h6 class="fw-bold text-dark mb-0">@(exerciseItem.Exercises != null ? exerciseItem.Exercises.Name : "Exercise #" + exerciseItem.ExerciseId)</h6>
+                                                            <span class="badge bg-secondary-subtle text-secondary small">
+                                                                @(exerciseItem.Exercises != null ? exerciseItem.Exercises.TargetMuscle : "Body")
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="d-flex flex-wrap gap-2 my-2 small">
+                                                    <span class="badge bg-white text-dark border">
+                                                        <i class="bi bi-layers text-primary me-1"></i><strong>@exerciseItem.Sets</strong> Sets
+                                                    </span>
+                                                    @if (exerciseItem.Reps.HasValue)
+                                                    {
+                                                        <span class="badge bg-white text-dark border">
+                                                            <i class="bi bi-repeat text-success me-1"></i><strong>@exerciseItem.Reps</strong> Reps
+                                                        </span>
+                                                    }
+                                                    @if (exerciseItem.DurationMinutes.HasValue && exerciseItem.DurationMinutes > 0)
+                                                    {
+                                                        <span class="badge bg-white text-dark border">
+                                                            <i class="bi bi-stopwatch text-danger me-1"></i><strong>@exerciseItem.DurationMinutes</strong> Min
+                                                        </span>
+                                                    }
+                                                    <span class="badge bg-white text-dark border">
+                                                        <i class="bi bi-hourglass-split text-warning me-1"></i><strong>@exerciseItem.RestSeconds</strong>s Rest
+                                                    </span>
+                                                </div>
+
+                                                @if (!string.IsNullOrWhiteSpace(exerciseItem.Instructions))
+                                                {
+                                                    <p class="small text-muted mb-0 fst-italic">
+                                                        <i class="bi bi-chat-left-quote me-1 text-primary"></i> @exerciseItem.Instructions
+                                                    </p>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- ========================================================
+         WORKOUT GUIDANCE & EXERCISE LIBRARY SECTION
+         ======================================================== -->
+    <div class="mb-4">
+        <!-- Section Header -->
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="text-primary fs-4"><i class="bi bi-activity"></i></span>
+            <h4 class="h5 fw-bold mb-0 text-dark">Workout Guidance &amp; Exercise Library</h4>
+        </div>
+        <p class="text-muted small mb-3">Learn correct technique, training targets, and safety tips for every movement.</p>
+
+        <!-- Key Hypertrophy Guidelines Panel -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4 overflow-hidden">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-2 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                        <i class="bi bi-bullseye"></i>
+                    </div>
+                    <h6 class="fw-bold mb-0 text-dark">Key Hypertrophy Guidelines</h6>
+                </div>
+
+                <div class="row g-3">
+                    <!-- 1. Rep Range -->
+                    <div class="col-md-3 col-6">
+                        <div class="p-3 bg-light rounded-3 border h-100 d-flex align-items-center gap-3">
+                            <div class="text-success fs-2">
+                                <i class="bi bi-bar-chart-fill"></i>
+                            </div>
+                            <div>
+                                <div class="fs-4 fw-bold text-dark lh-1">@(!string.IsNullOrEmpty(Model.TargetRepRange) ? Model.TargetRepRange : "6 – 30")</div>
+                                <div class="small fw-semibold text-dark">reps per set</div>
+                                <div class="text-muted x-small">Effective range for hypertrophy</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Weekly Training Volume -->
+                    <div class="col-md-3 col-6">
+                        <div class="p-3 bg-light rounded-3 border h-100 d-flex align-items-center gap-3">
+                            <div class="text-primary fs-2">
+                                <i class="bi bi-stack"></i>
+                            </div>
+                            <div>
+                                <div class="fs-4 fw-bold text-dark lh-1">@(!string.IsNullOrEmpty(Model.WeeklySetVolume) ? Model.WeeklySetVolume : "10 – 20")</div>
+                                <div class="small fw-semibold text-dark">weekly sets</div>
+                                <div class="text-muted x-small">per muscle group</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Proximity to Failure -->
+                    <div class="col-md-3 col-6">
+                        <div class="p-3 bg-light rounded-3 border h-100 d-flex align-items-center gap-3">
+                            <div class="text-warning fs-2">
+                                <i class="bi bi-speedometer2"></i>
+                            </div>
+                            <div>
+                                <div class="fs-4 fw-bold text-dark lh-1">@(!string.IsNullOrEmpty(Model.RirTarget) ? Model.RirTarget : "1 – 3")</div>
+                                <div class="small fw-semibold text-dark">reps in reserve</div>
+                                <div class="text-muted x-small">Stop before complete failure</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Rest Periods -->
+                    <div class="col-md-3 col-6">
+                        <div class="p-3 bg-light rounded-3 border h-100 d-flex align-items-center gap-3">
+                            <div class="text-purple fs-2" style="color: #8b5cf6;">
+                                <i class="bi bi-stopwatch"></i>
+                            </div>
+                            <div>
+                                <div class="fs-4 fw-bold text-dark lh-1">@(!string.IsNullOrEmpty(Model.RecommendedRest) ? Model.RecommendedRest : "1 – 2.5 min")</div>
+                                <div class="small fw-semibold text-dark">rest between sets</div>
+                                <div class="text-muted x-small">Based on exercise and goal</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Note -->
+                <div class="mt-3 pt-2 text-muted x-small d-flex align-items-center gap-2 border-top">
+                    <i class="bi bi-info-circle text-primary"></i>
+                    <span>Training targets are adjustable by the trainer; use a variation appropriate to your experience and health.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exercise Guidance Cards -->
+        @if (Model.WorkoutPlanExercises.Any())
+        {
+            var distinctPlanExercises = Model.WorkoutPlanExercises
+                .GroupBy(e => e.ExerciseId)
+                .Select(g => g.First())
+                .ToList();
+
+            <div class="row g-4">
+                @foreach (var planEx in distinctPlanExercises)
+                {
+                    <div class="col-lg-6">
+                        <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+                            <!-- Card Header -->
+                            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-activity text-primary fs-5"></i>
+                                    <h5 class="fw-bold text-dark mb-0">@(planEx.Exercises != null ? planEx.Exercises.Name : "Exercise #" + planEx.ExerciseId)</h5>
+                                </div>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 fw-semibold small">
+                                    @(!string.IsNullOrEmpty(planEx.ExerciseRole) ? planEx.ExerciseRole : (!string.IsNullOrEmpty(planEx.Exercises?.Category) && planEx.Exercises.Category.Contains("Core") ? "Core Exercise" : "Primary Exercise"))
+                                </span>
+                            </div>
+
+                            <div class="card-body p-4 d-flex flex-column justify-content-between">
+                                <div>
+                                    <!-- Visual Demonstration & Key Guidance Row -->
+                                    <div class="row g-3 align-items-start mb-3">
+                                        <!-- Main Demonstration Photo -->
+                                        <div class="col-sm-5 col-12">
+                                            <div class="position-relative rounded-3 overflow-hidden shadow-sm border" style="height: 140px; background-color: #f1f5f9;">
+                                                @{
+                                                    string mainImg = planEx.Exercises != null && !string.IsNullOrEmpty(planEx.Exercises.ImagePath)
+                                                        ? planEx.Exercises.ImagePath
+                                                        : "~/Content/images/exercises/placeholder-exercise.png";
+                                                }
+                                                <img src="@Url.Content(mainImg)" alt="@(planEx.Exercises?.Name)" class="w-100 h-100 object-fit-cover"
+                                                     onerror="this.onerror=null;this.src='@Url.Content("~/Content/images/exercises/placeholder-exercise.png")';" />
+                                            </div>
+                                        </div>
+
+                                        <!-- Stage Thumbnails (START / MOVEMENT) -->
+                                        <div class="col-sm-2 col-4 d-flex flex-column gap-2">
+                                            <!-- START stage -->
+                                            <div class="position-relative rounded-2 overflow-hidden border shadow-2xs" style="height: 65px; background-color: #f8fafc;">
+                                                @{
+                                                    string startImg = planEx.Exercises != null && !string.IsNullOrEmpty(planEx.Exercises.StartImagePath)
+                                                        ? planEx.Exercises.StartImagePath
+                                                        : mainImg;
+                                                }
+                                                <img src="@Url.Content(startImg)" alt="Start Position" class="w-100 h-100 object-fit-cover"
+                                                     onerror="this.onerror=null;this.src='@Url.Content("~/Content/images/exercises/placeholder-exercise.png")';" />
+                                                <span class="position-absolute top-0 start-0 badge bg-dark bg-opacity-75 text-white" style="font-size: 0.58rem; border-bottom-right-radius: 4px; padding: 2px 4px;">START</span>
+                                            </div>
+
+                                            <!-- MOVEMENT stage -->
+                                            <div class="position-relative rounded-2 overflow-hidden border shadow-2xs" style="height: 65px; background-color: #f8fafc;">
+                                                @{
+                                                    string moveImg = planEx.Exercises != null && !string.IsNullOrEmpty(planEx.Exercises.MovementImagePath)
+                                                        ? planEx.Exercises.MovementImagePath
+                                                        : mainImg;
+                                                }
+                                                <img src="@Url.Content(moveImg)" alt="Movement Position" class="w-100 h-100 object-fit-cover"
+                                                     onerror="this.onerror=null;this.src='@Url.Content("~/Content/images/exercises/placeholder-exercise.png")';" />
+                                                <span class="position-absolute top-0 start-0 badge bg-dark bg-opacity-75 text-white" style="font-size: 0.58rem; border-bottom-right-radius: 4px; padding: 2px 4px;">MOVEMENT</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Key Guidance Checklist -->
+                                        <div class="col-sm-5 col-8 ps-2">
+                                            <div class="fw-bold text-dark small mb-2">Key Guidance</div>
+                                            <ul class="list-unstyled d-flex flex-column gap-2 mb-0 x-small text-secondary">
+                                                @{
+                                                    var guidanceLines = new List<string>();
+                                                    if (planEx.Exercises != null && !string.IsNullOrWhiteSpace(planEx.Exercises.KeyGuidance))
+                                                    {
+                                                        guidanceLines = planEx.Exercises.KeyGuidance.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                                                    }
+                                                    else if (planEx.Exercises != null && !string.IsNullOrWhiteSpace(planEx.Exercises.TipsAndPrecautions))
+                                                    {
+                                                        guidanceLines = planEx.Exercises.TipsAndPrecautions.Split(new[] { '.', ';', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                                                    }
+
+                                                    if (!guidanceLines.Any())
+                                                    {
+                                                        guidanceLines.Add("Brace your core and keep spine neutral.");
+                                                        guidanceLines.Add("Control the eccentric movement.");
+                                                        guidanceLines.Add("Drive with steady force through mid-foot.");
+                                                    }
+                                                }
+                                                @foreach (var line in guidanceLines.Take(3))
+                                                {
+                                                    <li class="d-flex align-items-start gap-2">
+                                                        <i class="bi bi-check-circle-fill text-success fs-6 flex-shrink-0 mt-n1"></i>
+                                                        <span>@line.Trim()</span>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Card Footer: Tags, Prescription Pills, View Full Guide Button -->
+                                <div class="pt-3 border-top mt-2">
+                                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                                        <!-- Muscle & Category Tag -->
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle text-uppercase fw-bold" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+                                            @(planEx.Exercises != null ? planEx.Exercises.TargetMuscle : "Target") &bull; @(planEx.Exercises != null && !string.IsNullOrEmpty(planEx.Exercises.MovementPattern) ? planEx.Exercises.MovementPattern : (planEx.Exercises != null ? planEx.Exercises.Category : "General"))
+                                        </span>
+
+                                        <!-- View Full Guide Button -->
+                                        <a href="@Url.Action("ExerciseGuide", "WorkoutPlans", new { planId = Model.WorkoutPlanId, exerciseId = planEx.ExerciseId })"
+                                           class="btn btn-primary btn-sm px-3 shadow-sm d-inline-flex align-items-center gap-1 fw-semibold">
+                                            <span>View Full Guide</span>
+                                            <i class="bi bi-arrow-right"></i>
+                                        </a>
+                                    </div>
+
+                                    <!-- Prescribed Specs (Sets, Reps, Rest) -->
+                                    <div class="d-flex flex-wrap gap-2 small">
+                                        <span class="badge bg-light text-dark border">
+                                            <i class="bi bi-layers text-primary me-1"></i><strong>@planEx.Sets</strong> Sets
+                                        </span>
+                                        @if (planEx.Reps.HasValue)
+                                        {
+                                            <span class="badge bg-light text-dark border">
+                                                <i class="bi bi-repeat text-success me-1"></i><strong>@planEx.Reps</strong> Reps
+                                            </span>
+                                        }
+                                        @if (planEx.DurationMinutes.HasValue && planEx.DurationMinutes > 0)
+                                        {
+                                            <span class="badge bg-light text-dark border">
+                                                <i class="bi bi-stopwatch text-danger me-1"></i><strong>@planEx.DurationMinutes</strong> Min
+                                            </span>
+                                        }
+                                        <span class="badge bg-light text-dark border">
+                                            <i class="bi bi-hourglass-split text-warning me-1"></i><strong>@planEx.RestSeconds</strong>s Rest
+                                        </span>
+                                    </div>
+
+                                    @if (!string.IsNullOrWhiteSpace(planEx.Instructions))
+                                    {
+                                        <div class="mt-2 text-muted x-small fst-italic">
+                                            <i class="bi bi-chat-left-quote me-1 text-primary"></i>@planEx.Instructions
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+</div>

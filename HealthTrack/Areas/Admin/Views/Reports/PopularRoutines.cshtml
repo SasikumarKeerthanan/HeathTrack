@@ -1,0 +1,301 @@
+@model HealthTrack.Areas.Admin.ViewModels.AdminPopularRoutinesReportViewModel
+@{
+    ViewBag.Title = "Popular Workout Routine Reports";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Include html2pdf -->
+<script src="@Url.Content("~/Scripts/html2pdf.bundle.min.js")"></script>
+
+<style>
+    @@media print {
+        .no-print, .desktop-sidebar, .top-app-header, .btn, form {
+            display: none !important;
+        }
+        .main-content-wrapper {
+            margin-left: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+        .card {
+            box-shadow: none !important;
+            border: 1px solid #e2e8f0 !important;
+            page-break-inside: avoid;
+        }
+    }
+</style>
+
+<div class="container-fluid py-4 px-md-4" id="reportExportArea">
+
+    <!-- REPORT SUITE SUB-NAVIGATION -->
+    <ul class="nav nav-pills gap-2 mb-4 no-print">
+        <li class="nav-item">
+            <a class="nav-link bg-light text-secondary rounded-pill px-3 py-2 fw-semibold small" href="@Url.Action("Index", "Reports", new { area = "Admin" })">
+                <i class="bi bi-speedometer2 me-1"></i> Executive Overview
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link bg-light text-secondary rounded-pill px-3 py-2 fw-semibold small" href="@Url.Action("ClientPerformance", "Reports", new { area = "Admin" })">
+                <i class="bi bi-person-fill-gear me-1"></i> Client Performance
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active bg-dark text-white rounded-pill px-3 py-2 fw-semibold small" href="@Url.Action("PopularRoutines", "Reports", new { area = "Admin" })">
+                <i class="bi bi-fire me-1 text-danger"></i> Popular Workout Routines
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link bg-light text-secondary rounded-pill px-3 py-2 fw-semibold small" href="@Url.Action("TrainerActivity", "Reports", new { area = "Admin" })">
+                <i class="bi bi-person-badge-fill me-1 text-primary"></i> Trainer Activity &amp; Engagement
+            </a>
+        </li>
+    </ul>
+
+    <!-- PAGE HEADER -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 no-print">
+        <div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge border px-2 py-1 rounded-pill small fw-semibold" style="background-color: rgba(220, 53, 69, 0.1); color: #dc3545; border-color: rgba(220, 53, 69, 0.25) !important;">
+                    <i class="bi bi-fire me-1"></i>Routine Popularity Rankings
+                </span>
+                <span class="badge bg-secondary rounded-pill px-2 py-1 small">FR-A-27 &bull; FR-A-31</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mt-2 mb-1">Popular Workout Routine Reports</h2>
+            <p class="text-muted small mb-0">
+                System-wide ranking of workout routines ordered by actual client assignment count, excluding cancelled workouts.
+            </p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <button type="button" id="btnExportPdf" onclick="exportReportToPdf()" class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-sm px-3 py-2 fw-semibold" style="border-radius: 8px; background: linear-gradient(135deg, #00A3FF 0%, #0284c7 100%); border: none;">
+                <i class="bi bi-file-earmark-pdf-fill"></i>
+                <span>Export PDF</span>
+            </button>
+            <a href="@Url.Action("ExportPopularRoutinesPdf", "Reports", new { area = "Admin", goal = Model.SelectedGoal, trainerId = Model.SelectedTrainerId, preset = Model.DatePreset, fromDate = Model.FromDate, toDate = Model.ToDate, status = Model.StatusFilter })" target="_blank" class="btn btn-outline-secondary d-inline-flex align-items-center gap-1 shadow-sm px-3 py-2 fw-semibold" style="border-radius: 8px;">
+                <i class="bi bi-printer"></i>
+                <span>Print-Ready</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- FILTER TOOLBAR -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4 no-print">
+        <div class="card-body p-3">
+            @using (Html.BeginForm("PopularRoutines", "Reports", new { area = "Admin" }, FormMethod.Get, new { @class = "row g-3 align-items-end" }))
+            {
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted mb-1">FITNESS GOAL</label>
+                    <select name="goal" class="form-select form-select-sm">
+                        @foreach (var g in Model.AvailableGoals)
+                        {
+                            <option value="@g" @(string.Equals(Model.SelectedGoal, g, StringComparison.OrdinalIgnoreCase) ? "selected" : "")>@g</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted mb-1">ASSIGNING COACH</label>
+                    <select name="trainerId" class="form-select form-select-sm">
+                        @foreach (var t in Model.AvailableTrainers)
+                        {
+                            <option value="@t.Value" @(t.Selected ? "selected" : "")>@t.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted mb-1">ASSIGNMENT STATUS</label>
+                    <select name="status" class="form-select form-select-sm">
+                        <option value="active" @(Model.StatusFilter == "active" ? "selected" : "")>Active Only (Default)</option>
+                        <option value="all" @(Model.StatusFilter == "all" ? "selected" : "")>All (Incl. Inactive)</option>
+                        <option value="cancelled" @(Model.StatusFilter == "cancelled" ? "selected" : "")>Cancelled / Inactive Only</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted mb-1">TIMEFRAME</label>
+                    <select name="preset" class="form-select form-select-sm">
+                        <option value="all" @(Model.DatePreset == "all" ? "selected" : "")>All Time</option>
+                        <option value="30days" @(Model.DatePreset == "30days" ? "selected" : "")>Last 30 Days</option>
+                        <option value="90days" @(Model.DatePreset == "90days" ? "selected" : "")>Last 90 Days</option>
+                        <option value="year" @(Model.DatePreset == "year" ? "selected" : "")>Past Year</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-sm btn-dark w-100 py-1 fw-semibold">
+                        <i class="bi bi-funnel-fill me-1"></i>Apply Filters
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- METRIC SUMMARY CARDS -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 h-100 border-start border-4 border-danger">
+                <div class="text-muted small fw-semibold">UNIQUE ROUTINES</div>
+                <div class="h3 fw-bold text-dark mb-0 mt-1">@Model.TotalUniqueRoutines</div>
+                <div class="small text-muted mt-1">Distinct workout programs</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 h-100 border-start border-4 border-primary">
+                <div class="text-muted small fw-semibold">TOTAL ASSIGNMENTS</div>
+                <div class="h3 fw-bold text-primary mb-0 mt-1">@Model.TotalValidAssignments</div>
+                <div class="small text-muted mt-1">Plan allocations to clients</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 h-100 border-start border-4 border-success">
+                <div class="text-muted small fw-semibold">CLIENTS SERVED</div>
+                <div class="h3 fw-bold text-success mb-0 mt-1">@Model.TotalClientsServed</div>
+                <div class="small text-muted mt-1">Unique members assigned</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 h-100 border-start border-4 border-warning">
+                <div class="text-muted small fw-semibold">#1 TOP RANKED ROUTINE</div>
+                <div class="h4 fw-bold text-dark text-truncate mb-0 mt-1" title="@Model.TopRoutineTitle">@Model.TopRoutineTitle</div>
+                <div class="small text-muted mt-1"><strong>@Model.TopRoutineAssignments</strong> client assignments</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- POPULAR ROUTINES RANKING TABLE -->
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+            <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-trophy-fill text-warning"></i>Popular Workout Routines by Client Assignment Count
+            </h5>
+            <span class="badge bg-light text-dark border">@Model.RankedRoutines.Count Routines Ranked</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-muted small text-uppercase">
+                    <tr>
+                        <th class="ps-4" style="width: 80px;">Rank</th>
+                        <th>Routine Title</th>
+                        <th>Primary Goal</th>
+                        <th>Difficulty Level</th>
+                        <th>Program Schedule</th>
+                        <th class="text-center">Assignment Count</th>
+                        <th class="text-center">Unique Clients</th>
+                        <th class="text-end pe-4">Latest Assignment</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.RankedRoutines == null || !Model.RankedRoutines.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="bi bi-journal-x fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                <span class="fw-semibold">No valid workout assignments found for the selected criteria.</span>
+                                <div class="small">Try adjusting your goal, coach, or date-range filters.</div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var item in Model.RankedRoutines)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    @if (item.Rank == 1)
+                                    {
+                                        <span class="badge bg-warning text-dark fw-bold rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                            <i class="bi bi-trophy-fill"></i>
+                                        </span>
+                                    }
+                                    else if (item.Rank == 2)
+                                    {
+                                        <span class="badge bg-secondary text-white fw-bold rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                            2
+                                        </span>
+                                    }
+                                    else if (item.Rank == 3)
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                            3
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-muted border rounded-circle p-2 d-inline-flex align-items-center justify-content-center font-monospace" style="width: 32px; height: 32px;">
+                                            @item.Rank
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-dark fs-6">@item.RoutineTitle</div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-primary border">
+                                        <i class="bi bi-bullseye me-1"></i>@item.Goal
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-secondary border">
+                                        @item.DifficultyLevel
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="small text-dark">
+                                        <strong>@item.DurationWeeks</strong> weeks &bull; <strong>@item.DaysPerWeek</strong> days/wk
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-6 px-3 py-1 fw-bold">
+                                        @item.TotalAssignments
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="fw-semibold text-dark">@item.UniqueClientsCount</span>
+                                </td>
+                                <td class="text-end pe-4 text-muted small">
+                                    @(item.LatestAssignedDate.HasValue ? item.LatestAssignedDate.Value.ToString("MMM dd, yyyy") : "N/A")
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function exportReportToPdf() {
+        var btn = document.getElementById('btnExportPdf');
+        var originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Exporting...';
+
+        var element = document.getElementById('reportExportArea');
+        var opt = {
+            margin: [8, 8, 8, 8],
+            filename: 'HealthTrack_PopularWorkoutRoutines.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff' },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+
+        if (typeof html2pdf !== 'undefined') {
+            html2pdf().set(opt).from(element).save().then(function () {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }).catch(function (err) {
+                console.error('PDF error:', err);
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                window.print();
+            });
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            window.print();
+        }
+    }
+</script>

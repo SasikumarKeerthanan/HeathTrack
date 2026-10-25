@@ -1,0 +1,21 @@
+@{
+    ViewBag.Title = "HealthTrack";
+}
+
+<div class="container-fluid px-4 py-4 text-center">
+    <div class="p-5 mb-4 bg-light rounded-3 shadow-sm">
+        <h1 class="display-5 fw-bold text-dark"><i class="bi bi-activity text-primary me-2"></i>HealthTrack</h1>
+        <p class="col-md-8 fs-4 mx-auto text-muted">Fitness, Workout & Diet Management System</p>
+        <div class="d-flex justify-content-center gap-2 mt-4 flex-wrap">
+            <a href="@Url.Action("Login", "Account", new { area = "Client" })" class="btn btn-primary btn-lg">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Client Sign In
+            </a>
+            <a href="@Url.Action("Register", "Account", new { area = "Client" })" class="btn btn-success btn-lg">
+                <i class="bi bi-person-plus-fill me-1"></i> Register as Client
+            </a>
+            <a href="@Url.Action("Index", "Dashboard", new { area = "Client" })" class="btn btn-outline-secondary btn-lg">
+                <i class="bi bi-speedometer2 me-1"></i> Client Dashboard
+            </a>
+        </div>
+    </div>
+</div>

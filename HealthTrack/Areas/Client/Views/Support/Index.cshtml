@@ -1,0 +1,363 @@
+@model HealthTrack.Areas.Client.ViewModels.ClientSupportIndexViewModel
+@{
+    ViewBag.Title = "Customer Support & Helpdesk";
+}
+
+<div class="container-fluid px-4 py-3">
+
+    <!-- Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center shadow-sm rounded-3 mb-4" role="alert">
+            <i class="bi bi-check-circle-fill fs-5 me-2"></i>
+            <div>@TempData["SuccessMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center shadow-sm rounded-3 mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+            <div>@TempData["ErrorMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Header Section (Clean, without heavy background) -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="h3 fw-bold text-dark mb-1">Customer Support &amp; Helpdesk</h2>
+            <p class="text-muted small mb-0">Submit inquiries, report technical issues, and track responses from our support team.</p>
+        </div>
+        <div class="mt-2 mt-sm-0">
+            <button type="button" class="btn btn-primary shadow-sm d-inline-flex align-items-center gap-2 px-3 py-2" data-bs-toggle="modal" data-bs-target="#newTicketModal">
+                <i class="bi bi-plus-circle-fill"></i>
+                <span class="fw-semibold">New Support Ticket</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- KPI Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-medium">Total Tickets</div>
+                        <div class="h4 fw-bold mb-0 text-dark">@Model.TotalTicketsCount</div>
+                    </div>
+                    <div class="rounded-3 bg-light text-primary p-2 fs-4">
+                        <i class="bi bi-ticket-detailed"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-medium">Open Tickets</div>
+                        <div class="h4 fw-bold mb-0 text-primary">@Model.OpenTicketsCount</div>
+                    </div>
+                    <div class="rounded-3 bg-primary bg-opacity-10 text-primary p-2 fs-4">
+                        <i class="bi bi-envelope-open"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-medium">In Progress</div>
+                        <div class="h4 fw-bold mb-0 text-warning">@Model.InProgressTicketsCount</div>
+                    </div>
+                    <div class="rounded-3 bg-warning bg-opacity-10 text-warning p-2 fs-4">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-medium">Resolved</div>
+                        <div class="h4 fw-bold mb-0 text-success">@Model.ResolvedTicketsCount</div>
+                    </div>
+                    <div class="rounded-3 bg-success bg-opacity-10 text-success p-2 fs-4">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body p-3">
+            <form method="get" action="@Url.Action("Index", "Support", new { area = "Client" })" class="row g-2 align-items-center">
+                <div class="col-12 col-md-auto d-flex flex-wrap gap-1">
+                    <a href="@Url.Action("Index", "Support", new { area = "Client", status = "All", search = Model.SearchTerm })" 
+                       class="btn btn-sm @(Model.SelectedStatus == "All" ? "btn-primary" : "btn-light text-secondary border")">
+                        All (@Model.TotalTicketsCount)
+                    </a>
+                    <a href="@Url.Action("Index", "Support", new { area = "Client", status = "Open", search = Model.SearchTerm })" 
+                       class="btn btn-sm @(Model.SelectedStatus == "Open" ? "btn-primary" : "btn-light text-secondary border")">
+                        Open (@Model.OpenTicketsCount)
+                    </a>
+                    <a href="@Url.Action("Index", "Support", new { area = "Client", status = "In Progress", search = Model.SearchTerm })" 
+                       class="btn btn-sm @(Model.SelectedStatus == "In Progress" ? "btn-primary" : "btn-light text-secondary border")">
+                        In Progress (@Model.InProgressTicketsCount)
+                    </a>
+                    <a href="@Url.Action("Index", "Support", new { area = "Client", status = "Resolved", search = Model.SearchTerm })" 
+                       class="btn btn-sm @(Model.SelectedStatus == "Resolved" ? "btn-primary" : "btn-light text-secondary border")">
+                        Resolved (@Model.ResolvedTicketsCount)
+                    </a>
+                </div>
+
+                <div class="col-12 col-md d-flex justify-content-md-end gap-2 mt-2 mt-md-0">
+                    <input type="hidden" name="status" value="@Model.SelectedStatus" />
+                    <div class="input-group input-group-sm" style="max-width: 320px;">
+                        <input type="text" name="search" class="form-control" placeholder="Search by subject, issue..." value="@Model.SearchTerm" />
+                        <button class="btn btn-outline-secondary" type="submit">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.SearchTerm))
+                    {
+                        <a href="@Url.Action("Index", "Support", new { area = "Client", status = Model.SelectedStatus })" class="btn btn-sm btn-outline-danger" title="Clear Search">
+                            <i class="bi bi-x-lg"></i>
+                        </a>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tickets Table / List -->
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+        <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+            <h5 class="fw-bold mb-0 text-dark">My Support Tickets</h5>
+            <span class="badge bg-light text-dark border">@Model.Tickets.Count Ticket@(Model.Tickets.Count == 1 ? "" : "s")</span>
+        </div>
+
+        @if (!Model.Tickets.Any())
+        {
+            <div class="p-5 text-center">
+                <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
+                    <i class="bi bi-inbox text-muted fs-2"></i>
+                </div>
+                <h6 class="fw-bold text-dark">No Support Tickets Found</h6>
+                <p class="text-muted small mb-3">You currently have no support requests matching your criteria.</p>
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#newTicketModal">
+                    <i class="bi bi-plus-circle me-1"></i> Submit a Ticket
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="text-secondary small">
+                            <th scope="col" style="width: 90px;">ID</th>
+                            <th scope="col">Subject &amp; Category</th>
+                            <th scope="col" style="width: 110px;">Priority</th>
+                            <th scope="col" style="width: 130px;">Status</th>
+                            <th scope="col" style="width: 180px;">Submitted</th>
+                            <th scope="col" class="text-end" style="width: 150px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var ticket in Model.Tickets)
+                        {
+                            var priorityClass = "bg-secondary";
+                            if (ticket.Priority == "Urgent") { priorityClass = "bg-danger"; }
+                            else if (ticket.Priority == "High") { priorityClass = "bg-warning text-dark"; }
+                            else if (ticket.Priority == "Medium") { priorityClass = "bg-info text-dark"; }
+                            else if (ticket.Priority == "Low") { priorityClass = "bg-secondary"; }
+
+                            var statusClass = "bg-primary";
+                            if (ticket.Status == "In Progress") { statusClass = "bg-warning text-dark"; }
+                            else if (ticket.Status == "Resolved" || ticket.Status == "Closed") { statusClass = "bg-success"; }
+
+                            <tr>
+                                <td>
+                                    <span class="fw-bold text-primary">#@ticket.TicketId</span>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">@ticket.Subject</div>
+                                    <div class="text-muted small">
+                                        <i class="bi bi-tag me-1"></i>@ticket.Category
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge @priorityClass rounded-pill px-2 py-1">@ticket.Priority</span>
+                                </td>
+                                <td>
+                                    <span class="badge @statusClass rounded-pill px-2 py-1">@ticket.Status</span>
+                                </td>
+                                <td>
+                                    <div class="small text-dark">@ticket.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</div>
+                                    <div class="text-muted" style="font-size: 0.78rem;">@ticket.CreatedAt.ToLocalTime().ToString("hh:mm tt")</div>
+                                </td>
+                                <td class="text-end">
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#ticketDetailsModal-@ticket.TicketId">
+                                        <i class="bi bi-eye"></i>
+                                        <span>View Details</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- ========================================================
+     MODAL: NEW SUPPORT TICKET
+     ======================================================== -->
+<div class="modal fade" id="newTicketModal" tabindex="-1" aria-labelledby="newTicketModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            @using (Html.BeginForm("Create", "Support", new { area = "Client" }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold" id="newTicketModalLabel">
+                        <i class="bi bi-headset me-2"></i>Create New Support Ticket
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">Subject <span class="text-danger">*</span></label>
+                        <input type="text" name="Subject" class="form-control" placeholder="Brief summary of your question or issue" required maxlength="200" />
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark">Category <span class="text-danger">*</span></label>
+                            <select name="Category" class="form-select" required>
+                                <option value="" disabled selected>-- Select Category --</option>
+                                <option value="Technical Issue">Technical Issue</option>
+                                <option value="Billing & Membership">Billing &amp; Membership</option>
+                                <option value="Workout & Diet Inquiry">Workout &amp; Diet Inquiry</option>
+                                <option value="Coach Feedback">Coach Feedback</option>
+                                <option value="General Question">General Question</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark">Priority <span class="text-danger">*</span></label>
+                            <select name="Priority" class="form-select" required>
+                                <option value="Low">Low</option>
+                                <option value="Medium" selected>Medium</option>
+                                <option value="High">High</option>
+                                <option value="Urgent">Urgent</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold text-dark">Description <span class="text-danger">*</span></label>
+                        <textarea name="Description" class="form-control" rows="5" placeholder="Please explain your question or issue in detail..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-send-fill me-1"></i> Submit Ticket
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================
+     MODALS: VIEW TICKET DETAILS & RESPONSE (For Each Ticket)
+     ======================================================== -->
+@foreach (var ticket in Model.Tickets)
+{
+    var priorityClass = "bg-secondary";
+    if (ticket.Priority == "Urgent") { priorityClass = "bg-danger"; }
+    else if (ticket.Priority == "High") { priorityClass = "bg-warning text-dark"; }
+    else if (ticket.Priority == "Medium") { priorityClass = "bg-info text-dark"; }
+
+    var statusClass = "bg-primary";
+    if (ticket.Status == "In Progress") { statusClass = "bg-warning text-dark"; }
+    else if (ticket.Status == "Resolved" || ticket.Status == "Closed") { statusClass = "bg-success"; }
+
+    <div class="modal fade" id="ticketDetailsModal-@ticket.TicketId" tabindex="-1" aria-labelledby="detailsModalLabel-@ticket.TicketId" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-light border-bottom">
+                    <div>
+                        <span class="badge @statusClass rounded-pill me-2">@ticket.Status</span>
+                        <span class="badge @priorityClass rounded-pill me-2">@ticket.Priority Priority</span>
+                        <span class="text-muted small">Ticket #@ticket.TicketId</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <h5 class="fw-bold text-dark mb-1">@ticket.Subject</h5>
+                    <div class="text-muted small mb-3">
+                        <span><i class="bi bi-tag me-1"></i>@ticket.Category</span>
+                        <span class="mx-2">•</span>
+                        <span><i class="bi bi-clock me-1"></i>Submitted on @ticket.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy, hh:mm tt")</span>
+                    </div>
+
+                    <div class="card border bg-light bg-opacity-50 rounded-3 mb-4">
+                        <div class="card-body">
+                            <h6 class="fw-semibold text-secondary small text-uppercase mb-2">My Request Details</h6>
+                            <p class="mb-0 text-dark" style="white-space: pre-wrap;">@ticket.Description</p>
+                        </div>
+                    </div>
+
+                    <!-- Admin Response Section -->
+                    <div class="border rounded-3 p-3 @(!string.IsNullOrWhiteSpace(ticket.AdminResponse) ? "border-success bg-success bg-opacity-10" : "bg-light")">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-shield-check @(!string.IsNullOrWhiteSpace(ticket.AdminResponse) ? "text-success" : "text-muted") fs-5"></i>
+                                <span class="fw-bold text-dark">Staff Response &amp; Resolution</span>
+                            </div>
+                            @if (ticket.ResolvedAt.HasValue)
+                            {
+                                <span class="badge bg-success-subtle text-success border border-success-subtle small">
+                                    Resolved on @ticket.ResolvedAt.Value.ToLocalTime().ToString("MMM dd, yyyy, hh:mm tt")
+                                </span>
+                            }
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(ticket.AdminResponse))
+                        {
+                            <p class="mb-0 text-dark" style="white-space: pre-wrap;">@ticket.AdminResponse</p>
+                            if (ticket.UpdatedAt.HasValue && !ticket.ResolvedAt.HasValue)
+                            {
+                                <div class="text-muted small mt-2">
+                                    <i class="bi bi-pencil-square me-1"></i>Updated on @ticket.UpdatedAt.Value.ToLocalTime().ToString("MMM dd, yyyy, hh:mm tt")
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-muted small py-2 d-flex align-items-center gap-2">
+                                <i class="bi bi-hourglass text-warning"></i>
+                                <span>Our support staff is currently reviewing your request. Please check back shortly for updates.</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}

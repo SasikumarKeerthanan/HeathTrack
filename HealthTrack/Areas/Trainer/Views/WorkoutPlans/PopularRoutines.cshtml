@@ -1,0 +1,422 @@
+@model HealthTrack.Areas.Trainer.ViewModels.PopularRoutinesReportViewModel
+
+@{
+    ViewBag.Title = "Popular Workout Routines Report";
+}
+
+<div class="container-fluid px-4 py-3">
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Dashboard", new { area = "Trainer" })" class="text-decoration-none">
+                    <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "WorkoutPlans", new { area = "Trainer" })" class="text-decoration-none">
+                    <i class="bi bi-card-checklist me-1"></i>Workout Plans
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                Popular Workout Routines
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Header & Action Row -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                    <i class="bi bi-trophy-fill me-1"></i>FR-T-49
+                </span>
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                    <i class="bi bi-check-circle-fill me-1"></i>Workout Analytics
+                </span>
+            </div>
+            <h2 class="h3 fw-bold mb-0 text-dark">Popular Workout Routines Report</h2>
+            <p class="text-muted small mb-0">Ranking workout routines by client assignment count to evaluate program popularity and adoption</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("Index")" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2 shadow-sm">
+                <i class="bi bi-arrow-left"></i>
+                <span>Workout Plans</span>
+            </a>
+            <a href="@Url.Action("Create")" class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-sm">
+                <i class="bi bi-plus-circle-fill"></i>
+                <span>Create Plan for Client</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+            <div>@TempData["SuccessMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-5 text-danger"></i>
+            <div>@TempData["ErrorMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Stat Summary KPI Cards -->
+    <div class="row g-3 mb-4">
+        <!-- 1. Total Distinct Routines -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-3 me-3 d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                        <i class="bi bi-collection-play fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small text-uppercase fw-semibold">Distinct Routines</div>
+                        <h3 class="fw-bold mb-0 text-dark">@Model.TotalUniqueRoutines</h3>
+                        <span class="text-muted x-small">In training catalog</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Total Valid Assignments -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle bg-success bg-opacity-10 text-success p-3 me-3 d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                        <i class="bi bi-clipboard2-check fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small text-uppercase fw-semibold">Valid Assignments</div>
+                        <h3 class="fw-bold mb-0 text-success">@Model.TotalValidAssignments</h3>
+                        <span class="text-muted x-small">Excluded cancelled</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Clients Served -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle bg-info bg-opacity-10 text-info p-3 me-3 d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                        <i class="bi bi-people fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small text-uppercase fw-semibold">Clients Enrolled</div>
+                        <h3 class="fw-bold mb-0 text-dark">@Model.TotalClientsServed</h3>
+                        <span class="text-muted x-small">Active client recipients</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Top Performing Routine -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle bg-warning bg-opacity-10 text-warning p-3 me-3 d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                        <i class="bi bi-star-fill fs-4"></i>
+                    </div>
+                    <div class="overflow-hidden">
+                        <div class="text-muted small text-uppercase fw-semibold">#1 Most Popular</div>
+                        <h4 class="fw-bold mb-0 text-dark text-truncate" title="@Model.TopRoutineTitle">@Model.TopRoutineTitle</h4>
+                        <span class="text-muted x-small">
+                            @(Model.TopRoutineAssignments > 0 ? $"{Model.TopRoutineAssignments} total assignments" : "No assignments yet")
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter & Options Card -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
+        <div class="card-body p-3">
+            <form method="get" action="@Url.Action("PopularRoutines")" class="row g-3 align-items-end" id="routineFilterForm">
+                
+                <!-- Status Filter -->
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-semibold text-muted mb-1">
+                        <i class="bi bi-funnel me-1"></i>Assignment Status
+                    </label>
+                    <select name="status" class="form-select form-select-sm bg-light">
+                        <option value="active" @(Model.StatusFilter == "active" ? "selected" : "")>Valid Assignments (Active Only)</option>
+                        <option value="all" @(Model.StatusFilter == "all" ? "selected" : "")>All Assignments (Active + Deactivated)</option>
+                        <option value="cancelled" @(Model.StatusFilter == "cancelled" ? "selected" : "")>Cancelled / Inactive Only</option>
+                    </select>
+                </div>
+
+                <!-- Goal Filter -->
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-semibold text-muted mb-1">
+                        <i class="bi bi-bullseye me-1"></i>Goal / Focus
+                    </label>
+                    <select name="goal" class="form-select form-select-sm bg-light">
+                        <option value="">All Goals</option>
+                        @foreach (var g in Model.AvailableGoals.Where(x => x != "All Goals"))
+                        {
+                            <option value="@g" @(Model.SelectedGoal == g ? "selected" : "")>@g</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Date Range Preset -->
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-semibold text-muted mb-1">
+                        <i class="bi bi-calendar-range me-1"></i>Date Preset
+                    </label>
+                    <select name="preset" class="form-select form-select-sm bg-light" id="presetSelect" onchange="toggleCustomDates()">
+                        <option value="all" @(Model.DatePreset == "all" ? "selected" : "")>All Time</option>
+                        <option value="30days" @(Model.DatePreset == "30days" ? "selected" : "")>Last 30 Days</option>
+                        <option value="90days" @(Model.DatePreset == "90days" ? "selected" : "")>Last 90 Days</option>
+                        <option value="7days" @(Model.DatePreset == "7days" ? "selected" : "")>Last 7 Days</option>
+                        <option value="custom" @(Model.DatePreset == "custom" ? "selected" : "")>Custom Date Range</option>
+                    </select>
+                </div>
+
+                <!-- Actions -->
+                <div class="col-12 col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1 shadow-sm d-inline-flex align-items-center justify-content-center gap-1">
+                        <i class="bi bi-search"></i>
+                        <span>Apply Filter</span>
+                    </button>
+                    <a href="@Url.Action("PopularRoutines")" class="btn btn-outline-secondary btn-sm shadow-sm" title="Reset Filters">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </a>
+                </div>
+
+                <!-- Custom Date Inputs (Collapsible if custom selected) -->
+                <div class="col-12" id="customDateRow" style="display: @(Model.DatePreset == "custom" ? "block" : "none");">
+                    <div class="row g-2 pt-2 border-top">
+                        <div class="col-12 col-sm-6 col-md-3">
+                            <label class="form-label x-small text-muted mb-1">From Date</label>
+                            <input type="date" name="fromDate" class="form-control form-control-sm" value="@(Model.FromDate?.ToString("yyyy-MM-dd"))" />
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-3">
+                            <label class="form-label x-small text-muted mb-1">To Date</label>
+                            <input type="date" name="toDate" class="form-control form-control-sm" value="@(Model.ToDate?.ToString("yyyy-MM-dd"))" />
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Report Ranking Table Card -->
+    <div class="card border-0 shadow-sm rounded-3 bg-white overflow-hidden mb-4">
+        <div class="card-header bg-white py-3 px-4 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div>
+                <h5 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-bar-chart-line-fill text-primary me-2"></i>Workout Routine Popularity Ranking
+                </h5>
+                <span class="text-muted small">
+                    Routines ordered by total valid client assignments (highest to lowest)
+                </span>
+            </div>
+            <div>
+                <span class="badge bg-light text-secondary border px-2 py-1">
+                    @Model.RankedRoutines.Count Routine@(Model.RankedRoutines.Count == 1 ? "" : "s") Listed
+                </span>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            @if (Model.RankedRoutines.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light text-uppercase text-muted small">
+                            <tr>
+                                <th class="text-center" style="width: 80px;">Rank</th>
+                                <th>Workout Routine Name</th>
+                                <th>Primary Goal</th>
+                                <th>Difficulty</th>
+                                <th>Program Structure</th>
+                                <th class="text-center">Unique Clients</th>
+                                <th class="text-center" style="min-width: 150px;">Valid Assignments</th>
+                                <th class="text-end pe-4">Latest Assignment</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int maxAssignments = Model.RankedRoutines.Max(r => r.TotalAssignments);
+                                if (maxAssignments == 0) { maxAssignments = 1; }
+                            }
+                            @foreach (var routine in Model.RankedRoutines)
+                            {
+                                int pct = (int)Math.Round((double)routine.TotalAssignments / maxAssignments * 100);
+                                <tr>
+                                    <!-- Rank with visual badge -->
+                                    <td class="text-center">
+                                        @if (routine.Rank == 1)
+                                        {
+                                            <span class="badge rounded-pill bg-warning text-dark px-3 py-2 fw-bold shadow-sm" title="Rank 1 - Most Popular">
+                                                <i class="bi bi-trophy-fill me-1"></i>#1
+                                            </span>
+                                        }
+                                        else if (routine.Rank == 2)
+                                        {
+                                            <span class="badge rounded-pill bg-secondary bg-opacity-75 text-white px-3 py-2 fw-bold shadow-sm" title="Rank 2">
+                                                <i class="bi bi-award-fill me-1"></i>#2
+                                            </span>
+                                        }
+                                        else if (routine.Rank == 3)
+                                        {
+                                            <span class="badge rounded-pill bg-danger bg-opacity-75 text-white px-3 py-2 fw-bold shadow-sm" title="Rank 3">
+                                                <i class="bi bi-award me-1"></i>#3
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge rounded-pill bg-light text-secondary border px-3 py-2 fw-semibold">
+                                                #@routine.Rank
+                                            </span>
+                                        }
+                                    </td>
+
+                                    <!-- Routine Title -->
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                                                <i class="bi bi-lightning-charge-fill"></i>
+                                            </div>
+                                            <div>
+                                                <span class="fw-bold text-dark fs-6 d-block">@routine.RoutineTitle</span>
+                                                <span class="text-muted x-small">Structured Routine</span>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <!-- Goal -->
+                                    <td>
+                                        @{
+                                            string goalBadge = "bg-primary-subtle text-primary border-primary-subtle";
+                                            if (routine.Goal.Contains("Weight")) { goalBadge = "bg-success-subtle text-success border-success-subtle"; }
+                                            else if (routine.Goal.Contains("Muscle") || routine.Goal.Contains("Strength")) { goalBadge = "bg-danger-subtle text-danger border-danger-subtle"; }
+                                            else if (routine.Goal.Contains("Endurance")) { goalBadge = "bg-warning-subtle text-warning border-warning-subtle"; }
+                                        }
+                                        <span class="badge @goalBadge border px-2 py-1">
+                                            @routine.Goal
+                                        </span>
+                                    </td>
+
+                                    <!-- Difficulty -->
+                                    <td>
+                                        <span class="badge bg-light text-dark border px-2 py-1">
+                                            <i class="bi bi-bar-chart-fill me-1 text-muted"></i>@routine.DifficultyLevel
+                                        </span>
+                                    </td>
+
+                                    <!-- Program Structure -->
+                                    <td>
+                                        <span class="small text-muted d-block">
+                                            <i class="bi bi-calendar3 me-1"></i>@(routine.DurationWeeks > 0 ? $"{routine.DurationWeeks} Weeks" : "Flexible")
+                                        </span>
+                                        <span class="x-small text-muted">
+                                            <i class="bi bi-repeat me-1"></i>@(routine.DaysPerWeek > 0 ? $"{routine.DaysPerWeek} Days/Week" : "Custom Schedule")
+                                        </span>
+                                    </td>
+
+                                    <!-- Unique Clients -->
+                                    <td class="text-center">
+                                        <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 fs-7">
+                                            <i class="bi bi-person-fill me-1"></i>@routine.UniqueClientsCount
+                                        </span>
+                                    </td>
+
+                                    <!-- Total Valid Assignments (Primary Ranking Metric) -->
+                                    <td class="text-center">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <span class="fs-5 fw-bold text-success mb-1">
+                                                @routine.TotalAssignments
+                                                <span class="fs-7 text-muted fw-normal">assignment@(routine.TotalAssignments == 1 ? "" : "s")</span>
+                                            </span>
+                                            <div class="progress w-75" style="height: 6px;">
+                                                <div class="progress-bar bg-success rounded-pill" role="progressbar" style="width: @pct%;" aria-valuenow="@pct" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <!-- Latest Assignment Date -->
+                                    <td class="text-end pe-4">
+                                        @if (routine.LatestAssignedDate.HasValue)
+                                        {
+                                            <span class="small text-dark fw-semibold d-block">
+                                                @routine.LatestAssignedDate.Value.ToString("MMM dd, yyyy")
+                                            </span>
+                                            <span class="x-small text-muted">
+                                                @routine.LatestAssignedDate.Value.ToString("hh:mm tt")
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">--</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <!-- Empty-State Message (Requirement A.6) -->
+                <div class="text-center py-5 px-3">
+                    <div class="rounded-circle bg-light d-inline-flex p-4 mb-3 text-muted">
+                        <i class="bi bi-bar-chart-steps fs-1"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-1">No Workout Routine Assignments Found</h5>
+                    <p class="text-muted small mb-3" style="max-width: 480px; margin: 0 auto;">
+                        No valid routine assignments match your active filter criteria. Once you assign workout routines to your clients, the popularity ranking will automatically be calculated and displayed here.
+                    </p>
+                    <div class="d-flex justify-content-center gap-2">
+                        <a href="@Url.Action("PopularRoutines")" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>Clear Filters
+                        </a>
+                        <a href="@Url.Action("Create")" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i>Create New Plan
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Informational Card / Calculation Transparency (FR-T-49 Rules) -->
+    <div class="card border-0 bg-light rounded-3 shadow-sm p-3">
+        <div class="d-flex align-items-start gap-3">
+            <i class="bi bi-info-circle-fill text-primary fs-4 mt-1"></i>
+            <div>
+                <h6 class="fw-bold text-dark mb-1">About the Popular Workout Routines Report (FR-T-49)</h6>
+                <p class="text-muted small mb-0">
+                    <strong>Ranking Formula:</strong> Popularity is strictly defined as the total number of valid workout routine assignments to clients made by the authenticated trainer.
+                    Assignments are grouped by routine name and ranked in descending order. When assignment counts are equal, routines are sorted alphabetically.
+                    Cancelled or deactivated routine assignments are excluded from the default ranking. Individual exercise counts, ratings, and workout completion logs are intentionally excluded to ensure an unbiased measure of routine adoption.
+                </p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function toggleCustomDates() {
+        var preset = document.getElementById("presetSelect").value;
+        var customRow = document.getElementById("customDateRow");
+        if (preset === "custom") {
+            customRow.style.display = "block";
+        } else {
+            customRow.style.display = "none";
+        }
+    }
+</script>

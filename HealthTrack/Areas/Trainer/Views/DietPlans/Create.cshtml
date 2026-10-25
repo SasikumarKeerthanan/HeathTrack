@@ -1,0 +1,954 @@
+@model HealthTrack.Areas.Trainer.ViewModels.DietPlanFormViewModel
+
+@{
+    ViewBag.Title = "Create Client Diet Plan";
+}
+
+<div class="container-fluid px-4 py-3">
+
+    <!-- Breadcrumb & Header -->
+    <nav aria-label="breadcrumb" class="mb-2">
+        <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a href="@Url.Action("Index", "DietPlans")" class="text-decoration-none">Diet Plans</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Create Diet Plan</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="h3 fw-bold mb-0 text-dark">Build Client Nutrition Plan</h2>
+            <p class="text-muted small mb-0">Select an assigned client, configure their daily caloric targets, and design scheduled meals</p>
+        </div>
+        <a href="@Url.Action("Index", "DietPlans")" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Plans
+        </a>
+    </div>
+
+    <form action="@Url.Action("Create", "DietPlans")" method="post" id="dietPlanForm" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger shadow-sm mb-4" })
+
+        <div class="row g-4">
+
+            <!-- Left Column: Client, Strategy & Caloric Targets -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                            <i class="bi bi-person-fill text-warning"></i> Client & Nutritional Goals
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+
+                        <!-- Client Selection -->
+                        <div class="mb-3">
+                            <label for="clientSelect" class="form-label fw-semibold">Select Assigned Client <span class="text-danger">*</span></label>
+                            <select name="ClientId" class="form-select form-select-lg" id="clientSelect">
+                                <option value="" selected="@(string.IsNullOrEmpty(Model.ClientId) ? "selected" : null)" disabled>-- Select Assigned Client --</option>
+                                @foreach (var c in Model.AvailableClients)
+                                {
+                                    <option value="@c.Id" 
+                                            data-name="@c.FullName" 
+                                            data-email="@c.Email"
+                                            data-goal="@c.PrimaryGoal"
+                                            data-gender="@c.Gender"
+                                            data-height="@c.HeightCm"
+                                            data-weight="@(c.CurrentWeightKg.HasValue ? c.CurrentWeightKg.Value.ToString("0.0") : "--")"
+                                            data-targetweight="@(c.TargetWeightKg.HasValue ? c.TargetWeightKg.Value.ToString("0.0") : "--")"
+                                            data-bmi="@(c.CurrentBmi.HasValue ? c.CurrentBmi.Value.ToString("0.0") : "--")"
+                                            data-bmicategory="@c.BmiCategory"
+                                            data-allergies="@c.Allergies"
+                                            data-dietary="@c.DietaryRestrictions"
+                                            data-medical="@c.MedicalConditions"
+                                            selected="@(Model.ClientId == c.Id ? "selected" : null)">
+                                        @c.FullName (@c.Email) - Goal: @c.PrimaryGoal
+                                    </option>
+                                }
+                            </select>
+                            @Html.ValidationMessageFor(model => model.ClientId, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <!-- Live Client Health & Allergy Safety Snapshot Card -->
+                        <div id="clientHealthSnapshotCard" class="card border rounded-3 mb-3 shadow-sm bg-white" style="display: none;">
+                            <div class="card-header bg-light py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-person-badge-fill text-warning"></i>
+                                    <span class="x-small text-uppercase fw-bold text-muted">Client Health Profile</span>
+                                </div>
+                                <span class="badge bg-warning-subtle text-dark border x-small" id="snapshotGoalBadge">Goal</span>
+                            </div>
+                            <div class="card-body p-3">
+                                <div class="fw-bold text-dark fs-6 mb-2" id="snapshotClientName">--</div>
+
+                                <!-- Weight, Target & BMI Benchmarks -->
+                                <div class="row g-2 text-center mb-3">
+                                    <div class="col-4">
+                                        <div class="p-2 bg-light rounded-2 border">
+                                            <span class="x-small text-muted d-block text-truncate">Current Wt</span>
+                                            <strong class="text-dark fs-6" id="snapshotWeight">-- kg</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="p-2 bg-light rounded-2 border">
+                                            <span class="x-small text-muted d-block text-truncate">Target Wt</span>
+                                            <strong class="text-primary fs-6" id="snapshotTargetWeight">-- kg</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="p-2 bg-light rounded-2 border">
+                                            <span class="x-small text-muted d-block text-truncate">BMI</span>
+                                            <strong class="text-dark fs-6" id="snapshotBmi">--</strong>
+                                            <span class="badge x-small d-block mt-1 bg-success" id="snapshotBmiBadge">Normal</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Highlighted Food Allergies Banner -->
+                                <div id="snapshotAllergiesContainer" class="p-2 rounded-2 mb-2 border">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i id="snapshotAllergyIcon" class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
+                                        <div>
+                                            <div class="x-small fw-bold text-uppercase" id="snapshotAllergyLabel" style="letter-spacing: 0.5px;">Food Allergies & Intolerances</div>
+                                            <div class="fw-bold fs-6" id="snapshotAllergyValue">None</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Dietary Preference & Medical Conditions -->
+                                <div class="d-flex flex-wrap gap-1">
+                                    <span class="badge bg-light text-dark border" id="snapshotDietaryBadge">
+                                        <i class="bi bi-egg-fried me-1 text-warning"></i>Diet: <span id="snapshotDietaryValue">Balanced</span>
+                                    </span>
+                                    <span class="badge bg-light text-dark border" id="snapshotMedicalBadge">
+                                        <i class="bi bi-heart-pulse me-1 text-info"></i>Medical: <span id="snapshotMedicalValue">None</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="planTitleInput" class="form-label fw-semibold">Diet Plan Title <span class="text-danger">*</span></label>
+                            <input type="text" name="Title" value="@Model.Title" class="form-control" id="planTitleInput" placeholder="e.g. Personalized Nutrition Plan" />
+                            @Html.ValidationMessageFor(model => model.Title, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label for="preferenceSelect" class="form-label fw-semibold">Dietary Style <span class="text-danger">*</span></label>
+                                <select name="DietaryPreference" class="form-select" id="preferenceSelect">
+                                    <option value="" selected="@(string.IsNullOrEmpty(Model.DietaryPreference) ? "selected" : null)" disabled>-- Select Dietary Style --</option>
+                                    @foreach (var p in Model.DietaryPreferencesList)
+                                    {
+                                        <option value="@p" selected="@(Model.DietaryPreference == p ? "selected" : null)">@p</option>
+                                    }
+                                </select>
+                                @Html.ValidationMessageFor(model => model.DietaryPreference, "", new { @class = "text-danger small" })
+                            </div>
+                            <div class="col-6">
+                                <label for="dailyCalorieTargetInput" class="form-label fw-semibold">Daily Calories <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input name="DailyCalorieTarget" value="@Model.DailyCalorieTarget" class="form-control" type="number" min="800" max="6000" id="dailyCalorieTargetInput" placeholder="e.g. 2000" />
+                                    <span class="input-group-text bg-light small">kcal</span>
+                                </div>
+                                <div class="mt-1" id="calorieGuidanceContainer" style="display: none;">
+                                    <small class="text-muted d-flex align-items-center justify-content-between">
+                                        <span><i class="bi bi-calculator text-warning me-1"></i>Baseline Guide: <strong id="suggestedCalorieText" class="text-dark">2,000</strong> kcal</span>
+                                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none fw-semibold" id="btnApplyCalorieSuggestion" style="font-size: 0.75rem;">Apply Baseline</button>
+                                    </small>
+                                </div>
+                                @Html.ValidationMessageFor(model => model.DailyCalorieTarget, "", new { @class = "text-danger small" })
+                            </div>
+                        </div>
+
+                        <!-- Macronutrient Targets -->
+                        <div class="p-3 bg-light rounded-3 mb-3 border">
+                            <div class="fw-semibold small text-dark mb-2">Target Macronutrients (Daily Grams)</div>
+                            <div class="row g-2">
+                                <div class="col-4">
+                                    <label class="form-label x-small text-muted mb-1">Protein (g)</label>
+                                    <input name="TargetProteinGrams" value="@Model.TargetProteinGrams" class="form-control form-control-sm" type="number" min="20" max="400" placeholder="0" />
+                                    @Html.ValidationMessageFor(model => model.TargetProteinGrams, "", new { @class = "text-danger small" })
+                                </div>
+                                <div class="col-4">
+                                    <label class="form-label x-small text-muted mb-1">Carbs (g)</label>
+                                    <input name="TargetCarbsGrams" value="@Model.TargetCarbsGrams" class="form-control form-control-sm" type="number" min="20" max="600" placeholder="0" />
+                                    @Html.ValidationMessageFor(model => model.TargetCarbsGrams, "", new { @class = "text-danger small" })
+                                </div>
+                                <div class="col-4">
+                                    <label class="form-label x-small text-muted mb-1">Fats (g)</label>
+                                    <input name="TargetFatsGrams" value="@Model.TargetFatsGrams" class="form-control form-control-sm" type="number" min="10" max="250" placeholder="0" />
+                                    @Html.ValidationMessageFor(model => model.TargetFatsGrams, "", new { @class = "text-danger small" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-semibold">Water (L/day)</label>
+                                <input name="WaterIntakeLiters" value="@Model.WaterIntakeLiters" class="form-control" type="number" step="0.5" min="1" max="10" placeholder="e.g. 3.0" />
+                                @Html.ValidationMessageFor(model => model.WaterIntakeLiters, "", new { @class = "text-danger small" })
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-semibold">Duration (Weeks)</label>
+                                <input name="DurationWeeks" value="@Model.DurationWeeks" class="form-control" type="number" min="1" max="52" id="durationWeeksInput" placeholder="e.g. 4" />
+                                @Html.ValidationMessageFor(model => model.DurationWeeks, "", new { @class = "text-danger small" })
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-semibold">Start Date</label>
+                                <input name="StartDate" value="@(Model.StartDate?.ToString("yyyy-MM-dd"))" class="form-control" type="date" id="startDateInput" />
+                                @Html.ValidationMessageFor(model => model.StartDate, "", new { @class = "text-danger small" })
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-semibold">Target End Date</label>
+                                <input name="EndDate" value="@(Model.EndDate?.ToString("yyyy-MM-dd"))" class="form-control" type="date" id="endDateInput" />
+                                @Html.ValidationMessageFor(model => model.EndDate, "", new { @class = "text-danger small" })
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nutrition Strategy & Overview <span class="text-danger">*</span></label>
+                            <textarea name="Description" class="form-control" rows="3" placeholder="Outline calorie deficit or surplus, meal spacing, and target goals for this client...">@Model.Description</textarea>
+                            @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Coaching Instructions & Meal Rules</label>
+                            <textarea name="SpecialInstructions" class="form-control" rows="2" placeholder="e.g. Drink 500ml water before meals; avoid late night snacking...">@Model.SpecialInstructions</textarea>
+                            @Html.ValidationMessageFor(model => model.SpecialInstructions, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <div class="form-check form-switch pt-2">
+                            <input name="IsActive" class="form-check-input" type="checkbox" id="isActiveSwitch" value="true" @(Model.IsActive ? "checked" : "") />
+                            <label class="form-check-label fw-semibold" for="isActiveSwitch">
+                                Publish as Active Nutrition Plan
+                            </label>
+                            <div class="form-text small">Client will immediately receive this nutrition schedule.</div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Scheduled Daily Meals Builder -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                                <i class="bi bi-egg-fried text-warning"></i> Scheduled Meals Builder
+                            </h5>
+                            <small class="text-muted">Add Breakfast, Lunch, Dinner, and Snack meals with calories, instructions, and timing</small>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-light text-dark border" id="totalPlannedCaloriesBadge">
+                                Total: <strong id="totalPlannedCaloriesNum">0</strong> kcal
+                            </span>
+                            <button type="button" class="btn btn-sm btn-outline-warning text-dark fw-semibold d-inline-flex align-items-center gap-1" id="btnAddMeal">
+                                <i class="bi bi-plus-lg"></i> Add Meal
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card-body p-4">
+                        <div id="mealListContainer">
+                            @for (int i = 0; i < Model.Meals.Count; i++)
+                            {
+                                <div class="meal-item-row card mb-3 border bg-light" data-index="@i">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="badge bg-secondary meal-number-badge">Meal #@(i + 1)</span>
+                                                <span class="badge bg-warning-subtle text-dark border meal-type-display">@Model.Meals[i].MealType</span>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-danger border-0 btn-remove-row" title="Remove meal">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+
+                                        <div class="row g-2 mb-2">
+                                            <!-- Meal Type -->
+                                            <div class="col-md-4">
+                                                <label class="form-label small fw-semibold text-muted mb-1">Meal Type</label>
+                                                <select name="Meals[@i].MealType" class="form-select form-select-sm meal-type-select">
+                                                    @foreach (var mt in Model.MealTypesList)
+                                                    {
+                                                        <option value="@mt" selected="@(Model.Meals[i].MealType == mt ? "selected" : null)">@mt</option>
+                                                    }
+                                                </select>
+                                            </div>
+
+                                            <!-- Scheduled Time -->
+                                            <div class="col-md-4">
+                                                <label class="form-label small fw-semibold text-muted mb-1">Scheduled Time</label>
+                                                <input type="text" name="Meals[@i].ScheduledTime" value="@Model.Meals[i].ScheduledTime" 
+                                                       class="form-control form-control-sm" placeholder="e.g. 08:00 AM" />
+                                            </div>
+
+                                            <!-- Schedule Day -->
+                                            <div class="col-md-4">
+                                                <label class="form-label small fw-semibold text-muted mb-1">Schedule Day</label>
+                                                <select name="Meals[@i].DayOfWeek" class="form-select form-select-sm">
+                                                    @foreach (var day in Model.DaysList)
+                                                    {
+                                                        <option value="@day" selected="@(Model.Meals[i].DayOfWeek == day ? "selected" : null)">@day</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <!-- Meal Name / Description -->
+                                        <div class="mb-2">
+                                            <label class="form-label small fw-semibold text-muted mb-1">Meal Title / Food Items <span class="text-danger">*</span></label>
+                                            <input type="text" name="Meals[@i].MealName" value="@Model.Meals[i].MealName" 
+                                                   class="form-control form-control-sm meal-name-input" placeholder="e.g. Oatmeal with Whey Protein & Blueberries" required />
+                                        </div>
+
+                                        <div class="row g-2 mb-2">
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-semibold text-muted mb-1">Serving / Portion Size</label>
+                                                <input type="text" name="Meals[@i].ServingSize" value="@Model.Meals[i].ServingSize" 
+                                                       class="form-control form-control-sm" placeholder="e.g. 1 Large Bowl (350g) or 1 Full Plate (450g)" />
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-semibold text-muted mb-1">
+                                                    <i class="bi bi-camera me-1 text-primary"></i>Meal Food Image (from computer)
+                                                </label>
+                                                <input type="file" name="Meals[@i].ImageFile" class="form-control form-control-sm meal-image-file-input" accept=".jpg,.jpeg,.png,.webp" />
+                                                <input type="hidden" name="Meals[@i].ImagePath" value="@Model.Meals[i].ImagePath" class="meal-image-path-hidden" />
+                                                <div class="meal-image-preview-box mt-1 align-items-center gap-2" style="display: none;">
+                                                    <img src="" alt="Meal preview" class="rounded border shadow-sm meal-preview-thumb" style="width: 42px; height: 42px; object-fit: cover;" />
+                                                    <div class="x-small text-muted lh-sm">
+                                                        <span class="fw-semibold text-dark d-block meal-preview-name">image.jpg</span>
+                                                        <span class="text-success meal-preview-size"><i class="bi bi-check-circle-fill me-1"></i>Ready to upload</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <label class="form-label small fw-semibold text-muted mb-1">Meal Description & Nutritional Profile</label>
+                                            <input type="text" name="Meals[@i].Description" value="@Model.Meals[i].Description" 
+                                                   class="form-control form-control-sm" placeholder="e.g. Slow-release complex carbs with antioxidant berries" />
+                                        </div>
+
+                                        <!-- Ingredients & Portion -->
+                                        <div class="mb-2">
+                                            <label class="form-label small fw-semibold text-muted mb-1">Ingredients Breakdown & Measurements</label>
+                                            <input type="text" name="Meals[@i].IngredientsAndPortion" value="@Model.Meals[i].IngredientsAndPortion" 
+                                                   class="form-control form-control-sm meal-ingredient-input" placeholder="e.g. 80g rolled oats, 1 scoop whey, 50g blueberries" />
+                                            <div class="allergy-alert-slot"></div>
+                                        </div>
+
+                                        <div class="row g-2 mb-2">
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-semibold text-muted mb-1">Allergens</label>
+                                                <input type="text" name="Meals[@i].Allergens" value="@Model.Meals[i].Allergens" 
+                                                       class="form-control form-control-sm meal-allergen-input" placeholder="e.g. Dairy, Gluten or None" />
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-semibold text-muted mb-1">Dietary Info Tags</label>
+                                                <input type="text" name="Meals[@i].DietaryInfo" value="@Model.Meals[i].DietaryInfo" 
+                                                       class="form-control form-control-sm" placeholder="e.g. High-Protein • Gluten-Free • Low-GI" />
+                                            </div>
+                                        </div>
+
+                                        <!-- Calories & Macros -->
+                                        <div class="row g-2 mb-2">
+                                            <div class="col-3">
+                                                <label class="form-label small fw-semibold text-muted mb-1">Calories (kcal) <span class="text-danger">*</span></label>
+                                                <input type="number" name="Meals[@i].Calories" value="@Model.Meals[i].Calories" min="10" max="3000" 
+                                                       class="form-control form-control-sm meal-calorie-input" placeholder="e.g. 400" required />
+                                            </div>
+                                            <div class="col-3">
+                                                <label class="form-label small fw-semibold text-muted mb-1">Protein (g)</label>
+                                                <input type="number" name="Meals[@i].ProteinGrams" value="@Model.Meals[i].ProteinGrams" min="0" max="300" class="form-control form-control-sm" placeholder="0" />
+                                            </div>
+                                            <div class="col-3">
+                                                <label class="form-label small fw-semibold text-muted mb-1">Carbs (g)</label>
+                                                <input type="number" name="Meals[@i].CarbsGrams" value="@Model.Meals[i].CarbsGrams" min="0" max="500" class="form-control form-control-sm" placeholder="0" />
+                                            </div>
+                                            <div class="col-3">
+                                                <label class="form-label small fw-semibold text-muted mb-1">Fats (g)</label>
+                                                <input type="number" name="Meals[@i].FatsGrams" value="@Model.Meals[i].FatsGrams" min="0" max="200" class="form-control form-control-sm" placeholder="0" />
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <label class="form-label small fw-semibold text-muted mb-1">Trainer's Coaching Notes & Directives</label>
+                                            <input type="text" name="Meals[@i].TrainerNotes" value="@Model.Meals[i].TrainerNotes" 
+                                                   class="form-control form-control-sm" placeholder="e.g. Cook oats with water first. Let cool for 2 minutes before whisking whey." />
+                                        </div>
+
+                                        <!-- Instructions -->
+                                        <div>
+                                            <label class="form-label small fw-semibold text-muted mb-1">Preparation & Dietary Instructions</label>
+                                            <input type="text" name="Meals[@i].Instructions" value="@Model.Meals[i].Instructions" 
+                                                   class="form-control form-control-sm" placeholder="e.g. Cook oats with almond milk; consume with 500ml water" />
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="d-grid mt-3">
+                            <button type="button" class="btn btn-outline-secondary border-dashed py-2" id="btnAddMealBottom">
+                                <i class="bi bi-plus-circle me-1"></i> Add Another Meal to Client's Schedule
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a href="@Url.Action("Index", "DietPlans")" class="btn btn-light px-4">Cancel</a>
+                    <button type="submit" class="btn btn-warning text-dark fw-semibold px-4 shadow-sm">
+                        <i class="bi bi-check-lg me-1"></i> Save & Assign to Client
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </form>
+
+</div>
+
+<!-- Hidden template for dynamically added meal rows -->
+<template id="mealRowTemplate">
+    <div class="meal-item-row card mb-3 border bg-light" data-index="__INDEX__">
+        <div class="card-body p-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-secondary meal-number-badge">Meal #__NUM__</span>
+                    <span class="badge bg-warning-subtle text-dark border meal-type-display">Breakfast</span>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-danger border-0 btn-remove-row" title="Remove meal">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold text-muted mb-1">Meal Type</label>
+                    <select name="Meals[__INDEX__].MealType" class="form-select form-select-sm meal-type-select">
+                        @foreach (var mt in Model.MealTypesList)
+                        {
+                            <option value="@mt">@mt</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold text-muted mb-1">Scheduled Time</label>
+                    <input type="text" name="Meals[__INDEX__].ScheduledTime" value="" 
+                           class="form-control form-control-sm" placeholder="e.g. 08:00 AM" />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold text-muted mb-1">Schedule Day</label>
+                    <select name="Meals[__INDEX__].DayOfWeek" class="form-select form-select-sm">
+                        @foreach (var day in Model.DaysList)
+                        {
+                            <option value="@day">@day</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label small fw-semibold text-muted mb-1">Meal Title / Food Items <span class="text-danger">*</span></label>
+                <input type="text" name="Meals[__INDEX__].MealName" 
+                       class="form-control form-control-sm meal-name-input" placeholder="e.g. Grilled Chicken Salad" required />
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <label class="form-label small fw-semibold text-muted mb-1">Serving / Portion Size</label>
+                    <input type="text" name="Meals[__INDEX__].ServingSize" 
+                           class="form-control form-control-sm" placeholder="e.g. 1 Large Bowl (350g) or 1 Full Plate (450g)" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-semibold text-muted mb-1">
+                        <i class="bi bi-camera me-1 text-primary"></i>Meal Food Image (from computer)
+                    </label>
+                    <input type="file" name="Meals[__INDEX__].ImageFile" class="form-control form-control-sm meal-image-file-input" accept=".jpg,.jpeg,.png,.webp" />
+                    <input type="hidden" name="Meals[__INDEX__].ImagePath" value="" class="meal-image-path-hidden" />
+                    <div class="meal-image-preview-box mt-1 align-items-center gap-2" style="display: none;">
+                        <img src="" alt="Meal preview" class="rounded border shadow-sm meal-preview-thumb" style="width: 42px; height: 42px; object-fit: cover;" />
+                        <div class="x-small text-muted lh-sm">
+                            <span class="fw-semibold text-dark d-block meal-preview-name">image.jpg</span>
+                            <span class="text-success meal-preview-size"><i class="bi bi-check-circle-fill me-1"></i>Ready to upload</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label small fw-semibold text-muted mb-1">Meal Description & Nutritional Profile</label>
+                <input type="text" name="Meals[__INDEX__].Description" 
+                       class="form-control form-control-sm" placeholder="e.g. Slow-release complex carbs with antioxidant berries" />
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label small fw-semibold text-muted mb-1">Ingredients Breakdown & Measurements</label>
+                <input type="text" name="Meals[__INDEX__].IngredientsAndPortion" 
+                       class="form-control form-control-sm meal-ingredient-input" placeholder="e.g. 80g rolled oats, 1 scoop whey, 50g blueberries" />
+                <div class="allergy-alert-slot"></div>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <label class="form-label small fw-semibold text-muted mb-1">Allergens</label>
+                    <input type="text" name="Meals[__INDEX__].Allergens" 
+                           class="form-control form-control-sm meal-allergen-input" placeholder="e.g. Dairy, Gluten or None" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-semibold text-muted mb-1">Dietary Info Tags</label>
+                    <input type="text" name="Meals[__INDEX__].DietaryInfo" 
+                           class="form-control form-control-sm" placeholder="e.g. High-Protein • Gluten-Free • Low-GI" />
+                </div>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-3">
+                    <label class="form-label small fw-semibold text-muted mb-1">Calories (kcal) <span class="text-danger">*</span></label>
+                    <input type="number" name="Meals[__INDEX__].Calories" value="" min="10" max="3000" 
+                           class="form-control form-control-sm meal-calorie-input" placeholder="e.g. 400" required />
+                </div>
+                <div class="col-3">
+                    <label class="form-label small fw-semibold text-muted mb-1">Protein (g)</label>
+                    <input type="number" name="Meals[__INDEX__].ProteinGrams" value="" min="0" max="300" class="form-control form-control-sm" placeholder="0" />
+                </div>
+                <div class="col-3">
+                    <label class="form-label small fw-semibold text-muted mb-1">Carbs (g)</label>
+                    <input type="number" name="Meals[__INDEX__].CarbsGrams" value="" min="0" max="500" class="form-control form-control-sm" placeholder="0" />
+                </div>
+                <div class="col-3">
+                    <label class="form-label small fw-semibold text-muted mb-1">Fats (g)</label>
+                    <input type="number" name="Meals[__INDEX__].FatsGrams" value="" min="0" max="200" class="form-control form-control-sm" placeholder="0" />
+                </div>
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label small fw-semibold text-muted mb-1">Trainer's Coaching Notes & Directives</label>
+                <input type="text" name="Meals[__INDEX__].TrainerNotes" 
+                       class="form-control form-control-sm" placeholder="e.g. Cook oats with water first. Let cool for 2 minutes before whisking whey." />
+            </div>
+
+            <div>
+                <label class="form-label small fw-semibold text-muted mb-1">Preparation & Dietary Instructions</label>
+                <input type="text" name="Meals[__INDEX__].Instructions" 
+                       class="form-control form-control-sm" placeholder="e.g. Season with herbs; avoid oily dressings" />
+            </div>
+        </div>
+    </div>
+</template>
+
+@section Scripts {
+    @Html.Partial("_ValidationScriptsPartial")
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // DOM Elements
+            const clientSelect = document.getElementById('clientSelect');
+            const snapshotCard = document.getElementById('clientHealthSnapshotCard');
+            const snapshotClientName = document.getElementById('snapshotClientName');
+            const snapshotGoalBadge = document.getElementById('snapshotGoalBadge');
+            const snapshotWeight = document.getElementById('snapshotWeight');
+            const snapshotTargetWeight = document.getElementById('snapshotTargetWeight');
+            const snapshotBmi = document.getElementById('snapshotBmi');
+            const snapshotBmiBadge = document.getElementById('snapshotBmiBadge');
+            const snapshotAllergiesContainer = document.getElementById('snapshotAllergiesContainer');
+            const snapshotAllergyIcon = document.getElementById('snapshotAllergyIcon');
+            const snapshotAllergyLabel = document.getElementById('snapshotAllergyLabel');
+            const snapshotAllergyValue = document.getElementById('snapshotAllergyValue');
+            const snapshotDietaryBadge = document.getElementById('snapshotDietaryBadge');
+            const snapshotDietaryValue = document.getElementById('snapshotDietaryValue');
+            const snapshotMedicalBadge = document.getElementById('snapshotMedicalBadge');
+            const snapshotMedicalValue = document.getElementById('snapshotMedicalValue');
+            const planTitleInput = document.getElementById('planTitleInput');
+            const dailyCalorieTargetInput = document.getElementById('dailyCalorieTargetInput');
+            const calorieGuidanceContainer = document.getElementById('calorieGuidanceContainer');
+            const suggestedCalorieText = document.getElementById('suggestedCalorieText');
+            const btnApplyCalorieSuggestion = document.getElementById('btnApplyCalorieSuggestion');
+            const preferenceSelect = document.getElementById('preferenceSelect');
+            const dietPlanForm = document.getElementById('dietPlanForm');
+
+            const startDateInput = document.getElementById('startDateInput');
+            const endDateInput = document.getElementById('endDateInput');
+            const durationWeeksInput = document.getElementById('durationWeeksInput');
+
+            const container = document.getElementById('mealListContainer');
+            const template = document.getElementById('mealRowTemplate');
+            const btnAdd = document.getElementById('btnAddMeal');
+            const btnAddBottom = document.getElementById('btnAddMealBottom');
+
+            // Allergen Dictionary for intelligent synonym matching
+            const allergenDictionary = {
+                "peanut": ["peanut", "peanuts", "peanut butter", "groundnut", "arachis"],
+                "shellfish": ["shellfish", "shrimp", "shrimps", "prawn", "prawns", "crab", "crabs", "lobster", "lobsters", "clam", "clams", "mussel", "mussels", "oyster", "oysters", "scallop", "scallops"],
+                "dairy": ["dairy", "milk", "cheese", "cheddar", "mozzarella", "parmesan", "yogurt", "yoghurt", "whey", "butter", "cream", "ghee", "casein", "curd", "lactose"],
+                "lactose": ["lactose", "milk", "dairy", "cheese", "cream", "whey", "butter"],
+                "whey": ["whey", "whey protein"],
+                "gluten": ["gluten", "wheat", "flour", "bread", "pasta", "spaghetti", "noodle", "noodles", "barley", "rye", "couscous", "semolina", "seitan"],
+                "wheat": ["wheat", "flour", "bread", "pasta", "wheat bran", "semolina"],
+                "egg": ["egg", "eggs", "egg white", "egg whites", "yolk", "mayo", "mayonnaise"],
+                "fish": ["fish", "salmon", "tuna", "cod", "tilapia", "trout", "mackerel", "sardine", "anchovy", "halibut", "snapper"],
+                "soy": ["soy", "soya", "soybean", "soybeans", "tofu", "edamame", "soy sauce", "tempeh", "miso"],
+                "nut": ["nut", "nuts", "tree nut", "almond", "almonds", "cashew", "cashews", "walnut", "walnuts", "pecan", "pecans", "pistachio", "pistachios", "hazelnut", "hazelnuts", "macadamia"]
+            };
+
+            let currentClientAllergies = "";
+            let currentClientName = "";
+
+            // 1. Live Client Health & Allergy Snapshot
+            function updateClientSnapshot() {
+                if (!clientSelect) return;
+                const opt = clientSelect.options[clientSelect.selectedIndex];
+                if (!opt || !opt.value) {
+                    if (snapshotCard) snapshotCard.style.display = 'none';
+                    if (calorieGuidanceContainer) calorieGuidanceContainer.style.display = 'none';
+                    currentClientAllergies = "";
+                    currentClientName = "";
+                    validateAllMealAllergies();
+                    return;
+                }
+
+                const name = opt.getAttribute('data-name') || opt.textContent.split('(')[0].trim();
+                const email = opt.getAttribute('data-email') || '';
+                const goal = opt.getAttribute('data-goal') || 'Healthy Eating';
+                const weight = opt.getAttribute('data-weight') || '--';
+                const targetWeight = opt.getAttribute('data-targetweight') || '--';
+                const bmi = opt.getAttribute('data-bmi') || '--';
+                const bmiCategory = opt.getAttribute('data-bmicategory') || 'Normal';
+                const allergies = opt.getAttribute('data-allergies') || 'None';
+                const dietary = opt.getAttribute('data-dietary') || 'Balanced';
+                const medical = opt.getAttribute('data-medical') || 'None';
+
+                currentClientAllergies = allergies;
+                currentClientName = name;
+
+                // Populate Snapshot Preview
+                if (snapshotClientName) snapshotClientName.textContent = `${name} (${email})`;
+                if (snapshotGoalBadge) snapshotGoalBadge.textContent = goal;
+                if (snapshotWeight) snapshotWeight.textContent = (weight && weight !== '--') ? `${weight} kg` : '--';
+                if (snapshotTargetWeight) snapshotTargetWeight.textContent = (targetWeight && targetWeight !== '--') ? `${targetWeight} kg` : '--';
+                if (snapshotBmi) snapshotBmi.textContent = bmi;
+                
+                if (snapshotBmiBadge) {
+                    snapshotBmiBadge.textContent = bmiCategory;
+                    snapshotBmiBadge.className = 'badge x-small d-block mt-1';
+                    if (bmiCategory === 'Normal') snapshotBmiBadge.classList.add('bg-success');
+                    else if (bmiCategory === 'Underweight') snapshotBmiBadge.classList.add('bg-info', 'text-dark');
+                    else if (bmiCategory === 'Overweight') snapshotBmiBadge.classList.add('bg-warning', 'text-dark');
+                    else snapshotBmiBadge.classList.add('bg-danger');
+                }
+
+                // Food Allergies Display
+                const hasAllergies = allergies && !allergies.toLowerCase().includes('none');
+                if (snapshotAllergiesContainer && snapshotAllergyIcon && snapshotAllergyLabel && snapshotAllergyValue) {
+                    if (hasAllergies) {
+                        snapshotAllergiesContainer.className = 'p-2 rounded-2 mb-2 border bg-danger-subtle border-danger text-danger';
+                        snapshotAllergyIcon.className = 'bi bi-exclamation-octagon-fill text-danger fs-5';
+                        snapshotAllergyLabel.textContent = 'CRITICAL FOOD ALLERGIES & INTOLERANCES';
+                        snapshotAllergyValue.textContent = allergies;
+                    } else {
+                        snapshotAllergiesContainer.className = 'p-2 rounded-2 mb-2 border bg-success-subtle border-success text-success';
+                        snapshotAllergyIcon.className = 'bi bi-check-circle-fill text-success fs-5';
+                        snapshotAllergyLabel.textContent = 'FOOD ALLERGIES STATUS';
+                        snapshotAllergyValue.textContent = 'No known food allergies reported';
+                    }
+                }
+
+                // Dietary Restrictions & Medical Conditions
+                if (snapshotDietaryValue) snapshotDietaryValue.textContent = dietary;
+                if (snapshotMedicalValue) snapshotMedicalValue.textContent = medical;
+                if (snapshotMedicalBadge) {
+                    const hasMedical = medical && !medical.toLowerCase().includes('none');
+                    if (hasMedical) {
+                        snapshotMedicalBadge.className = 'badge bg-warning-subtle text-dark border border-warning';
+                    } else {
+                        snapshotMedicalBadge.className = 'badge bg-light text-dark border';
+                    }
+                }
+
+                if (snapshotCard) snapshotCard.style.display = 'block';
+
+                // Auto-suggest plan title if blank
+                if (planTitleInput && (!planTitleInput.value.trim() || planTitleInput.value.includes("'s Personalized Nutrition Plan"))) {
+                    planTitleInput.value = `${name}'s Personalized Nutrition Plan`;
+                }
+
+                // Caloric Baseline Guidance
+                let baselineCal = 2000;
+                const weightNum = parseFloat(weight);
+                if (!isNaN(weightNum) && weightNum > 0) {
+                    const gLower = goal.toLowerCase();
+                    if (gLower.includes('loss') || gLower.includes('shred') || gLower.includes('cut')) {
+                        baselineCal = Math.round(weightNum * 24);
+                    } else if (gLower.includes('gain') || gLower.includes('muscle') || gLower.includes('hypertrophy')) {
+                        baselineCal = Math.round(weightNum * 32);
+                    } else {
+                        baselineCal = Math.round(weightNum * 28);
+                    }
+                }
+                if (suggestedCalorieText) suggestedCalorieText.textContent = baselineCal.toLocaleString();
+                if (calorieGuidanceContainer) calorieGuidanceContainer.style.display = 'block';
+                if (btnApplyCalorieSuggestion && dailyCalorieTargetInput) {
+                    btnApplyCalorieSuggestion.onclick = function () {
+                        dailyCalorieTargetInput.value = baselineCal;
+                    };
+                    if (!dailyCalorieTargetInput.value) {
+                        dailyCalorieTargetInput.value = baselineCal;
+                    }
+                }
+
+                // Sync dietary style dropdown if empty or default
+                if (preferenceSelect && !preferenceSelect.value && dietary) {
+                    const dLower = dietary.toLowerCase();
+                    for (let i = 0; i < preferenceSelect.options.length; i++) {
+                        const optVal = preferenceSelect.options[i].value.toLowerCase();
+                        if (optVal === dLower || dLower.includes(optVal)) {
+                            preferenceSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+
+                // Run recipe allergy checks against newly selected client
+                validateAllMealAllergies();
+            }
+
+            if (clientSelect) {
+                clientSelect.addEventListener('change', updateClientSnapshot);
+            }
+
+            // 2. Intelligent Recipe / Ingredient Allergy Validation
+            function detectAllergyInText(text, allergiesStr) {
+                if (!text || !allergiesStr || allergiesStr.toLowerCase().includes('none')) return null;
+                const cleanAllergies = allergiesStr.toLowerCase();
+                const lowerText = text.toLowerCase();
+
+                // 1. Check mapped synonyms
+                for (const [key, aliases] of Object.entries(allergenDictionary)) {
+                    if (cleanAllergies.includes(key)) {
+                        for (const alias of aliases) {
+                            const regex = new RegExp('\\b' + alias + '\\b', 'i');
+                            if (regex.test(lowerText) || (alias.length > 3 && lowerText.includes(alias))) {
+                                return { allergenGroup: key, matchedTerm: alias };
+                            }
+                        }
+                    }
+                }
+
+                // 2. Arbitrary token check from allergies string
+                const tokens = cleanAllergies.split(/[,/&]+/).map(s => s.trim()).filter(s => s.length >= 3 && !s.includes('none'));
+                for (const token of tokens) {
+                    const regex = new RegExp('\\b' + token + '\\b', 'i');
+                    if (regex.test(lowerText) || lowerText.includes(token)) {
+                        return { allergenGroup: token, matchedTerm: token };
+                    }
+                }
+
+                return null;
+            }
+
+            function checkRowAllergy(row) {
+                const alertSlot = row.querySelector('.allergy-alert-slot');
+                const nameInput = row.querySelector('.meal-name-input');
+                const ingInput = row.querySelector('.meal-ingredient-input');
+                if (!alertSlot) return;
+
+                if (!currentClientAllergies || currentClientAllergies.toLowerCase().includes('none')) {
+                    alertSlot.innerHTML = '';
+                    if (nameInput) nameInput.classList.remove('border-danger', 'bg-danger-subtle');
+                    if (ingInput) ingInput.classList.remove('border-danger', 'bg-danger-subtle');
+                    return;
+                }
+
+                const textToSearch = (nameInput ? nameInput.value : '') + ' ' + (ingInput ? ingInput.value : '') + ' ' + (row.querySelector('.meal-allergen-input') ? row.querySelector('.meal-allergen-input').value : '');
+                const conflict = detectAllergyInText(textToSearch, currentClientAllergies);
+
+                if (conflict) {
+                    alertSlot.innerHTML = `
+                        <div class="alert alert-danger py-2 px-3 mt-1 mb-2 rounded-2 d-flex align-items-center gap-2 small border-danger shadow-sm allergy-warning-banner">
+                            <i class="bi bi-exclamation-octagon-fill text-danger fs-5 flex-shrink-0"></i>
+                            <div>
+                                <strong class="text-danger">ALLERGY CONFLICT DETECTED:</strong><br />
+                                Contains "<strong>${conflict.matchedTerm}</strong>" which violates <strong>${currentClientName || 'this client'}'s</strong> recorded allergy to <strong>${currentClientAllergies}</strong>!
+                            </div>
+                        </div>
+                    `;
+                    if (ingInput) ingInput.classList.add('border-danger', 'bg-danger-subtle');
+                    if (nameInput && detectAllergyInText(nameInput.value, currentClientAllergies)) {
+                        nameInput.classList.add('border-danger', 'bg-danger-subtle');
+                    }
+                } else {
+                    alertSlot.innerHTML = '';
+                    if (nameInput) nameInput.classList.remove('border-danger', 'bg-danger-subtle');
+                    if (ingInput) ingInput.classList.remove('border-danger', 'bg-danger-subtle');
+                }
+            }
+
+            function validateAllMealAllergies() {
+                container.querySelectorAll('.meal-item-row').forEach(checkRowAllergy);
+            }
+
+            // Real-time listener for typing meal titles, ingredients and allergens
+            container.addEventListener('input', function (e) {
+                if (e.target.classList.contains('meal-name-input') || e.target.classList.contains('meal-ingredient-input') || e.target.classList.contains('meal-allergen-input')) {
+                    const row = e.target.closest('.meal-item-row');
+                    if (row) checkRowAllergy(row);
+                }
+            });
+
+            // Live Image Preview for Chosen Computer Files
+            container.addEventListener('change', function (e) {
+                if (e.target.classList.contains('meal-image-file-input')) {
+                    const fileInput = e.target;
+                    const row = fileInput.closest('.meal-item-row');
+                    const previewBox = row ? row.querySelector('.meal-image-preview-box') : null;
+                    const previewThumb = row ? row.querySelector('.meal-preview-thumb') : null;
+                    const previewName = row ? row.querySelector('.meal-preview-name') : null;
+                    const previewSize = row ? row.querySelector('.meal-preview-size') : null;
+
+                    if (fileInput.files && fileInput.files[0]) {
+                        const file = fileInput.files[0];
+                        const reader = new FileReader();
+                        reader.onload = function (evt) {
+                            if (previewThumb) previewThumb.src = evt.target.result;
+                            if (previewName) previewName.textContent = file.name;
+                            if (previewSize) previewSize.innerHTML = '<i class="bi bi-check-circle-fill text-success me-1"></i>' + (file.size / 1024).toFixed(0) + ' KB (Ready)';
+                            if (previewBox) previewBox.style.display = 'flex';
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        if (previewBox) previewBox.style.display = 'none';
+                    }
+                }
+            });
+
+            // Form Submit Safety Guard
+            if (dietPlanForm) {
+                dietPlanForm.addEventListener('submit', function (e) {
+                    const allergyBanners = container.querySelectorAll('.allergy-warning-banner');
+                    if (allergyBanners.length > 0) {
+                        const proceed = confirm(
+                            `⚠️ SAFETY WARNING:\n\n` +
+                            `You have ${allergyBanners.length} meal(s) that conflict with ${currentClientName || 'the client'}'s recorded allergies (${currentClientAllergies}).\n\n` +
+                            `Serving allergenic foods poses a serious health risk.\n\n` +
+                            `Are you sure you want to proceed and save this diet plan?`
+                        );
+                        if (!proceed) {
+                            e.preventDefault();
+                            allergyBanners[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                });
+            }
+
+            // Date sync with duration weeks
+            function updateEndDate() {
+                if (!startDateInput.value) return;
+                const start = new Date(startDateInput.value);
+                const weeks = parseInt(durationWeeksInput.value) || 4;
+                if (!isNaN(start.getTime())) {
+                    const end = new Date(start);
+                    end.setDate(end.getDate() + (weeks * 7));
+                    endDateInput.value = end.toISOString().split('T')[0];
+                }
+            }
+            if (durationWeeksInput) durationWeeksInput.addEventListener('input', updateEndDate);
+            if (startDateInput) startDateInput.addEventListener('change', updateEndDate);
+
+            // Calorie Calculation
+            function calculateTotalCalories() {
+                let total = 0;
+                container.querySelectorAll('.meal-calorie-input').forEach(input => {
+                    const val = parseInt(input.value) || 0;
+                    total += val;
+                });
+                const totalNumEl = document.getElementById('totalPlannedCaloriesNum');
+                if (totalNumEl) totalNumEl.textContent = total;
+            }
+
+            function reindexRows() {
+                const rows = container.querySelectorAll('.meal-item-row');
+                rows.forEach((row, idx) => {
+                    row.setAttribute('data-index', idx);
+                    const badge = row.querySelector('.meal-number-badge');
+                    if (badge) badge.textContent = 'Meal #' + (idx + 1);
+
+                    row.querySelectorAll('input, select, textarea').forEach(el => {
+                        const name = el.getAttribute('name');
+                        if (name) {
+                            const newName = name.replace(/Meals\[\d+\]/, 'Meals[' + idx + ']');
+                            el.setAttribute('name', newName);
+                        }
+                    });
+                });
+                calculateTotalCalories();
+                validateAllMealAllergies();
+            }
+
+            function addRow(defaultMealType = "Breakfast") {
+                const nextIdx = container.querySelectorAll('.meal-item-row').length;
+                let html = template.innerHTML
+                    .replace(/__INDEX__/g, nextIdx)
+                    .replace(/__NUM__/g, nextIdx + 1);
+
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html.trim();
+                const newRow = tempDiv.firstChild;
+
+                const sel = newRow.querySelector('.meal-type-select');
+                if (sel) {
+                    sel.value = defaultMealType;
+                    const disp = newRow.querySelector('.meal-type-display');
+                    if (disp) disp.textContent = defaultMealType;
+                }
+
+                container.appendChild(newRow);
+                attachRowListeners(newRow);
+                reindexRows();
+            }
+
+            function attachRowListeners(row) {
+                const btnRemove = row.querySelector('.btn-remove-row');
+                if (btnRemove) {
+                    btnRemove.addEventListener('click', function () {
+                        if (container.querySelectorAll('.meal-item-row').length <= 1) {
+                            alert('A diet plan must contain at least one scheduled meal.');
+                            return;
+                        }
+                        row.remove();
+                        reindexRows();
+                    });
+                }
+
+                const sel = row.querySelector('.meal-type-select');
+                const disp = row.querySelector('.meal-type-display');
+                if (sel && disp) {
+                    sel.addEventListener('change', function () {
+                        disp.textContent = sel.value;
+                    });
+                }
+
+                const calInput = row.querySelector('.meal-calorie-input');
+                if (calInput) {
+                    calInput.addEventListener('input', calculateTotalCalories);
+                }
+            }
+
+            container.querySelectorAll('.meal-item-row').forEach(attachRowListeners);
+            if (btnAdd) btnAdd.addEventListener('click', () => addRow());
+            if (btnAddBottom) btnAddBottom.addEventListener('click', () => addRow());
+
+            calculateTotalCalories();
+
+            // Run initial snapshot on page load (e.g. if client preselected or default)
+            updateClientSnapshot();
+        });
+    </script>
+}

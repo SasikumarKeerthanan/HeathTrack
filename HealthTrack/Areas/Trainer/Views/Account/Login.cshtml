@@ -1,0 +1,283 @@
+@model HealthTrack.Areas.Trainer.ViewModels.TrainerLoginViewModel
+@{
+    ViewBag.Title = "Trainer Sign In";
+    Layout = "~/Views/Shared/_AuthLayout.cshtml";
+}
+
+<link rel="stylesheet" href="@Url.Content("~/Content/trainer-auth.css")" />
+
+<div class="trainer-auth-wrapper">
+    <div class="trainer-auth-card">
+
+        <!-- ========================================================
+             LEFT COLUMN: Form Panel (Inputs & Credentials)
+             ======================================================== -->
+        <div class="trainer-form-side">
+            <div>
+                <!-- Brand Header (HealthTrack Logo + Name) -->
+                <a href="@Url.Action("Login", "Account", new { area = "Trainer" })" class="trainer-brand-header">
+                    <img src="@Url.Content("~/Content/images/logo.png")" alt="HealthTrack Logo" class="trainer-brand-icon" />
+                    <span class="trainer-brand-title">HealthTrack</span>
+                </a>
+
+                <!-- Headline & Subtext (Matches UI: "Welcome Back / Keep moving. Keep growing.") -->
+                <h1 class="trainer-headline">Welcome Back</h1>
+                <p class="trainer-subtext">Keep moving. Keep growing.</p>
+
+                <!-- Feedback / Error Alerts -->
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="dark-alert-success mb-4">
+                        <div class="dark-alert-content">
+                            <i class="bi bi-check-circle-fill fs-5 flex-shrink-0 text-success"></i>
+                            <div>@TempData["SuccessMessage"]</div>
+                        </div>
+                    </div>
+                }
+                @if (TempData["InfoMessage"] != null)
+                {
+                    <div class="dark-alert-info mb-4">
+                        <div class="dark-alert-content">
+                            <i class="bi bi-info-circle-fill fs-5 flex-shrink-0 text-info"></i>
+                            <div>@TempData["InfoMessage"]</div>
+                        </div>
+                    </div>
+                }
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="dark-alert-error mb-4">
+                        <div class="dark-alert-content">
+                            <i class="bi bi-shield-exclamation fs-5 flex-shrink-0 text-danger"></i>
+                            <div>@TempData["ErrorMessage"]</div>
+                        </div>
+                    </div>
+                }
+
+                @if (!ViewData.ModelState.IsValid && ViewData.ModelState[""] != null && ViewData.ModelState[""].Errors.Count > 0)
+                {
+                    <div class="dark-alert-error mb-4">
+                        <div class="dark-alert-content">
+                            <i class="bi bi-shield-exclamation fs-5 flex-shrink-0 text-danger"></i>
+                            <div>
+                                @Html.ValidationSummary(true, "", new { @class = "mb-0 ps-0 list-unstyled" })
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Trainer Login Form -->
+                @using (Html.BeginForm("Login", "Account", new { area = "Trainer" }, FormMethod.Post, new { id = "trainerLoginForm" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.ReturnUrl)
+
+                    <!-- Email Address Field -->
+                    <div class="mb-3">
+                        <label class="trainer-input-label" for="trainerEmailInput">Email address</label>
+                        @Html.TextBoxFor(m => m.Email, new { 
+                            @class = "trainer-input", 
+                            id = "trainerEmailInput",
+                            placeholder = "Enter your email", 
+                            type = "email",
+                            autocomplete = "email",
+                            autofocus = "autofocus"
+                        })
+                        @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger small mt-1 d-block" })
+                    </div>
+
+                    <!-- Password Field with Embedded Eye Toggle -->
+                    <div class="mb-2">
+                        <label class="trainer-input-label" for="trainerPasswordInput">Password</label>
+                        <div class="password-input-wrapper">
+                            @Html.PasswordFor(m => m.Password, new { 
+                                @class = "trainer-input", 
+                                id = "trainerPasswordInput",
+                                placeholder = "Enter your password",
+                                autocomplete = "current-password"
+                            })
+                            <button type="button" class="password-toggle-btn" id="toggleTrainerPassBtn" aria-label="Toggle password visibility">
+                                <i class="bi bi-eye" id="toggleTrainerPassIcon"></i>
+                            </button>
+                        </div>
+                        @Html.ValidationMessageFor(m => m.Password, "", new { @class = "text-danger small mt-1 d-block" })
+                    </div>
+
+                    <!-- Forgot Password Link (Aligned Right directly under Password) -->
+                    <div class="d-flex justify-content-end mb-4">
+                        <a href="javascript:void(0)" class="trainer-forgot-link" id="trainerForgotLink">
+                            Forgot password?
+                        </a>
+                    </div>
+
+                    <!-- Sign In Button (Clean White Solid Button) -->
+                    <button type="submit" class="btn-trainer-signin" id="trainerSignInBtn">
+                        Sign in
+                    </button>
+                }
+            </div>
+        </div>
+
+        <!-- ========================================================
+             RIGHT COLUMN: Black & White Barbell Visual Panel
+             ======================================================== -->
+        <div class="trainer-visual-side">
+            <div class="trainer-visual-container">
+                <img src="@Url.Content("~/Content/images/trainer-login-hero.jpg")" 
+                     alt="Olympic Barbell Gym Floor" 
+                     class="trainer-visual-img" />
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ============================================================
+     FORGOT PASSWORD MODAL (Self-Service Reset for Trainers)
+     ============================================================ -->
+<div id="trainerForgotModal" class="auth-modal-overlay" style="display: none;">
+    <div class="trainer-modal-card">
+        <!-- Close Button in Top-Right Corner -->
+        <button type="button" class="trainer-modal-close" id="closeTrainerForgotBtn" aria-label="Close modal">
+            <i class="bi bi-x-lg"></i>
+        </button>
+
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <div class="trainer-modal-icon-badge">
+                <i class="bi bi-key-fill fs-5"></i>
+            </div>
+            <h4 class="trainer-modal-title">Reset Trainer Password</h4>
+        </div>
+
+        <p class="trainer-modal-subtitle">
+            Enter your coach email to receive a password reset link.
+        </p>
+
+        <div id="trainerForgotAlert" style="display: none;"></div>
+
+        <div class="mb-3" id="trainerForgotEmailGroup">
+            <label class="trainer-input-label" for="trainerForgotEmail">Coach Email Address</label>
+            <input type="email" class="trainer-input" id="trainerForgotEmail" placeholder="coach@example.com" autocomplete="email" />
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+            <button type="button" class="btn btn-trainer-modal-cancel flex-grow-1" id="cancelTrainerForgotBtn">
+                Cancel
+            </button>
+            <button type="button" class="btn btn-trainer-modal-send flex-grow-1" id="sendTrainerResetBtn">
+                Send Reset Link
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Password Visibility Toggle
+        var passInput = document.getElementById('trainerPasswordInput');
+        var passBtn = document.getElementById('toggleTrainerPassBtn');
+        var passIcon = document.getElementById('toggleTrainerPassIcon');
+
+        if (passBtn && passInput && passIcon) {
+            passBtn.addEventListener('click', function () {
+                if (passInput.type === 'password') {
+                    passInput.type = 'text';
+                    passIcon.classList.remove('bi-eye');
+                    passIcon.classList.add('bi-eye-slash');
+                } else {
+                    passInput.type = 'password';
+                    passIcon.classList.remove('bi-eye-slash');
+                    passIcon.classList.add('bi-eye');
+                }
+            });
+        }
+
+        // Forgot Password Modal
+        var forgotModal = document.getElementById('trainerForgotModal');
+        var forgotLink = document.getElementById('trainerForgotLink');
+        var closeForgotBtn = document.getElementById('closeTrainerForgotBtn');
+        var cancelForgotBtn = document.getElementById('cancelTrainerForgotBtn');
+        var sendResetBtn = document.getElementById('sendTrainerResetBtn');
+        var forgotEmail = document.getElementById('trainerForgotEmail');
+        var forgotAlert = document.getElementById('trainerForgotAlert');
+        var forgotGroup = document.getElementById('trainerForgotEmailGroup');
+
+        function openForgotModal() {
+            if (forgotAlert) {
+                forgotAlert.style.display = 'none';
+                forgotAlert.innerHTML = '';
+            }
+            if (forgotGroup) forgotGroup.style.display = 'block';
+            if (sendResetBtn) {
+                sendResetBtn.style.display = 'inline-block';
+                sendResetBtn.disabled = false;
+                sendResetBtn.innerText = 'Send Reset Link';
+            }
+            if (cancelForgotBtn) cancelForgotBtn.innerText = 'Cancel';
+            if (forgotEmail) {
+                var loginEmail = document.getElementById('trainerEmailInput');
+                forgotEmail.value = (loginEmail && loginEmail.value) ? loginEmail.value.trim() : '';
+            }
+            if (forgotModal) forgotModal.style.display = 'flex';
+        }
+
+        function closeForgotModal() {
+            if (forgotModal) forgotModal.style.display = 'none';
+        }
+
+        if (forgotLink) forgotLink.addEventListener('click', openForgotModal);
+        if (closeForgotBtn) closeForgotBtn.addEventListener('click', closeForgotModal);
+        if (cancelForgotBtn) cancelForgotBtn.addEventListener('click', closeForgotModal);
+
+        if (sendResetBtn) {
+            sendResetBtn.addEventListener('click', function () {
+                var email = forgotEmail ? forgotEmail.value.trim() : '';
+                if (!email) {
+                    if (forgotAlert) {
+                        forgotAlert.innerHTML = '<div class="dark-alert-error mb-3"><div class="dark-alert-content"><i class="bi bi-shield-exclamation fs-5 flex-shrink-0 text-danger"></i><div>Please enter your coach email address.</div></div></div>';
+                        forgotAlert.style.display = 'block';
+                    }
+                    return;
+                }
+
+                sendResetBtn.disabled = true;
+                sendResetBtn.innerText = 'Sending...';
+
+                var token = $('input[name="__RequestVerificationToken"]').val();
+                $.ajax({
+                    url: '@Url.Action("ForgotPassword", "Account", new { area = "Trainer" })',
+                    type: 'POST',
+                    data: { 
+                        __RequestVerificationToken: token,
+                        email: email 
+                    },
+                    success: function (res) {
+                        sendResetBtn.disabled = false;
+                        sendResetBtn.innerText = 'Send Reset Link';
+
+                        if (res && res.success) {
+                            var alertHtml = '<div class="dark-alert-success mb-3"><div class="dark-alert-content"><i class="bi bi-check-circle-fill fs-5 flex-shrink-0 text-success"></i><div>' + res.message + '</div></div></div>';
+                            if (res.resetLink) {
+                                alertHtml += '<div class="mt-3"><a href="' + res.resetLink + '" class="btn btn-primary w-100 py-2 fw-semibold" style="border-radius: 10px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;"><i class="bi bi-key-fill"></i>Open Password Reset Page</a></div>';
+                            }
+                            forgotAlert.innerHTML = alertHtml;
+                            forgotAlert.style.display = 'block';
+                            if (forgotGroup) forgotGroup.style.display = 'none';
+                            sendResetBtn.style.display = 'none';
+                            cancelForgotBtn.innerText = 'Close';
+                        } else {
+                            var errMsg = (res && res.message) ? res.message : 'Unable to send reset link.';
+                            forgotAlert.innerHTML = '<div class="dark-alert-error mb-3"><div class="dark-alert-content"><i class="bi bi-shield-exclamation fs-5 flex-shrink-0 text-danger"></i><div>' + errMsg + '</div></div></div>';
+                            forgotAlert.style.display = 'block';
+                        }
+                    },
+                    error: function () {
+                        sendResetBtn.disabled = false;
+                        sendResetBtn.innerText = 'Send Reset Link';
+                        forgotAlert.innerHTML = '<div class="dark-alert-error mb-3"><div class="dark-alert-content"><i class="bi bi-shield-exclamation fs-5 flex-shrink-0 text-danger"></i><div>Error connecting to server. Please try again.</div></div></div>';
+                        forgotAlert.style.display = 'block';
+                    }
+                });
+            });
+        }
+    </script>
+}

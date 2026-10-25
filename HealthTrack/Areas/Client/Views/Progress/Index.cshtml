@@ -1,0 +1,1417 @@
+@model HealthTrack.Areas.Client.ViewModels.ClientProgressReportViewModel
+@{
+    ViewBag.Title = "My Progress & Plans Report - HealthTrack";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- HealthTrack Report Theme Styles -->
+<style>
+    /* Executive Light Card Styles */
+    .report-shell {
+        color: #0f172a;
+    }
+    .report-card-light {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .kpi-card-box {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 1.25rem;
+        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+    .kpi-card-box::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+    }
+    .kpi-border-cyan::before { background: #009dff; }
+    .kpi-border-green::before { background: #22c55e; }
+    .kpi-border-amber::before { background: #f59e0b; }
+    .kpi-border-purple::before { background: #8b5cf6; }
+
+    .kpi-title-label {
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+    }
+    .kpi-number {
+        color: #0f172a;
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        line-height: 1.1;
+        margin: 0.35rem 0;
+    }
+    .section-pill-tag {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .tag-cyan {
+        background: #e0f2fe;
+        color: #0284c7;
+        border: 1px solid #bae6fd;
+    }
+    .tag-green {
+        background: #dcfce7;
+        color: #15803d;
+        border: 1px solid #bbf7d0;
+    }
+    .tag-purple {
+        background: #f3e8ff;
+        color: #7e22ce;
+        border: 1px solid #e9d5ff;
+    }
+
+    /* Clean Light Table Styling */
+    .table-report {
+        color: #0f172a;
+        margin-bottom: 0;
+    }
+    .table-report th {
+        background: #f8fafc;
+        color: #475569;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        border-bottom: 2px solid #e2e8f0;
+        padding: 0.85rem 1rem;
+        vertical-align: middle;
+    }
+    .table-report td {
+        border-bottom: 1px solid #f1f5f9;
+        padding: 0.85rem 1rem;
+        vertical-align: middle;
+        font-size: 0.88rem;
+    }
+    .table-report tr:hover td {
+        background-color: #f8fafc;
+    }
+
+    /* Print Specific Media Styles */
+    @@media print {
+        body {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+        }
+        .sidebar, .navbar, .report-top-bar, .no-print, .btn, .breadcrumb, #downloadPdfToast {
+            display: none !important;
+        }
+        .main-content, .container-fluid, .content-wrapper {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        .report-card-light {
+            border: 1px solid #cbd5e1 !important;
+            box-shadow: none !important;
+            break-inside: avoid;
+            page-break-inside: avoid;
+            margin-bottom: 1.25rem !important;
+        }
+    }
+
+    /* Dedicated Offline PDF Paper Layout (Used strictly for HTML2PDF rendering) */
+    #reportDossierPrintContainer {
+        display: none; /* hidden on screen, cloned & rendered by html2pdf */
+    }
+</style>
+
+<div class="container-fluid px-3 px-lg-4 py-3 report-shell">
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 mb-4 rounded-3 shadow-sm border-0" role="alert">
+            <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+            <div class="fw-semibold">@TempData["SuccessMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 mb-4 rounded-3 shadow-sm border-0" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-5 text-danger"></i>
+            <div class="fw-semibold">@TempData["ErrorMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Top Action Bar & Date Range Filters -->
+    <div class="report-top-bar d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-3 border-bottom border-slate-200">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="section-pill-tag tag-cyan"><i class="bi bi-file-earmark-medical-fill"></i> Client Health Dossier</span>
+                <span class="text-muted small">•</span>
+                <span class="text-muted small fw-semibold">Report ID: <code class="text-primary fw-bold">@Model.ReportId</code></span>
+            </div>
+            <h1 class="h3 fw-bold text-dark mb-0" style="letter-spacing: -0.4px;">My Progress &amp; Plans Report</h1>
+            <p class="text-muted small mb-0">Official health telemetry, workout progression, and prescribed diet blueprint in one unified report.</p>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <!-- Date Filter Presets -->
+            <div class="btn-group btn-group-sm bg-white p-1 rounded-3 border shadow-sm" role="group">
+                <a href="@Url.Action("Index", "Progress", new { area = "Client", preset = "7days" })" 
+                   class="btn @(Model.DatePreset == "7days" ? "btn-primary fw-bold" : "btn-light text-muted border-0")">7 Days</a>
+                <a href="@Url.Action("Index", "Progress", new { area = "Client", preset = "30days" })" 
+                   class="btn @(Model.DatePreset == "30days" ? "btn-primary fw-bold" : "btn-light text-muted border-0")">30 Days</a>
+                <a href="@Url.Action("Index", "Progress", new { area = "Client", preset = "90days" })" 
+                   class="btn @(Model.DatePreset == "90days" ? "btn-primary fw-bold" : "btn-light text-muted border-0")">90 Days</a>
+                <a href="@Url.Action("Index", "Progress", new { area = "Client", preset = "1year" })" 
+                   class="btn @(Model.DatePreset == "1year" ? "btn-primary fw-bold" : "btn-light text-muted border-0")">1 Year</a>
+                <a href="@Url.Action("Index", "Progress", new { area = "Client", preset = "all" })" 
+                   class="btn @(Model.DatePreset == "all" ? "btn-primary fw-bold" : "btn-light text-muted border-0")">All Time</a>
+            </div>
+
+            <!-- DIRECT DOWNLOAD PDF BUTTON (Report Format, Not Screen Print) -->
+            <button type="button" id="btnDownloadPdf" onclick="downloadOfficialPdfReport()" class="btn btn-sm btn-success fw-bold d-flex align-items-center gap-2 shadow-sm px-3 py-2 rounded-3">
+                <i class="bi bi-file-earmark-arrow-down-fill fs-6"></i>
+                <span id="btnDownloadText">Download PDF Report</span>
+            </button>
+
+            <!-- Secondary Clean Print Preview Link -->
+            <a href="@Url.Action("ExportPdf", "Progress", new { area = "Client", preset = Model.DatePreset })" target="_blank" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 py-2 rounded-3 shadow-sm bg-white">
+                <i class="bi bi-printer"></i>
+                <span>Print Document</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Client Dossier Identity Header Banner -->
+    <div class="report-card-light p-4 mb-4" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 65%, #0369a1 100%);">
+        <div class="row align-items-center g-3 text-white">
+            <div class="col-lg-7">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow flex-shrink-0" 
+                         style="width: 64px; height: 64px; background: linear-gradient(135deg, #009dff, #0056b3); font-size: 1.5rem; border: 2px solid rgba(255, 255, 255, 0.4);">
+                        @(string.IsNullOrWhiteSpace(Model.ClientName) ? "C" : Model.ClientName.Substring(0, 1).ToUpper())
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                            <h4 class="fw-bold text-white mb-0">@Model.ClientName</h4>
+                            <span class="badge bg-info text-dark fw-bold">@Model.PrimaryGoal</span>
+                            <span class="badge  bg-opacity-20 text-white border border-white border-opacity-25">ID: @Model.ClientId</span>
+                        </div>
+                        <div class="text-white-50 small d-flex flex-wrap gap-3">
+                            <span><i class="bi bi-envelope me-1 text-info"></i> @Model.ClientEmail</span>
+                            <span><i class="bi bi-person me-1 text-info"></i> @(string.IsNullOrWhiteSpace(Model.Gender) ? "Member" : Model.Gender)</span>
+                            <span><i class="bi bi-calendar-range me-1 text-warning"></i> Report Period: @Model.FromDate.ToString("MMM dd, yyyy") — @Model.ToDate.ToString("MMM dd, yyyy")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="p-3 rounded-3" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(4px);">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span class="small text-white-50"><i class="bi bi-person-badge-fill text-warning me-1"></i> Assigned Personal Coach</span>
+                        <span class="badge bg-success text-white">Active Guidance</span>
+                    </div>
+                    <div class="fw-bold text-white fs-6">@Model.TrainerName</div>
+                    <div class="text-white-50 small">@Model.TrainerSpecialization • @Model.TrainerEmail</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. Executive Health & Biometrics KPI Summary -->
+    <div class="mb-4">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-heart-pulse-fill text-primary fs-5"></i>
+                <span>1. Executive Health &amp; Biometrics Telemetry</span>
+            </h5>
+            <span class="badge bg-light text-muted border">Updated Live</span>
+        </div>
+        <div class="row g-3">
+            <!-- Current Weight KPI -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="kpi-card-box kpi-border-cyan">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <span class="kpi-title-label">Current Weight</span>
+                        <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            <i class="bi bi-speedometer fs-6"></i>
+                        </div>
+                    </div>
+                    <div class="kpi-number">
+                        @Model.CurrentWeightKg.ToString("0.0") <span class="fs-6 fw-semibold text-muted">kg</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between small pt-1 border-top border-slate-100">
+                        <span class="text-muted">Target: <strong>@Model.TargetWeightKg.ToString("0.0") kg</strong></span>
+                        @if (Model.WeightChangeKg < 0)
+                        {
+                            <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-arrow-down"></i> @Math.Abs(Model.WeightChangeKg) kg lost</span>
+                        }
+                        else if (Model.WeightChangeKg > 0)
+                        {
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle"><i class="bi bi-arrow-up"></i> +@Model.WeightChangeKg kg</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-info-subtle text-info border border-info-subtle">Maintained</span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- BMI KPI -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="kpi-card-box kpi-border-green">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <span class="kpi-title-label">Body Mass Index (BMI)</span>
+                        <div class="rounded-circle bg-success bg-opacity-10 text-success p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            <i class="bi bi-activity fs-6"></i>
+                        </div>
+                    </div>
+                    <div class="kpi-number">
+                        @(Model.CurrentBmi > 0 ? Model.CurrentBmi.ToString("0.0") : "N/A")
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between small pt-1 border-top border-slate-100">
+                        <span class="text-muted">Height: <strong>@Model.HeightCm.ToString("0") cm</strong></span>
+                        <span class="badge @(Model.BmiCategory == "Normal" ? "bg-success text-white" : (Model.BmiCategory == "Overweight" ? "bg-warning text-dark" : "bg-info text-white"))">
+                            @Model.BmiCategory
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Workout Adherence KPI -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="kpi-card-box kpi-border-amber">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <span class="kpi-title-label">Workout Adherence</span>
+                        <div class="rounded-circle bg-warning bg-opacity-10 text-warning p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            <i class="bi bi-trophy-fill fs-6"></i>
+                        </div>
+                    </div>
+                    <div class="kpi-number text-warning">
+                        @Model.WorkoutAdherencePct<span class="fs-6 fw-semibold text-muted">%</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between small pt-1 border-top border-slate-100">
+                        <span class="text-muted"><strong>@Model.TotalWorkoutsCompleted</strong> completed</span>
+                        <span class="text-muted"><strong>@Model.TotalExerciseMinutes</strong> mins</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nutrition Compliance KPI -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="kpi-card-box kpi-border-purple">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <span class="kpi-title-label">Daily Calorie Target</span>
+                        <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            <i class="bi bi-egg-fried fs-6"></i>
+                        </div>
+                    </div>
+                    <div class="kpi-number text-primary">
+                        @Model.PrescribedDailyCalories <span class="fs-6 fw-semibold text-muted">kcal</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between small pt-1 border-top border-slate-100">
+                        <span class="text-muted">Avg Consumed: <strong>@Model.AverageDailyCaloriesConsumed kcal</strong></span>
+                        <span class="badge bg-light text-dark border">@Model.PrescribedWaterLiters L Water</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Active Health Goals & Milestones -->
+    @if (Model.Goals != null && Model.Goals.Any())
+    {
+        <div class="report-card-light p-4 mb-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                    <i class="bi bi-flag-fill text-warning"></i>
+                    <span>2. Active Health Goals &amp; Milestone Progress</span>
+                </h5>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">@Model.Goals.Count Goals Tracked</span>
+            </div>
+            <div class="row g-3">
+                @foreach (var goal in Model.Goals)
+                {
+                    <div class="col-md-6 col-lg-4">
+                        <div class="p-3 rounded-3 bg-light border border-slate-200 h-100">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="fw-bold text-dark">@goal.GoalName</span>
+                                @if (goal.IsAchieved)
+                                {
+                                    <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i> Achieved</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle">@goal.Category</span>
+                                }
+                            </div>
+                            <div class="d-flex justify-content-between text-muted small mb-1">
+                                <span>Current: <strong class="text-dark">@goal.CurrentValue @goal.Unit</strong></span>
+                                <span>Target: <strong class="text-dark">@goal.TargetValue @goal.Unit</strong></span>
+                            </div>
+                            <div class="progress" style="height: 8px; background: #e2e8f0;">
+                                <div class="progress-bar @(goal.IsAchieved ? "bg-success" : "bg-primary")" role="progressbar" 
+                                     style="width: @goal.ProgressPercentage%;" aria-valuenow="@goal.ProgressPercentage" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-2 small">
+                                <span class="text-muted">@goal.StatusMessage</span>
+                                <span class="fw-bold @(goal.IsAchieved ? "text-success" : "text-primary")">@goal.ProgressPercentage%</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- 3. THEIR PLANS: Active Workout Routine -->
+    <div class="report-card-light p-4 mb-4">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-2 border-bottom border-slate-100">
+            <div>
+                <span class="section-pill-tag tag-cyan"><i class="bi bi-lightning-charge-fill me-1"></i> Plan Component 1</span>
+                <h4 class="fw-bold text-dark mt-1 mb-0">3. Prescribed Workout Routine</h4>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                @if (Model.HasActiveWorkoutPlan)
+                {
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-6 px-3 py-1">
+                        @Model.WorkoutPlanName
+                    </span>
+                    <span class="badge bg-light text-muted border">
+                        @Model.WorkoutDifficulty • @Model.WorkoutDurationWeeks Weeks
+                    </span>
+                }
+                else
+                {
+                    <span class="badge bg-light text-muted border fs-6 px-3 py-1">
+                        No Active Workout Plan
+                    </span>
+                }
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.WorkoutObjective))
+        {
+            <div class="p-3 rounded-3 mb-3" style="background: #f0f9ff; border-left: 4px solid #009dff;">
+                <div class="text-primary fw-bold small text-uppercase mb-1"><i class="bi bi-bullseye me-1"></i> Workout Objective</div>
+                <div class="text-dark small">@Model.WorkoutObjective</div>
+                @if (!string.IsNullOrWhiteSpace(Model.WorkoutProgressionStrategy))
+                {
+                    <div class="text-muted small mt-2"><strong>Progression Strategy:</strong> @Model.WorkoutProgressionStrategy</div>
+                }
+            </div>
+        }
+
+        @if (Model.WorkoutDays != null && Model.WorkoutDays.Any())
+        {
+            <div class="row g-3">
+                @foreach (var day in Model.WorkoutDays)
+                {
+                    <div class="col-lg-6">
+                        <div class="p-3 rounded-3 bg-light border border-slate-200 h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                <span class="fw-bold text-primary fs-6"><i class="bi bi-calendar-event me-1"></i> @day.DayOfWeek</span>
+                                <span class="badge bg-white text-dark border">@day.FocusTitle</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-report mb-0" style="font-size: 0.85rem;">
+                                    <thead>
+                                        <tr>
+                                            <th>Exercise</th>
+                                            <th>Sets x Reps</th>
+                                            <th>Rest</th>
+                                            <th>Target</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var ex in day.Exercises)
+                                        {
+                                            <tr>
+                                                <td class="fw-bold text-dark">@ex.Name</td>
+                                                <td>@ex.Sets sets @(ex.Reps.HasValue ? "× " + ex.Reps.Value + " reps" : (ex.DurationMinutes.HasValue ? "× " + ex.DurationMinutes.Value + " mins" : ""))</td>
+                                                <td><span class="text-muted">@ex.RestSeconds s</span></td>
+                                                <td><span class="badge bg-white text-dark border">@ex.TargetMuscle</span></td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-muted small p-4 bg-light rounded-3 text-center border">
+                <i class="bi bi-info-circle me-1"></i> No active workout plan currently assigned. Your coach will prescribe your customized exercise split here.
+            </div>
+        }
+    </div>
+
+    <!-- 4. THEIR PLANS: Active Diet & Nutrition Plan -->
+    <div class="report-card-light p-4 mb-4">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-2 border-bottom border-slate-100">
+            <div>
+                <span class="section-pill-tag tag-green"><i class="bi bi-egg-fried me-1"></i> Plan Component 2</span>
+                <h4 class="fw-bold text-dark mt-1 mb-0">4. Prescribed Nutrition &amp; Meal Blueprint</h4>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                @if (Model.HasActiveDietPlan)
+                {
+                    <span class="badge bg-success-subtle text-success border border-success-subtle fs-6 px-3 py-1">
+                        @Model.DietPlanName
+                    </span>
+                    <span class="badge bg-light text-muted border">
+                        @Model.PrescribedDailyCalories kcal/day • @Model.PrescribedWaterLiters L Water
+                    </span>
+                }
+                else
+                {
+                    <span class="badge bg-light text-muted border fs-6 px-3 py-1">
+                        No Active Diet Plan
+                    </span>
+                }
+            </div>
+        </div>
+
+        <!-- Macronutrient Ratios -->
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <div class="p-3 rounded-3 text-center" style="background: #f0fdf4; border: 1px solid #bbf7d0;">
+                    <div class="small text-success text-uppercase fw-bold">Protein Target</div>
+                    <div class="fs-3 fw-bold text-dark my-1">@Model.TargetProteinGrams <span class="fs-6 fw-normal text-muted">g</span></div>
+                    <div class="small text-muted">Avg Consumed: <strong>@Model.AverageProteinGrams g</strong></div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3 rounded-3 text-center" style="background: #f0f9ff; border: 1px solid #bae6fd;">
+                    <div class="small text-primary text-uppercase fw-bold">Carbohydrates Target</div>
+                    <div class="fs-3 fw-bold text-dark my-1">@Model.TargetCarbsGrams <span class="fs-6 fw-normal text-muted">g</span></div>
+                    <div class="small text-muted">Avg Consumed: <strong>@Model.AverageCarbsGrams g</strong></div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3 rounded-3 text-center" style="background: #fffbeb; border: 1px solid #fde68a;">
+                    <div class="small text-warning text-uppercase fw-bold">Healthy Fats Target</div>
+                    <div class="fs-3 fw-bold text-dark my-1">@Model.TargetFatsGrams <span class="fs-6 fw-normal text-muted">g</span></div>
+                    <div class="small text-muted">Avg Consumed: <strong>@Model.AverageFatsGrams g</strong></div>
+                </div>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.DietSpecialInstructions))
+        {
+            <div class="p-3 rounded-3 mb-3" style="background: #f0fdf4; border-left: 4px solid #22c55e;">
+                <div class="text-success fw-bold small text-uppercase mb-1"><i class="bi bi-journal-check me-1"></i> Special Dietary Instructions</div>
+                <div class="text-dark small">@Model.DietSpecialInstructions</div>
+            </div>
+        }
+
+        @if (Model.ScheduledMeals != null && Model.ScheduledMeals.Any())
+        {
+            <div class="table-responsive rounded-3 border">
+                <table class="table table-report">
+                    <thead>
+                        <tr>
+                            <th>Meal Timing</th>
+                            <th>Category</th>
+                            <th>Meal Name</th>
+                            <th>Ingredients &amp; Portions</th>
+                            <th class="text-end">Calories</th>
+                            <th class="text-end">Macros (P/C/F)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var meal in Model.ScheduledMeals)
+                        {
+                            <tr>
+                                <td class="fw-bold text-primary"><i class="bi bi-clock me-1"></i> @meal.ScheduledTime</td>
+                                <td><span class="badge bg-light text-dark border">@meal.MealType</span></td>
+                                <td class="fw-bold text-dark">@meal.MealName</td>
+                                <td class="small text-muted" style="max-width: 320px;">@meal.IngredientsAndPortion</td>
+                                <td class="text-end fw-bold text-success">@meal.Calories kcal</td>
+                                <td class="text-end small text-muted">@meal.ProteinGrams g / @meal.CarbsGrams g / @meal.FatsGrams g</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-muted small p-4 bg-light rounded-3 text-center border">
+                <i class="bi bi-info-circle me-1"></i> No active diet plan or meal breakdown currently assigned.
+            </div>
+        }
+    </div>
+
+    <!-- 5 & 6. Recent Workout History & Biometric Progression Tables -->
+    <div class="row g-4 mb-4">
+        <!-- Recent Workouts -->
+        <div class="col-lg-6">
+            <div class="report-card-light p-4 h-100">
+                <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                    <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-clock-history text-primary"></i>
+                        <span>5. Recent Completed Workouts</span>
+                    </h5>
+                    <span class="badge bg-light text-muted border">@Model.RecentWorkoutLogs.Count Sessions</span>
+                </div>
+                @if (Model.RecentWorkoutLogs != null && Model.RecentWorkoutLogs.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm table-report mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Routine</th>
+                                    <th>Duration</th>
+                                    <th class="text-end">Burned</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var log in Model.RecentWorkoutLogs)
+                                {
+                                    <tr>
+                                        <td class="text-muted small">@log.Date.ToString("MMM dd, yyyy")</td>
+                                        <td class="fw-bold text-dark">@log.RoutineName</td>
+                                        <td>@log.DurationMinutes mins</td>
+                                        <td class="text-end fw-bold text-warning">@log.CaloriesBurned kcal</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="p-4 bg-light rounded-3 text-center text-muted small border">
+                        <i class="bi bi-calendar-x me-1"></i> No workout logs recorded in selected date range.
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Biometric History -->
+        <div class="col-lg-6">
+            <div class="report-card-light p-4 h-100">
+                <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                    <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-graph-up text-success"></i>
+                        <span>6. Weigh-Ins &amp; Biometrics History</span>
+                    </h5>
+                    <span class="badge bg-light text-muted border">@Model.BiometricHistory.Count Weigh-ins</span>
+                </div>
+
+                <!-- Date-Range Filter Toolbar (FR-C-62) -->
+                <form method="get" action="@Url.Action("Index", "Progress", new { area = "Client" })" class="mb-3 p-2 bg-light rounded-3 border">
+                    <input type="hidden" name="preset" value="custom" />
+                    <div class="row g-2 align-items-end">
+                        <div class="col-sm-5 col-6">
+                            <label class="form-label text-muted small fw-semibold mb-1">From Date</label>
+                            <input type="date" name="fromDate" class="form-control form-control-sm"
+                                   value="@(Model.FilterFromDate?.ToString("yyyy-MM-dd") ?? (Model.DatePreset == "custom" ? Model.FromDate.ToString("yyyy-MM-dd") : ""))" />
+                        </div>
+                        <div class="col-sm-5 col-6">
+                            <label class="form-label text-muted small fw-semibold mb-1">To Date</label>
+                            <input type="date" name="toDate" class="form-control form-control-sm"
+                                   value="@(Model.FilterToDate?.ToString("yyyy-MM-dd") ?? (Model.DatePreset == "custom" ? Model.ToDate.ToString("yyyy-MM-dd") : ""))" />
+                        </div>
+                        <div class="col-sm-2 col-12 d-flex gap-1">
+                            <button type="submit" class="btn btn-sm btn-primary w-100" title="Filter measurements">
+                                <i class="bi bi-funnel-fill"></i>
+                            </button>
+                            @if (Model.DatePreset != "all")
+                            {
+                                <a href="@Url.Action("Index", "Progress", new { area = "Client", preset = "all" })" class="btn btn-sm btn-outline-secondary" title="Clear filter & show all measurements">
+                                    <i class="bi bi-x-circle"></i>
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </form>
+
+                @if (Model.BiometricHistory != null && Model.BiometricHistory.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm table-report mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Recorded Date</th>
+                                    <th>Weight</th>
+                                    <th>BMI</th>
+                                    <th>Consumed / Burned</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var bio in Model.BiometricHistory)
+                                {
+                                    <tr>
+                                        <td class="text-muted small">@bio.RecordedDate.ToString("MMM dd, yyyy")</td>
+                                        <td class="fw-bold text-dark">@bio.WeightKg.ToString("0.0") kg</td>
+                                        <td><span class="badge bg-light text-dark border">@(bio.Bmi.HasValue ? bio.Bmi.Value.ToString("0.0") : "N/A")</span></td>
+                                        <td class="small">
+                                            <span class="text-success fw-bold">@bio.CaloriesConsumed</span> / <span class="text-warning fw-bold">@bio.CaloriesBurned kcal</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="d-inline-flex align-items-center gap-1">
+                                                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 rounded-pill x-small fw-semibold btn-edit-measurement"
+                                                        data-id="@bio.RecordId"
+                                                        data-date="@bio.RecordedDate.ToString("yyyy-MM-dd")"
+                                                        data-displaydate="@bio.RecordedDate.ToString("MMM dd, yyyy")"
+                                                        data-weight="@bio.WeightKg.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)"
+                                                        data-height="@bio.HeightCm.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)"
+                                                        data-heartrate="@(bio.HeartRateBpm?.ToString() ?? "")"
+                                                        data-steps="@(bio.StepsCount?.ToString() ?? "")"
+                                                        data-caloriesconsumed="@bio.CaloriesConsumed"
+                                                        data-caloriesburned="@bio.CaloriesBurned"
+                                                        data-water="@bio.WaterIntakeMl"
+                                                        data-bodyfat="@(bio.BodyFatPct.HasValue ? bio.BodyFatPct.Value.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) : "")"
+                                                        data-notes="@(bio.Notes ?? "")"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#editMeasurementModal"
+                                                        title="Edit this recorded measurement">
+                                                    <i class="bi bi-pencil-square me-1"></i>Edit
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 rounded-pill x-small fw-semibold btn-delete-measurement"
+                                                        data-id="@bio.RecordId"
+                                                        data-displaydate="@bio.RecordedDate.ToString("MMM dd, yyyy")"
+                                                        data-weight="@bio.WeightKg.ToString("0.0") kg"
+                                                        data-bmi="@(bio.Bmi.HasValue ? bio.Bmi.Value.ToString("0.0") : "N/A")"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#deleteMeasurementModal"
+                                                        title="Delete this recorded measurement">
+                                                    <i class="bi bi-trash me-1"></i>Delete
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="p-4 bg-light rounded-3 text-center text-muted small border">
+                        <i class="bi bi-calendar-x fs-4 d-block mb-2 text-secondary"></i>
+                        <p class="mb-2 fw-semibold">No biometric progress logs recorded in selected date range (@Model.FromDate.ToString("MMM dd, yyyy") – @Model.ToDate.ToString("MMM dd, yyyy")).</p>
+                        @if (Model.DatePreset != "all")
+                        {
+                            <a href="@Url.Action("Index", "Progress", new { area = "Client", preset = "all" })" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i> Clear Filter &amp; Show All
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. Professional Coach Clinical Evaluation & Next Phase -->
+    <div class="report-card-light p-4 mb-4" style="border-left: 5px solid #22c55e;">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <i class="bi bi-chat-heart-fill text-success fs-4"></i>
+            <div>
+                <h5 class="fw-bold text-dark mb-0">7. Coach Evaluation &amp; Next Phase Guidance</h5>
+                <div class="text-muted small">Official clinical assessment by <strong>@(string.IsNullOrWhiteSpace(Model.TrainerName) || Model.TrainerName == "Not Assigned" ? "HealthTrack Coaching Team" : Model.TrainerName)</strong> @(!string.IsNullOrWhiteSpace(Model.TrainerSpecialization) ? $"({Model.TrainerSpecialization})" : "")</div>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <div class="p-3 rounded-3 bg-light border border-slate-200 h-100">
+                    <div class="small text-uppercase text-muted fw-bold mb-1"><i class="bi bi-check2-circle text-success me-1"></i> Current Performance Assessment</div>
+                    <p class="text-dark small mb-0" style="line-height: 1.6;">@(!string.IsNullOrWhiteSpace(Model.CoachEvaluationNotes) ? Model.CoachEvaluationNotes : "No specific evaluation notes recorded for this period yet.")</p>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="p-3 rounded-3 bg-light border border-slate-200 h-100">
+                    <div class="small text-uppercase text-muted fw-bold mb-1"><i class="bi bi-arrow-right-circle text-primary me-1"></i> Next Phase Recommendations</div>
+                    <p class="text-dark small mb-0" style="line-height: 1.6;">@(!string.IsNullOrWhiteSpace(Model.NextPhaseRecommendations) ? Model.NextPhaseRecommendations : "Continue following your prescribed workout and nutrition schedule.")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Footer -->
+    <div class="text-center text-muted small py-3 border-top border-slate-200">
+        <div>HealthTrack Unified Digital Health &amp; Fitness Management System</div>
+        <div>Report ID: <code class="text-primary fw-bold">@Model.ReportId</code> • Generated for @Model.ClientName on @Model.GeneratedAt.ToString("MMMM dd, yyyy")</div>
+    </div>
+
+</div>
+
+<!-- ========================================================================= -->
+<!-- DEDICATED OFFICIAL REPORT DOCUMENT (Rendered and Exported by html2pdf)     -->
+<!-- This is strictly formatted as an executive white-paper dossier report    -->
+<!-- ========================================================================= -->
+<div id="reportDossierPrintContainer" style="font-family: 'Inter', Arial, sans-serif; background: #ffffff; color: #0f172a; padding: 30px; font-size: 12px; line-height: 1.45;">
+
+    <!-- Document Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #009dff; padding-bottom: 15px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <img src="@Url.Content("~/Content/images/logo.png")" alt="HealthTrack" style="width: 44px; height: 44px; object-fit: contain;" />
+            <div>
+                <div style="font-size: 20px; font-weight: 800; color: #009dff; line-height: 1.1;">HealthTrack</div>
+                <div style="font-size: 9px; font-weight: 700; color: #22c55e; letter-spacing: 1px; text-transform: uppercase;">WORKOUT &amp; NUTRITION — OFFICIAL CLIENT REPORT</div>
+            </div>
+        </div>
+        <div style="text-align: right; font-size: 11px; color: #475569;">
+            <div>Report ID: <strong style="color: #0f172a;">@Model.ReportId</strong></div>
+            <div>Generated: <strong style="color: #0f172a;">@Model.GeneratedAt.ToString("MMM dd, yyyy hh:mm tt")</strong></div>
+            <div>Period: <strong>@Model.FromDate.ToString("MMM dd, yyyy") — @Model.ToDate.ToString("MMM dd, yyyy")</strong></div>
+        </div>
+    </div>
+
+    <!-- Client & Coach Demographics Table -->
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px;">
+        <tr>
+            <td style="padding: 10px 14px; width: 50%; border-right: 1px solid #cbd5e1; vertical-align: top;">
+                <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Client Dossier</div>
+                <div style="font-size: 14px; font-weight: 700; color: #0f172a;">@Model.ClientName <span style="font-size: 11px; font-weight: normal; color: #64748b;">(ID: @Model.ClientId)</span></div>
+                <div style="color: #475569; margin-top: 2px;">Email: <strong>@Model.ClientEmail</strong></div>
+                <div style="color: #475569;">Primary Goal: <strong>@Model.PrimaryGoal</strong></div>
+                <div style="color: #475569;">Medical / Allergies: <strong>@Model.MedicalConditions • @Model.Allergies</strong></div>
+            </td>
+            <td style="padding: 10px 14px; width: 50%; vertical-align: top;">
+                <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Assigned Professional Coach</div>
+                <div style="font-size: 14px; font-weight: 700; color: #0f172a;">@Model.TrainerName</div>
+                <div style="color: #475569; margin-top: 2px;">Specialization: <strong>@Model.TrainerSpecialization</strong></div>
+                <div style="color: #475569;">Coach Email: <strong>@Model.TrainerEmail</strong></div>
+                <div style="color: #15803d; font-weight: 600; margin-top: 2px;">Evaluation: Active Performance Cycle</div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- 1. Executive Health Telemetry Summary -->
+    <div style="font-size: 13px; font-weight: 700; color: #0f172a; border-left: 4px solid #009dff; padding-left: 8px; margin-bottom: 10px;">
+        1. Executive Health &amp; Biometrics Summary
+    </div>
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 18px;">
+        <tr>
+            <td style="width: 25%; padding: 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+                <div style="font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 700;">Current Weight</div>
+                <div style="font-size: 18px; font-weight: 800; color: #0f172a; margin: 3px 0;">@Model.CurrentWeightKg.ToString("0.0") kg</div>
+                <div style="font-size: 10px; color: #475569;">Baseline: @Model.BaselineWeightKg.ToString("0.0") kg (@(Model.WeightChangeKg > 0 ? "+" + Model.WeightChangeKg : Model.WeightChangeKg.ToString()) kg)</div>
+            </td>
+            <td style="width: 25%; padding: 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+                <div style="font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 700;">Body Mass Index</div>
+                <div style="font-size: 18px; font-weight: 800; color: #0f172a; margin: 3px 0;">@(Model.CurrentBmi > 0 ? Model.CurrentBmi.ToString("0.0") : "N/A")</div>
+                <div style="font-size: 10px; color: #475569;">Category: <strong>@Model.BmiCategory</strong> (Height: @Model.HeightCm cm)</div>
+            </td>
+            <td style="width: 25%; padding: 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+                <div style="font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 700;">Workout Adherence</div>
+                <div style="font-size: 18px; font-weight: 800; color: #0f172a; margin: 3px 0;">@Model.WorkoutAdherencePct%</div>
+                <div style="font-size: 10px; color: #475569;">@Model.TotalWorkoutsCompleted Completed • @Model.TotalExerciseMinutes Mins</div>
+            </td>
+            <td style="width: 25%; padding: 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+                <div style="font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 700;">Daily Calorie Target</div>
+                <div style="font-size: 18px; font-weight: 800; color: #0f172a; margin: 3px 0;">@Model.PrescribedDailyCalories kcal</div>
+                <div style="font-size: 10px; color: #475569;">Avg: @Model.AverageDailyCaloriesConsumed kcal • @Model.PrescribedWaterLiters L Water</div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- 2. Tracked Health Goals -->
+    @if (Model.Goals != null && Model.Goals.Any())
+    {
+        <div style="font-size: 13px; font-weight: 700; color: #0f172a; border-left: 4px solid #f59e0b; padding-left: 8px; margin-bottom: 8px;">
+            2. Active Health Goals &amp; Milestones
+        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 18px; font-size: 11px;">
+            <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
+                    <th style="padding: 6px 10px; text-align: left;">Goal Description</th>
+                    <th style="padding: 6px 10px; text-align: left;">Category</th>
+                    <th style="padding: 6px 10px; text-align: left;">Baseline</th>
+                    <th style="padding: 6px 10px; text-align: left;">Current</th>
+                    <th style="padding: 6px 10px; text-align: left;">Target</th>
+                    <th style="padding: 6px 10px; text-align: right;">Progress</th>
+                    <th style="padding: 6px 10px; text-align: left;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var g in Model.Goals)
+                {
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 6px 10px; font-weight: 700;">@g.GoalName</td>
+                        <td style="padding: 6px 10px;">@g.Category</td>
+                        <td style="padding: 6px 10px;">@g.BaselineValue @g.Unit</td>
+                        <td style="padding: 6px 10px; font-weight: 700;">@g.CurrentValue @g.Unit</td>
+                        <td style="padding: 6px 10px;">@g.TargetValue @g.Unit</td>
+                        <td style="padding: 6px 10px; text-align: right; font-weight: 700; color: #0284c7;">@g.ProgressPercentage%</td>
+                        <td style="padding: 6px 10px;">@(g.IsAchieved ? "Achieved" : g.StatusMessage)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <!-- 3. Prescribed Workout Routine -->
+    <div style="font-size: 13px; font-weight: 700; color: #0f172a; border-left: 4px solid #009dff; padding-left: 8px; margin-bottom: 6px;">
+        3. Prescribed Workout Routine Blueprint
+    </div>
+    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px 14px; margin-bottom: 10px;">
+        <div style="display: flex; justify-content: space-between; font-weight: 700;">
+            <span style="font-size: 13px; color: #009dff;">@Model.WorkoutPlanName</span>
+            <span style="color: #475569; font-size: 11px;">@Model.WorkoutDifficulty • @Model.WorkoutDurationWeeks Weeks Duration</span>
+        </div>
+        <div style="color: #475569; font-size: 11px; margin-top: 3px;">
+            <strong>Objective:</strong> @Model.WorkoutObjective
+            @if (!string.IsNullOrWhiteSpace(Model.WorkoutProgressionStrategy))
+            {
+                <span> • <strong>Progression Strategy:</strong> @Model.WorkoutProgressionStrategy</span>
+            }
+        </div>
+    </div>
+
+    @if (Model.WorkoutDays != null && Model.WorkoutDays.Any())
+    {
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 18px; font-size: 11px;">
+            <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
+                    <th style="padding: 6px 10px; text-align: left; width: 110px;">Day</th>
+                    <th style="padding: 6px 10px; text-align: left;">Exercise Name</th>
+                    <th style="padding: 6px 10px; text-align: left;">Sets × Reps / Duration</th>
+                    <th style="padding: 6px 10px; text-align: left;">Rest</th>
+                    <th style="padding: 6px 10px; text-align: left;">Target Muscle</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var day in Model.WorkoutDays)
+                {
+                    foreach (var ex in day.Exercises)
+                    {
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="padding: 6px 10px; font-weight: 700; color: #0284c7;">@day.DayOfWeek</td>
+                            <td style="padding: 6px 10px; font-weight: 700;">@ex.Name</td>
+                            <td style="padding: 6px 10px;">@ex.Sets sets @(ex.Reps.HasValue ? "× " + ex.Reps.Value + " reps" : (ex.DurationMinutes.HasValue ? "× " + ex.DurationMinutes.Value + " mins" : ""))</td>
+                            <td style="padding: 6px 10px; color: #64748b;">@ex.RestSeconds s</td>
+                            <td style="padding: 6px 10px;">@ex.TargetMuscle</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    }
+
+    <!-- 4. Prescribed Nutrition Blueprint -->
+    <div style="font-size: 13px; font-weight: 700; color: #0f172a; border-left: 4px solid #22c55e; padding-left: 8px; margin-bottom: 6px;">
+        4. Prescribed Nutrition &amp; Meal Schedule
+    </div>
+    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px 14px; margin-bottom: 10px;">
+        <div style="display: flex; justify-content: space-between; font-weight: 700;">
+            <span style="font-size: 13px; color: #15803d;">@Model.DietPlanName</span>
+            <span style="color: #475569; font-size: 11px;">@Model.PrescribedDailyCalories kcal/day • @Model.PrescribedWaterLiters L Water Target</span>
+        </div>
+        <div style="color: #475569; font-size: 11px; margin-top: 3px;">
+            <strong>Macronutrient Targets:</strong> Protein: @Model.TargetProteinGrams g | Carbs: @Model.TargetCarbsGrams g | Healthy Fats: @Model.TargetFatsGrams g
+            @if (!string.IsNullOrWhiteSpace(Model.DietSpecialInstructions))
+            {
+                <div><strong>Instructions:</strong> @Model.DietSpecialInstructions</div>
+            }
+        </div>
+    </div>
+
+    @if (Model.ScheduledMeals != null && Model.ScheduledMeals.Any())
+    {
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 18px; font-size: 11px;">
+            <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
+                    <th style="padding: 6px 10px; text-align: left; width: 90px;">Time</th>
+                    <th style="padding: 6px 10px; text-align: left; width: 80px;">Category</th>
+                    <th style="padding: 6px 10px; text-align: left;">Meal Name</th>
+                    <th style="padding: 6px 10px; text-align: left;">Ingredients &amp; Portions</th>
+                    <th style="padding: 6px 10px; text-align: right;">Calories</th>
+                    <th style="padding: 6px 10px; text-align: right;">Protein</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var meal in Model.ScheduledMeals)
+                {
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 6px 10px; font-weight: 600; color: #0284c7;">@meal.ScheduledTime</td>
+                        <td style="padding: 6px 10px; color: #475569;">@meal.MealType</td>
+                        <td style="padding: 6px 10px; font-weight: 700;">@meal.MealName</td>
+                        <td style="padding: 6px 10px; color: #64748b;">@meal.IngredientsAndPortion</td>
+                        <td style="padding: 6px 10px; text-align: right; font-weight: 700; color: #15803d;">@meal.Calories kcal</td>
+                        <td style="padding: 6px 10px; text-align: right;">@meal.ProteinGrams g</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <!-- 5 & 6. Recent Logs & Weigh-Ins -->
+    <div style="display: flex; gap: 16px; margin-bottom: 18px;">
+        <div style="flex: 1;">
+            <div style="font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">
+                5. Recent Workout Sessions
+            </div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 10.5px; border: 1px solid #cbd5e1;">
+                <thead>
+                    <tr style="background: #f1f5f9; border-bottom: 1px solid #cbd5e1;">
+                        <th style="padding: 5px 8px; text-align: left;">Date</th>
+                        <th style="padding: 5px 8px; text-align: left;">Routine</th>
+                        <th style="padding: 5px 8px; text-align: left;">Mins</th>
+                        <th style="padding: 5px 8px; text-align: right;">Burned</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.RecentWorkoutLogs != null && Model.RecentWorkoutLogs.Any())
+                    {
+                        foreach (var w in Model.RecentWorkoutLogs.Take(5))
+                        {
+                            <tr style="border-bottom: 1px solid #f1f5f9;">
+                                <td style="padding: 5px 8px; color: #64748b;">@w.Date.ToString("MMM dd")</td>
+                                <td style="padding: 5px 8px; font-weight: 600;">@w.RoutineName</td>
+                                <td style="padding: 5px 8px;">@w.DurationMinutes m</td>
+                                <td style="padding: 5px 8px; text-align: right; font-weight: 700; color: #b45309;">@w.CaloriesBurned kcal</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="4" style="padding: 8px; text-align: center; color: #94a3b8;">No recent workout sessions.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div style="flex: 1;">
+            <div style="font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">
+                6. Recent Weigh-Ins &amp; Biometrics
+            </div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 10.5px; border: 1px solid #cbd5e1;">
+                <thead>
+                    <tr style="background: #f1f5f9; border-bottom: 1px solid #cbd5e1;">
+                        <th style="padding: 5px 8px; text-align: left;">Date</th>
+                        <th style="padding: 5px 8px; text-align: left;">Weight</th>
+                        <th style="padding: 5px 8px; text-align: left;">BMI</th>
+                        <th style="padding: 5px 8px; text-align: right;">Calories Burned</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.BiometricHistory != null && Model.BiometricHistory.Any())
+                    {
+                        foreach (var b in Model.BiometricHistory.Take(5))
+                        {
+                            <tr style="border-bottom: 1px solid #f1f5f9;">
+                                <td style="padding: 5px 8px; color: #64748b;">@b.RecordedDate.ToString("MMM dd")</td>
+                                <td style="padding: 5px 8px; font-weight: 700;">@b.WeightKg.ToString("0.0") kg</td>
+                                <td style="padding: 5px 8px;">@(b.Bmi.HasValue ? b.Bmi.Value.ToString("0.0") : "-")</td>
+                                <td style="padding: 5px 8px; text-align: right; font-weight: 700; color: #b45309;">@b.CaloriesBurned kcal</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="4" style="padding: 8px; text-align: center; color: #94a3b8;">No recent weigh-ins recorded.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 7. Coach Clinical Assessment & Verification -->
+    <div style="font-size: 13px; font-weight: 700; color: #0f172a; border-left: 4px solid #22c55e; padding-left: 8px; margin-bottom: 6px;">
+        7. Professional Coach Assessment &amp; Next Phase Guidance
+    </div>
+    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #22c55e; border-radius: 4px; padding: 10px 14px; margin-bottom: 18px;">
+        <div style="font-size: 11px; color: #0f172a; margin-bottom: 6px;">
+            <strong>Clinical Assessment from Coach @(string.IsNullOrWhiteSpace(Model.TrainerName) || Model.TrainerName == "Not Assigned" ? "HealthTrack Coaching Team" : Model.TrainerName):</strong>
+            <p style="margin: 2px 0 6px 0; color: #334155;">@(!string.IsNullOrWhiteSpace(Model.CoachEvaluationNotes) ? Model.CoachEvaluationNotes : "No specific evaluation notes recorded for this period yet.")</p>
+        </div>
+        <div style="font-size: 11px; color: #0f172a;">
+            <strong>Next Phase Recommendations:</strong>
+            <p style="margin: 2px 0 0 0; color: #334155;">@(!string.IsNullOrWhiteSpace(Model.NextPhaseRecommendations) ? Model.NextPhaseRecommendations : "Continue following your prescribed workout and nutrition schedule.")</p>
+        </div>
+    </div>
+
+    <!-- Document Verification & Signature -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #cbd5e1; padding-top: 14px; margin-top: 20px; font-size: 10px; color: #64748b;">
+        <div>
+            <div><strong>HealthTrack Digital Health &amp; Sports Science Platform</strong></div>
+            <div>Report ID: @Model.ReportId • System Verified on @Model.GeneratedAt.ToString("yyyy-MM-dd HH:mm")</div>
+        </div>
+        <div style="text-align: right;">
+            <div style="border-bottom: 1px solid #94a3b8; width: 140px; margin-bottom: 4px; margin-left: auto;"></div>
+            <div>Authorized Coach Signature: <strong>@(string.IsNullOrWhiteSpace(Model.TrainerName) || Model.TrainerName == "Not Assigned" ? "HealthTrack Clinical Team" : Model.TrainerName)</strong></div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Edit Health Measurement Modal (FR-C-26) -->
+<div class="modal fade" id="editMeasurementModal" tabindex="-1" aria-labelledby="editMeasurementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            @using (Html.BeginForm("Edit", "Progress", new { area = "Client" }, FormMethod.Post, new { id = "editMeasurementForm" }))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="RecordId" id="modalRecordId" />
+
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-3 bg-primary bg-opacity-10 text-primary p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                            <i class="bi bi-pencil-square fs-5"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title fw-bold text-dark mb-0" id="editMeasurementModalLabel">Update Health Measurement</h5>
+                            <div class="text-muted small">Recorded Entry for <span id="modalRecordDateText" class="fw-semibold text-primary">--</span></div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body p-4">
+                    <!-- Biometrics Section -->
+                    <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                        <i class="bi bi-person-lines-fill text-primary"></i>
+                        <span class="fw-bold text-dark small text-uppercase">1. Biometric Measurements</span>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold text-secondary">Weight (kg) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="number" step="0.1" min="20" max="400" name="WeightKg" id="modalWeight" class="form-control" required />
+                                <span class="input-group-text bg-light text-muted small">kg</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold text-secondary">Height (cm) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="number" step="0.1" min="50" max="260" name="HeightCm" id="modalHeight" class="form-control" required />
+                                <span class="input-group-text bg-light text-muted small">cm</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold text-secondary">Auto Calculated BMI</label>
+                            <div class="p-2 bg-light rounded-3 border d-flex align-items-center justify-content-between" style="min-height: 38px;">
+                                <span class="small text-muted">Computed BMI:</span>
+                                <span id="modalBmiPreview" class="badge bg-primary text-white fw-bold">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Body Fat Percentage (%)</label>
+                            <div class="input-group">
+                                <input type="number" step="0.1" min="1" max="70" name="BodyFatPercentage" id="modalBodyFat" class="form-control" placeholder="Optional (e.g. 18.5)" />
+                                <span class="input-group-text bg-light text-muted small">%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Resting Heart Rate (bpm)</label>
+                            <div class="input-group">
+                                <input type="number" min="30" max="250" name="HeartRateBpm" id="modalHeartRate" class="form-control" placeholder="Optional (e.g. 72)" />
+                                <span class="input-group-text bg-light text-muted small">bpm</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Daily Activity & Habits Section -->
+                    <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                        <i class="bi bi-activity text-success"></i>
+                        <span class="fw-bold text-dark small text-uppercase">2. Daily Activity &amp; Telemetry</span>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold text-secondary">Daily Steps Count</label>
+                            <div class="input-group">
+                                <input type="number" min="0" max="100000" name="StepsCount" id="modalSteps" class="form-control" placeholder="0" />
+                                <span class="input-group-text bg-light text-muted small">steps</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold text-secondary">Calories Consumed</label>
+                            <div class="input-group">
+                                <input type="number" min="0" max="20000" name="CaloriesConsumed" id="modalCaloriesConsumed" class="form-control" placeholder="0" />
+                                <span class="input-group-text bg-light text-muted small">kcal</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold text-secondary">Calories Burned</label>
+                            <div class="input-group">
+                                <input type="number" min="0" max="20000" name="CaloriesBurned" id="modalCaloriesBurned" class="form-control" placeholder="0" />
+                                <span class="input-group-text bg-light text-muted small">kcal</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Water Intake (ml)</label>
+                            <div class="input-group">
+                                <input type="number" min="0" max="20000" name="WaterIntakeMl" id="modalWater" class="form-control" placeholder="0" />
+                                <span class="input-group-text bg-light text-muted small">ml</span>
+                            </div>
+                            <div class="form-text x-small text-muted">1 liter = 1000 ml</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Check-in Notes</label>
+                            <input type="text" name="Notes" id="modalNotes" class="form-control" maxlength="500" placeholder="e.g. Morning weigh-in, post-fasting" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 pt-0 pb-4 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm">
+                        <i class="bi bi-check2-circle me-1"></i> Save Changes
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Delete Health Measurement Confirmation Modal (FR-C-27) -->
+<div class="modal fade" id="deleteMeasurementModal" tabindex="-1" aria-labelledby="deleteMeasurementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            @using (Html.BeginForm("Delete", "Progress", new { area = "Client" }, FormMethod.Post, new { id = "deleteMeasurementForm" }))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="deleteRecordId" />
+
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-3 bg-danger bg-opacity-10 text-danger p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                            <i class="bi bi-trash-fill fs-5"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title fw-bold text-dark mb-0" id="deleteMeasurementModalLabel">Delete Health Measurement</h5>
+                            <div class="text-muted small">Permanent Deletion Confirmation</div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body p-4">
+                    <p class="text-dark mb-2">
+                        Are you sure you want to permanently delete your health measurement recorded on <strong id="deleteRecordDateText" class="text-dark">--</strong>?
+                    </p>
+                    <div class="p-3 bg-light rounded-3 border mb-3">
+                        <div class="d-flex justify-content-between small text-muted mb-0">
+                            <span>Recorded Summary:</span>
+                            <span id="deleteRecordDetailsText" class="fw-bold text-dark">--</span>
+                        </div>
+                    </div>
+                    <div class="alert alert-warning d-flex align-items-center gap-2 mb-0 py-2 px-3 rounded-3 border-0 small">
+                        <i class="bi bi-exclamation-triangle-fill text-warning fs-6"></i>
+                        <div>This action is permanent and cannot be undone. The record will be removed from your history and charts.</div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 pt-0 pb-4 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold shadow-sm">
+                        <i class="bi bi-trash-fill me-1"></i> Confirm Delete
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Client Toast Notification for PDF Generation Feedback -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080;">
+    <div id="downloadPdfToast" class="toast align-items-center text-white bg-success border-0 shadow-lg rounded-3" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body d-flex align-items-center gap-2">
+                <i class="bi bi-check-circle-fill fs-5"></i>
+                <span id="toastMsg">Your official PDF report has been downloaded successfully!</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<!-- html2pdf.bundle.min.js Script for Direct PDF Download -->
+<script src="@Url.Content("~/Scripts/html2pdf.bundle.min.js")"></script>
+
+<script>
+    // Direct PDF Report Downloader (Report Format, Pure Document, Direct Download)
+    function downloadOfficialPdfReport() {
+        var btn = document.getElementById('btnDownloadPdf');
+        var btnText = document.getElementById('btnDownloadText');
+        var originalHtml = btn.innerHTML;
+
+        // 1. Show Loading State
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Generating Official PDF...';
+
+        // 2. Target the dedicated report dossier document
+        var reportElement = document.getElementById('reportDossierPrintContainer');
+        
+        // Temporarily display element so html2canvas can measure dimensions cleanly
+        reportElement.style.display = 'block';
+
+        var cleanClientName = '@(Model.ClientName ?? "Client")'.replace(/[^a-zA-Z0-9]/g, '_');
+        var reportFileName = 'HealthTrack_Progress_Report_' + cleanClientName + '_@Model.ReportId' + '.pdf';
+
+        var opt = {
+            margin: [8, 8, 8, 8],
+            filename: reportFileName,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                letterRendering: true,
+                backgroundColor: '#ffffff'
+            },
+            jsPDF: {
+                unit: 'mm',
+                format: 'a4',
+                orientation: 'portrait'
+            },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+
+        // 3. Execute html2pdf generation & direct file download
+        html2pdf().set(opt).from(reportElement).save().then(function () {
+            // Restore hidden state
+            reportElement.style.display = 'none';
+
+            // Reset button
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+
+            // Show Toast Notification
+            try {
+                var toastEl = document.getElementById('downloadPdfToast');
+                var toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+                toast.show();
+            } catch (e) {
+                console.log('Report downloaded:', reportFileName);
+            }
+        }).catch(function (error) {
+            console.error('Error generating PDF report:', error);
+            reportElement.style.display = 'none';
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            alert('PDF generation completed. If the download did not start, you can use the Print Document button.');
+        });
+    }
+
+    // FR-C-26: Dynamic BMI Calculation and Edit Modal Population
+    function calculateModalBmi() {
+        var wInput = document.getElementById('modalWeight');
+        var hInput = document.getElementById('modalHeight');
+        var preview = document.getElementById('modalBmiPreview');
+        if (!wInput || !hInput || !preview) return;
+
+        var w = parseFloat(wInput.value);
+        var h = parseFloat(hInput.value);
+        if (!isNaN(w) && !isNaN(h) && w > 0 && h > 0) {
+            var hM = h / 100.0;
+            var bmi = (w / (hM * hM)).toFixed(1);
+            preview.innerText = bmi;
+            if (bmi < 18.5) {
+                preview.className = 'badge bg-warning text-dark fw-bold';
+            } else if (bmi <= 24.9) {
+                preview.className = 'badge bg-success text-white fw-bold';
+            } else if (bmi <= 29.9) {
+                preview.className = 'badge bg-warning text-dark fw-bold';
+            } else {
+                preview.className = 'badge bg-danger text-white fw-bold';
+            }
+        } else {
+            preview.innerText = '--';
+            preview.className = 'badge bg-primary text-white fw-bold';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var editBtns = document.querySelectorAll('.btn-edit-measurement');
+        editBtns.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var recordId = btn.getAttribute('data-id');
+                var displayDate = btn.getAttribute('data-displaydate') || btn.getAttribute('data-date');
+                var weight = btn.getAttribute('data-weight') || '';
+                var height = btn.getAttribute('data-height') || '';
+                var heartRate = btn.getAttribute('data-heartrate') || '';
+                var steps = btn.getAttribute('data-steps') || '';
+                var caloriesConsumed = btn.getAttribute('data-caloriesconsumed') || '0';
+                var caloriesBurned = btn.getAttribute('data-caloriesburned') || '0';
+                var water = btn.getAttribute('data-water') || '0';
+                var bodyFat = btn.getAttribute('data-bodyfat') || '';
+                var notes = btn.getAttribute('data-notes') || '';
+
+                var idField = document.getElementById('modalRecordId');
+                var dateText = document.getElementById('modalRecordDateText');
+                var weightField = document.getElementById('modalWeight');
+                var heightField = document.getElementById('modalHeight');
+                var hrField = document.getElementById('modalHeartRate');
+                var stepsField = document.getElementById('modalSteps');
+                var ccField = document.getElementById('modalCaloriesConsumed');
+                var cbField = document.getElementById('modalCaloriesBurned');
+                var waterField = document.getElementById('modalWater');
+                var bfField = document.getElementById('modalBodyFat');
+                var notesField = document.getElementById('modalNotes');
+
+                if (idField) idField.value = recordId;
+                if (dateText) dateText.innerText = displayDate;
+                if (weightField) weightField.value = weight;
+                if (heightField) heightField.value = height;
+                if (hrField) hrField.value = heartRate;
+                if (stepsField) stepsField.value = steps;
+                if (ccField) ccField.value = caloriesConsumed;
+                if (cbField) cbField.value = caloriesBurned;
+                if (waterField) waterField.value = water;
+                if (bfField) bfField.value = bodyFat;
+                if (notesField) notesField.value = notes;
+
+                calculateModalBmi();
+            });
+        });
+
+        var wInput = document.getElementById('modalWeight');
+        var hInput = document.getElementById('modalHeight');
+        if (wInput) wInput.addEventListener('input', calculateModalBmi);
+        if (hInput) hInput.addEventListener('input', calculateModalBmi);
+
+        // FR-C-27: Delete Modal Population Handler
+        var deleteBtns = document.querySelectorAll('.btn-delete-measurement');
+        deleteBtns.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var recordId = btn.getAttribute('data-id');
+                var displayDate = btn.getAttribute('data-displaydate');
+                var weight = btn.getAttribute('data-weight');
+                var bmi = btn.getAttribute('data-bmi');
+
+                var idField = document.getElementById('deleteRecordId');
+                var dateText = document.getElementById('deleteRecordDateText');
+                var detailsText = document.getElementById('deleteRecordDetailsText');
+
+                if (idField) idField.value = recordId;
+                if (dateText) dateText.innerText = displayDate;
+                if (detailsText) detailsText.innerText = 'Weight: ' + weight + ' • BMI: ' + bmi;
+            });
+        });
+    });
+</script>

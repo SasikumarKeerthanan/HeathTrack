@@ -1,0 +1,453 @@
+@model HealthTrack.Areas.Admin.ViewModels.AdminTrainerActivityReportViewModel
+@{
+    ViewBag.Title = "Trainer Activity & Engagement Report";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Include html2pdf -->
+<script src="@Url.Content("~/Scripts/html2pdf.bundle.min.js")"></script>
+
+<style>
+    @@media print {
+        .no-print, .desktop-sidebar, .top-app-header, .btn, form {
+            display: none !important;
+        }
+        .main-content-wrapper {
+            margin-left: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+        .card {
+            box-shadow: none !important;
+            border: 1px solid #e2e8f0 !important;
+            page-break-inside: avoid;
+        }
+    }
+</style>
+
+<div class="container-fluid py-4 px-md-4" id="reportExportArea">
+
+    <!-- REPORT SUITE SUB-NAVIGATION -->
+    <ul class="nav nav-pills gap-2 mb-4 no-print">
+        <li class="nav-item">
+            <a class="nav-link bg-light text-secondary rounded-pill px-3 py-2 fw-semibold small" href="@Url.Action("Index", "Reports", new { area = "Admin" })">
+                <i class="bi bi-speedometer2 me-1"></i> Executive Overview
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link bg-light text-secondary rounded-pill px-3 py-2 fw-semibold small" href="@Url.Action("ClientPerformance", "Reports", new { area = "Admin" })">
+                <i class="bi bi-person-fill-gear me-1"></i> Client Performance
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link bg-light text-secondary rounded-pill px-3 py-2 fw-semibold small" href="@Url.Action("PopularRoutines", "Reports", new { area = "Admin" })">
+                <i class="bi bi-fire me-1 text-danger"></i> Popular Workout Routines
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active bg-dark text-white rounded-pill px-3 py-2 fw-semibold small" href="@Url.Action("TrainerActivity", "Reports", new { area = "Admin" })">
+                <i class="bi bi-person-badge-fill me-1 text-primary"></i> Trainer Activity &amp; Engagement
+            </a>
+        </li>
+    </ul>
+
+    <!-- PAGE HEADER -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 no-print">
+        <div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge border px-2 py-1 rounded-pill small fw-semibold" style="background-color: rgba(13, 110, 253, 0.1); color: #0d6efd; border-color: rgba(13, 110, 253, 0.25) !important;">
+                    <i class="bi bi-person-badge-fill me-1"></i>Coach Telemetry
+                </span>
+                <span class="badge bg-secondary rounded-pill px-2 py-1 small">FR-A-28 &bull; FR-A-31</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mt-2 mb-1">Trainer Activity &amp; Engagement Reports</h2>
+            <p class="text-muted small mb-0">
+                Workload metrics, workout execution rates, active vs. historical client rosters, and appointment status telemetry.
+            </p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <button type="button" id="btnExportPdf" onclick="exportReportToPdf()" class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-sm px-3 py-2 fw-semibold" style="border-radius: 8px; background: linear-gradient(135deg, #00A3FF 0%, #0284c7 100%); border: none;">
+                <i class="bi bi-file-earmark-pdf-fill"></i>
+                <span>Export PDF</span>
+            </button>
+            <a href="@Url.Action("ExportTrainerActivityPdf", "Reports", new { area = "Admin", trainerId = Model.SelectedTrainerId, preset = Model.DatePreset, fromDate = Model.FromDate, toDate = Model.ToDate })" target="_blank" class="btn btn-outline-secondary d-inline-flex align-items-center gap-1 shadow-sm px-3 py-2 fw-semibold" style="border-radius: 8px;">
+                <i class="bi bi-printer"></i>
+                <span>Print-Ready</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- FILTER TOOLBAR -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4 no-print">
+        <div class="card-body p-3">
+            @using (Html.BeginForm("TrainerActivity", "Reports", new { area = "Admin" }, FormMethod.Get, new { @class = "row g-3 align-items-end" }))
+            {
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-muted mb-1">SELECT TRAINER / COACH</label>
+                    <select name="trainerId" class="form-select form-select-sm" onchange="this.form.submit()">
+                        @foreach (var opt in Model.AvailableTrainers)
+                        {
+                            <option value="@opt.Value" @(opt.Selected ? "selected" : "")>@opt.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted mb-1">DATE PRESET</label>
+                    <select name="preset" id="presetSelect" class="form-select form-select-sm" onchange="toggleCustomDates(this.value)">
+                        <option value="7days" @(Model.DatePreset == "7days" ? "selected" : "")>Last 7 Days</option>
+                        <option value="30days" @(Model.DatePreset == "30days" ? "selected" : "")>Last 30 Days</option>
+                        <option value="90days" @(Model.DatePreset == "90days" ? "selected" : "")>Last 90 Days</option>
+                        <option value="all" @(Model.DatePreset == "all" ? "selected" : "")>All Historical Records</option>
+                        <option value="custom" @(Model.DatePreset == "custom" ? "selected" : "")>Custom Date Range</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2 custom-date-col @(Model.DatePreset == "custom" ? "" : "d-none")">
+                    <label class="form-label small fw-bold text-muted mb-1">FROM DATE</label>
+                    <input type="date" name="fromDate" value="@(Model.FromDate.HasValue ? Model.FromDate.Value.ToString("yyyy-MM-dd") : "")" class="form-control form-control-sm" />
+                </div>
+
+                <div class="col-md-2 custom-date-col @(Model.DatePreset == "custom" ? "" : "d-none")">
+                    <label class="form-label small fw-bold text-muted mb-1">TO DATE</label>
+                    <input type="date" name="toDate" value="@(Model.ToDate.HasValue ? Model.ToDate.Value.ToString("yyyy-MM-dd") : "")" class="form-control form-control-sm" />
+                </div>
+
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-sm btn-dark w-100 py-1 fw-semibold">Generate</button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- VALIDATION ERROR ALERT -->
+    @if (!string.IsNullOrEmpty(Model.ValidationError))
+    {
+        <div class="alert alert-warning alert-dismissible fade show d-flex align-items-center gap-2 mb-4" role="alert" style="border-radius: 10px;">
+            <i class="bi bi-exclamation-triangle-fill fs-5 text-warning flex-shrink-0"></i>
+            <div>@Model.ValidationError</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- TRAINER PROFILE SNAPSHOT -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold fs-3 flex-shrink-0" style="width: 54px; height: 54px;">
+                        @(string.IsNullOrEmpty(Model.TrainerName) ? "T" : Model.TrainerName.Substring(0, 1).ToUpper())
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <h4 class="fw-bold text-dark mb-0">@Model.TrainerName</h4>
+                            <span class="badge @(Model.IsActiveTrainer ? "bg-success" : "bg-secondary")">@(Model.IsActiveTrainer ? "Active Coach" : "Inactive")</span>
+                        </div>
+                        <div class="text-muted small">@Model.TrainerEmail &bull; Coach ID: <strong class="font-monospace">@Model.SelectedTrainerId</strong> &bull; @Model.Specialization</div>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-3">
+                    <div class="p-2 border rounded-3 bg-light text-center" style="min-width: 130px;">
+                        <div class="text-muted small" style="font-size: 0.72rem;">ACTIVE CLIENTS</div>
+                        <div class="fw-bold text-success fs-5">@Model.ActiveClientsCount / @Model.MaxClientCapacity</div>
+                        <div class="text-muted" style="font-size: 0.7rem;">@Model.CapacityRemaining Slots Free</div>
+                    </div>
+                    <div class="p-2 border rounded-3 bg-light text-center" style="min-width: 130px;">
+                        <div class="text-muted small" style="font-size: 0.72rem;">HISTORICAL CLIENTS</div>
+                        <div class="fw-bold text-secondary fs-5">@Model.HistoricalClientsCount</div>
+                        <div class="text-muted" style="font-size: 0.7rem;">Past Assignments Preserved</div>
+                    </div>
+                    <div class="p-2 border rounded-3 bg-light text-center" style="min-width: 130px;">
+                        <div class="text-muted small" style="font-size: 0.72rem;">WORKOUT COMPLETION</div>
+                        <div class="fw-bold text-primary fs-5">@Model.FormattedCompletionRate</div>
+                        <div class="text-muted" style="font-size: 0.7rem;">@Model.CompletedWorkoutsCount / @Model.ScheduledWorkoutsCount Executed</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WORKOUT ENGAGEMENT & APPOINTMENT STAT CARDS (FR-T-50 & FR-T-51) -->
+    <div class="row g-3 mb-4">
+        <!-- Scheduled Workouts -->
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 h-100 border-start border-4 border-primary">
+                <div class="text-muted small fw-semibold">SCHEDULED WORKOUTS</div>
+                <div class="h3 fw-bold text-dark mb-0 mt-1">@Model.ScheduledWorkoutsCount</div>
+                <div class="small text-muted mt-1">Real historical schedule records</div>
+            </div>
+        </div>
+
+        <!-- Completed Workouts -->
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 h-100 border-start border-4 border-success">
+                <div class="text-muted small fw-semibold">COMPLETED WORKOUTS</div>
+                <div class="h3 fw-bold text-success mb-0 mt-1">@Model.CompletedWorkoutsCount</div>
+                <div class="small text-muted mt-1">Completion Rate: <strong>@Model.FormattedCompletionRate</strong></div>
+            </div>
+        </div>
+
+        <!-- Total Calories Generated -->
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 h-100 border-start border-4 border-danger">
+                <div class="text-muted small fw-semibold">ENERGY EXPENDITURE</div>
+                <div class="h3 fw-bold text-danger mb-0 mt-1">@Model.TotalCaloriesBurned.ToString("N0")</div>
+                <div class="small text-muted mt-1">Total kcal burned by clients</div>
+            </div>
+        </div>
+
+        <!-- Total Appointments Telemetry -->
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 h-100 border-start border-4 border-info">
+                <div class="text-muted small fw-semibold">APPOINTMENT ACTIVITY</div>
+                <div class="h3 fw-bold text-info mb-0 mt-1">@Model.TotalAppointments</div>
+                <div class="small text-muted mt-1">
+                    <span class="text-success fw-semibold">@Model.CompletedAppointments Completed</span> &bull; 
+                    <span class="text-warning fw-semibold">@Model.PendingAppointments Pending</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- APPOINTMENT STATUS BREAKDOWN PILLS -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-white py-3 border-bottom">
+            <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-pie-chart-fill text-primary"></i>Appointment Telemetry by Status (Each Appointment Counted Once)
+            </h6>
+        </div>
+        <div class="card-body p-3">
+            <div class="row g-2 text-center">
+                <div class="col-sm-4 col-md-2">
+                    <div class="p-2 border rounded-3 bg-light">
+                        <div class="text-muted small" style="font-size: 0.72rem;">TOTAL</div>
+                        <div class="fw-bold fs-5 text-dark">@Model.TotalAppointments</div>
+                    </div>
+                </div>
+                <div class="col-sm-4 col-md-2">
+                    <div class="p-2 border rounded-3 bg-light">
+                        <div class="text-muted small" style="font-size: 0.72rem;">APPROVED</div>
+                        <div class="fw-bold fs-5 text-primary">@Model.ApprovedAppointments</div>
+                    </div>
+                </div>
+                <div class="col-sm-4 col-md-2">
+                    <div class="p-2 border rounded-3 bg-light">
+                        <div class="text-muted small" style="font-size: 0.72rem;">COMPLETED</div>
+                        <div class="fw-bold fs-5 text-success">@Model.CompletedAppointments</div>
+                    </div>
+                </div>
+                <div class="col-sm-4 col-md-2">
+                    <div class="p-2 border rounded-3 bg-light">
+                        <div class="text-muted small" style="font-size: 0.72rem;">PENDING</div>
+                        <div class="fw-bold fs-5 text-warning">@Model.PendingAppointments</div>
+                    </div>
+                </div>
+                <div class="col-sm-4 col-md-2">
+                    <div class="p-2 border rounded-3 bg-light">
+                        <div class="text-muted small" style="font-size: 0.72rem;">CANCELLED</div>
+                        <div class="fw-bold fs-5 text-danger">@Model.CancelledAppointments</div>
+                    </div>
+                </div>
+                <div class="col-sm-4 col-md-2">
+                    <div class="p-2 border rounded-3 bg-light">
+                        <div class="text-muted small" style="font-size: 0.72rem;">REJECTED</div>
+                        <div class="fw-bold fs-5 text-secondary">@Model.RejectedAppointments</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CLIENT ROSTER: ACTIVE VS HISTORICAL (FR-A-28 Rule 7) -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+            <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-people-fill text-success"></i>Assigned Client Portfolio (Active vs. Historical Relationships)
+            </h5>
+            <span class="badge bg-light text-dark border">@Model.ClientRoster.Count Clients Ever Associated</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="font-size: 0.88rem;">
+                <thead class="table-light text-muted small text-uppercase">
+                    <tr>
+                        <th class="ps-4">Client / Member</th>
+                        <th>Relationship Status</th>
+                        <th>First Associated</th>
+                        <th class="text-center">Workouts Executed</th>
+                        <th class="text-center">Completed Consultations</th>
+                        <th class="text-end pe-4">Client Dossier</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.ClientRoster.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">No clients have been assigned to this trainer yet.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var c in Model.ClientRoster)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold text-dark">@c.ClientName</div>
+                                    <div class="text-muted small">@c.ClientEmail &bull; <span class="font-monospace">@c.ClientId</span></div>
+                                </td>
+                                <td>
+                                    @if (c.AssignmentStatus == "Active")
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">
+                                            <i class="bi bi-check-circle-fill me-1"></i>Currently Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3 py-1">
+                                            <i class="bi bi-clock-history me-1"></i>Historical Relationship
+                                        </span>
+                                    }
+                                </td>
+                                <td class="text-muted">
+                                    @(c.AssignmentDate.HasValue ? c.AssignmentDate.Value.ToString("MMM dd, yyyy") : "-")
+                                </td>
+                                <td class="text-center fw-bold">@c.CompletedWorkoutsCount</td>
+                                <td class="text-center fw-bold text-primary">@c.CompletedAppointmentsCount</td>
+                                <td class="text-end pe-4">
+                                    <a href="@Url.Action("ClientPerformance", "Reports", new { area = "Admin", clientId = c.ClientId })" class="btn btn-sm btn-outline-primary" title="View Client Performance Report">
+                                        <i class="bi bi-graph-up-arrow"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- DETAILED APPOINTMENT ACTIVITY TABLE (FR-T-51) -->
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+            <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-calendar2-check text-primary"></i>Appointment Schedule Activity Details
+            </h5>
+            <span class="badge bg-light text-dark border">@Model.AppointmentDetails.Count Appointments</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                <thead class="table-light text-muted small text-uppercase">
+                    <tr>
+                        <th class="ps-4">Code</th>
+                        <th>Appointment Date &amp; Time</th>
+                        <th>Client Member</th>
+                        <th>Session Title</th>
+                        <th>Status</th>
+                        <th>Location</th>
+                        <th class="pe-4">Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.AppointmentDetails.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">No appointments found within the selected date range.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var a in Model.AppointmentDetails)
+                        {
+                            <tr>
+                                <td class="ps-4 font-monospace fw-bold text-secondary">@a.AppointmentCode</td>
+                                <td>
+                                    <div class="fw-semibold text-dark">@a.AppointmentDate.ToString("MMM dd, yyyy")</div>
+                                    <div class="text-muted" style="font-size: 0.72rem;">@a.FormattedTimeRange</div>
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-dark">@a.ClientName</div>
+                                    <div class="text-muted" style="font-size: 0.72rem;">@a.ClientEmail</div>
+                                </td>
+                                <td>@a.Title</td>
+                                <td>
+                                    @if (a.Status == "Completed")
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Completed</span>
+                                    }
+                                    else if (a.Status == "Approved")
+                                    {
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">Approved</span>
+                                    }
+                                    else if (a.Status == "Pending")
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Pending</span>
+                                    }
+                                    else if (a.Status == "Cancelled")
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">Cancelled</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill">@a.Status</span>
+                                    }
+                                </td>
+                                <td class="text-muted">@a.MeetingLocation</td>
+                                <td class="pe-4 text-muted small" style="max-width: 200px;">
+                                    <span class="text-truncate d-inline-block" style="max-width: 180px;" title="@a.CancellationReason">
+                                        @(string.IsNullOrEmpty(a.CancellationReason) ? "-" : a.CancellationReason)
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function toggleCustomDates(preset) {
+        var customCols = document.querySelectorAll('.custom-date-col');
+        if (preset === 'custom') {
+            customCols.forEach(function (col) { col.classList.remove('d-none'); });
+        } else {
+            customCols.forEach(function (col) { col.classList.add('d-none'); });
+        }
+    }
+
+    function exportReportToPdf() {
+        var btn = document.getElementById('btnExportPdf');
+        var originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Exporting...';
+
+        var element = document.getElementById('reportExportArea');
+        var opt = {
+            margin: [8, 8, 8, 8],
+            filename: 'HealthTrack_TrainerActivity_@(Model.SelectedTrainerId).pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff' },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+
+        if (typeof html2pdf !== 'undefined') {
+            html2pdf().set(opt).from(element).save().then(function () {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }).catch(function (err) {
+                console.error('PDF error:', err);
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                window.print();
+            });
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            window.print();
+        }
+    }
+</script>

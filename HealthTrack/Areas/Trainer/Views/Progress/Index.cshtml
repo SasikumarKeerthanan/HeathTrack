@@ -1,0 +1,558 @@
+@model HealthTrack.Areas.Trainer.ViewModels.ProgressAnalyticsViewModel
+@using Newtonsoft.Json
+
+@{
+    ViewBag.Title = "Progress & Analytics";
+    var client = Model.SelectedClient;
+}
+
+<div class="container-fluid px-4 py-3">
+
+    <!-- Header & Client / Date Range Filter Toolbar -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                    <i class="bi bi-graph-up-arrow me-1"></i>Progress & Analytics
+                </span>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                    <i class="bi bi-person-check me-1"></i>Client: @(client != null ? client.FullName : "N/A")
+                </span>
+            </div>
+            <h2 class="h3 fw-bold mb-0 text-dark">Client Progress & Analytics</h2>
+            <p class="text-muted small mb-0">Track weight evolution, BMI shifts, caloric adherence, workout completion rates, and goal trends</p>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+            <a href="@Url.Action("Reports", "Progress", new { clientId = Model.SelectedClientId, preset = Model.DatePreset })" 
+               class="btn btn-outline-danger d-inline-flex align-items-center gap-2 shadow-sm">
+                <i class="bi bi-file-earmark-text"></i>
+                <span>View Full Client Report</span>
+            </a>
+            <a href="@Url.Action("ExportPdf", "Progress", new { clientId = Model.SelectedClientId, preset = Model.DatePreset })" target="_blank"
+               class="btn btn-danger d-inline-flex align-items-center gap-2 shadow-sm">
+                <i class="bi bi-printer"></i>
+                <span>Export PDF</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Control Card: Client Switcher & Date Range Presets -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
+        <div class="card-body p-3">
+            <form method="get" action="@Url.Action("Index", "Progress")" class="row g-2 align-items-center" id="analyticsFilterForm">
+                <!-- Client Switcher Dropdown -->
+                <div class="col-4">
+                    <label class="form-label small fw-semibold text-muted mb-1">Select Client</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="bi bi-person text-danger"></i>
+                        </span>
+                        <select name="clientId" class="form-select bg-light border-start-0" onchange="document.getElementById('analyticsFilterForm').submit();">
+                            @foreach (var c in Model.AvailableClients)
+                            {
+                                <option value="@c.Id" selected="@(Model.SelectedClientId == c.Id ? "selected" : null)">
+                                    @c.FullName (@c.PrimaryGoal)
+                                </option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Date Range Preset Buttons -->
+                <div class="col-5">
+                    <label class="form-label small fw-semibold text-muted mb-1">Date Interval</label>
+                    <div class="btn-group w-100" role="group">
+                        <a href="@Url.Action("Index", "Progress", new { clientId = Model.SelectedClientId, preset = "7days" })" 
+                           class="btn btn-sm @(Model.DatePreset == "7days" ? "btn-danger text-white fw-bold shadow-sm" : "btn-outline-secondary bg-light")">
+                            7 Days
+                        </a>
+                        <a href="@Url.Action("Index", "Progress", new { clientId = Model.SelectedClientId, preset = "30days" })" 
+                           class="btn btn-sm @(Model.DatePreset == "30days" ? "btn-danger text-white fw-bold shadow-sm" : "btn-outline-secondary bg-light")">
+                            30 Days
+                        </a>
+                        <a href="@Url.Action("Index", "Progress", new { clientId = Model.SelectedClientId, preset = "90days" })" 
+                           class="btn btn-sm @(Model.DatePreset == "90days" ? "btn-danger text-white fw-bold shadow-sm" : "btn-outline-secondary bg-light")">
+                            90 Days
+                        </a>
+                        <a href="@Url.Action("Index", "Progress", new { clientId = Model.SelectedClientId, preset = "all" })" 
+                           class="btn btn-sm @(Model.DatePreset == "all" ? "btn-danger text-white fw-bold shadow-sm" : "btn-outline-secondary bg-light")">
+                            All Time
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Filter Range Summary -->
+                <div class="col-3 text-end">
+                    <div class="small text-muted">Analysis Window:</div>
+                    <span class="badge bg-light text-dark border font-monospace py-2 px-3">
+                        <i class="bi bi-calendar-range me-1 text-danger"></i>@Model.FromDate.ToString("MMM dd") - @Model.ToDate.ToString("MMM dd, yyyy")
+                    </span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Top KPI Performance Cards -->
+    <div class="row g-3 mb-4">
+        <!-- 1. Current Weight & Delta -->
+        <div class="col-3">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small text-uppercase fw-semibold">Current Weight</span>
+                        <div class="rounded-circle bg-danger bg-opacity-10 text-danger p-2 d-inline-flex align-items-center justify-content-center" style="width: 34px; height: 34px;">
+                            <i class="bi bi-speedometer2"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2">
+                        <h3 class="fw-bold mb-0 text-dark">@Model.CurrentWeight <span class="fs-6 fw-normal text-muted">kg</span></h3>
+                        <span class="badge @(Model.WeightChangeKg <= 0 ? "bg-success-subtle text-success" : "bg-primary-subtle text-primary") border small">
+                            @(Model.WeightChangeKg > 0 ? $"+{Model.WeightChangeKg} kg" : $"{Model.WeightChangeKg} kg")
+                        </span>
+                    </div>
+                    <div class="small text-muted mt-2">
+                        Baseline: <strong>@Model.BaselineWeight kg</strong> &bull; Target: <strong>@Model.TargetWeight kg</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. BMI & Status Category -->
+        <div class="col-3">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small text-uppercase fw-semibold">Body Mass Index (BMI)</span>
+                        <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-2 d-inline-flex align-items-center justify-content-center" style="width: 34px; height: 34px;">
+                            <i class="bi bi-heart-pulse"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2">
+                        <h3 class="fw-bold mb-0 text-dark">@Model.CurrentBmi</h3>
+                        <span class="badge @(Model.BmiCategory == "Normal" ? "bg-success-subtle text-success border-success-subtle" : "bg-warning-subtle text-dark border-warning-subtle") border small">
+                            @Model.BmiCategory
+                        </span>
+                    </div>
+                    <div class="small text-muted mt-2">
+                        Healthy Range: <strong>18.5 - 24.9</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Workout Completion Rate -->
+        <div class="col-3">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small text-uppercase fw-semibold">Workout Completion</span>
+                        <div class="rounded-circle bg-success bg-opacity-10 text-success p-2 d-inline-flex align-items-center justify-content-center" style="width: 34px; height: 34px;">
+                            <i class="bi bi-check2-circle"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2">
+                        <h3 class="fw-bold mb-0 text-success">@Model.FormattedCompletionRate</h3>
+                        <span class="badge bg-light text-dark border small">
+                            @Model.TotalWorkoutsCompleted / @Model.TotalWorkoutsScheduled Sessions
+                        </span>
+                    </div>
+                    <div class="small text-muted mt-2">
+                        Active Training Minutes: <strong>@Model.TotalActiveMinutes mins</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Calorie Burned & Intake Ratio -->
+        <div class="col-3">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small text-uppercase fw-semibold">Calorie Balance</span>
+                        <div class="rounded-circle bg-warning bg-opacity-10 text-warning p-2 d-inline-flex align-items-center justify-content-center" style="width: 34px; height: 34px;">
+                            <i class="bi bi-fire"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2">
+                        <h3 class="fw-bold mb-0 text-dark">@Model.AvgDailyCaloriesConsumed <span class="fs-6 fw-normal text-muted">kcal/day</span></h3>
+                        <span class="badge bg-warning-subtle text-dark border small">
+                            Goal: @Model.DailyCalorieTarget
+                        </span>
+                    </div>
+                    <div class="small text-muted mt-2">
+                        Total Burned in Sessions: <strong>@Model.TotalCaloriesBurned kcal</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Grid Row 1: Weight & BMI Line Chart + Workout Completion Doughnut -->
+    <div class="row g-4 mb-4">
+        <!-- Chart 1: Weight & BMI Trend Chart -->
+        <div class="col-8">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                            <i class="bi bi-graph-up text-danger"></i> Body Weight & BMI Progression
+                        </h5>
+                        <small class="text-muted">Periodic weigh-in history and body mass index trajectory</small>
+                    </div>
+                    <span class="badge bg-light text-dark border">
+                        <i class="bi bi-flag-fill text-danger me-1"></i>Goal: @Model.TargetWeight kg
+                    </span>
+                </div>
+                <div class="card-body p-4">
+                    <div style="height: 320px; position: relative;">
+                        <canvas id="weightBmiChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart 2: Workout Completion Donut Chart -->
+        <div class="col-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                        <i class="bi bi-pie-chart text-success"></i> Workout Adherence
+                    </h5>
+                    <small class="text-muted">Completed vs missed sessions ratio</small>
+                </div>
+                <div class="card-body p-4 d-flex flex-column align-items-center justify-content-center">
+                    <div style="height: 220px; width: 220px; position: relative;">
+                        <canvas id="completionDonutChart"></canvas>
+                    </div>
+                    <div class="d-flex justify-content-around w-100 text-center mt-3 pt-3 border-top">
+                        <div>
+                            <div class="fs-5 fw-bold text-success">@Model.TotalWorkoutsCompleted</div>
+                            <div class="x-small text-muted text-uppercase">Completed</div>
+                        </div>
+                        <div class="border-start ps-3">
+                            <div class="fs-5 fw-bold text-danger">@(Model.TotalWorkoutsScheduled - Model.TotalWorkoutsCompleted)</div>
+                            <div class="x-small text-muted text-uppercase">Missed / Paused</div>
+                        </div>
+                        <div class="border-start ps-3">
+                            <div class="fs-5 fw-bold text-dark">@Model.FormattedCompletionRate</div>
+                            <div class="x-small text-muted text-uppercase">Adherence</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Grid Row 2: Calorie Intake vs Burn Trends + Activity Duration Trend -->
+    <div class="row g-4 mb-4">
+        <!-- Chart 3: Calories Consumed vs Calories Burned -->
+        <div class="col-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                            <i class="bi bi-bar-chart-fill text-warning"></i> Caloric Balance & Activity Trends
+                        </h5>
+                        <small class="text-muted">Daily caloric intake vs exercise energy expenditure</small>
+                    </div>
+                    <span class="badge bg-warning-subtle text-dark border">
+                        Target: @Model.DailyCalorieTarget kcal
+                    </span>
+                </div>
+                <div class="card-body p-4">
+                    <div style="height: 280px; position: relative;">
+                        <canvas id="calorieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart 4: Activity Minutes / Volume -->
+        <div class="col-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                            <i class="bi bi-stopwatch-fill text-primary"></i> Training Activity Duration Trends
+                        </h5>
+                        <small class="text-muted">Weekly active exercise minutes performed</small>
+                    </div>
+                    <span class="badge bg-primary-subtle text-primary border">
+                        Total: @Model.TotalActiveMinutes mins
+                    </span>
+                </div>
+                <div class="card-body p-4">
+                    <div style="height: 280px; position: relative;">
+                        <canvas id="activityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3: Goal Milestones & Targets -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-trophy-fill text-warning"></i> Client Goal Milestones & Achievements
+                </h5>
+                <small class="text-muted">Target parameters, current benchmarks, and completion progress</small>
+            </div>
+            <span class="badge bg-success-subtle text-success border">
+                @Model.Goals.Count(g => g.IsAchieved) / @Model.Goals.Count Goals Achieved
+            </span>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-4">
+                @foreach (var goal in Model.Goals)
+                {
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded-3 border h-100">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="fw-bold text-dark mb-0">@goal.GoalName</h6>
+                                <span class="badge @(goal.IsAchieved ? "bg-success" : "bg-primary") small">
+                                    @goal.ProgressPercentage%
+                                </span>
+                            </div>
+
+                            <div class="progress mb-2" style="height: 8px;">
+                                <div class="progress-bar @(goal.IsAchieved ? "bg-success" : "bg-primary")" role="progressbar" 
+                                     style="width: @goal.ProgressPercentage%" aria-valuenow="@goal.ProgressPercentage" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+
+                            <div class="d-flex justify-content-between small text-muted mb-2">
+                                <span>Base: <strong>@goal.BaselineValue @goal.Unit</strong></span>
+                                <span>Now: <strong>@goal.CurrentValue @goal.Unit</strong></span>
+                                <span>Goal: <strong>@goal.TargetValue @goal.Unit</strong></span>
+                            </div>
+
+                            <div class="x-small text-secondary fst-italic">
+                                <i class="bi bi-info-circle me-1"></i>@goal.StatusMessage
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 4: Recent Workout & Session Logs Table -->
+    <div class="card border-0 shadow-sm rounded-3 bg-white mb-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-calendar-check text-primary"></i> Recent Workout Session Logs
+                </h5>
+                <small class="text-muted">Client execution records, intensity ratings, and coach feedback</small>
+            </div>
+            <a href="@Url.Action("Reports", "Progress", new { clientId = Model.SelectedClientId })" class="btn btn-sm btn-outline-secondary">
+                View Full Logs in Report
+            </a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="ps-4">Date</th>
+                            <th>Workout Routine</th>
+                            <th>Session Name</th>
+                            <th>Duration</th>
+                            <th>Calories</th>
+                            <th>Effort (RPE)</th>
+                            <th>Status</th>
+                            <th class="pe-4">Client Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var log in Model.RecentLogs)
+                        {
+                            <tr>
+                                <td class="ps-4 font-monospace small fw-semibold">@log.LogDate.ToString("MMM dd, yyyy")</td>
+                                <td class="small fw-semibold text-dark">@(log.WorkoutPlans != null ? log.WorkoutPlans.Title : "N/A")</td>
+                                <td class="small text-secondary">@log.SessionName</td>
+                                <td class="small"><i class="bi bi-stopwatch text-muted me-1"></i>@log.DurationMinutes min</td>
+                                <td class="small text-danger fw-semibold"><i class="bi bi-fire me-1"></i>@log.CaloriesBurned kcal</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        RPE @log.PerceivedExertion / 10
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (log.IsCompleted)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">Completed</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning-subtle text-dark border border-warning-subtle">Partial / Missed</span>
+                                    }
+                                </td>
+                                <td class="pe-4 small text-muted text-truncate" style="max-width: 220px;" title="@log.ClientNotes">
+                                    @(string.IsNullOrWhiteSpace(log.ClientNotes) ? "-" : log.ClientNotes)
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const labels = @Html.Raw(JsonConvert.SerializeObject(Model.ChartLabels));
+        const weightData = @Html.Raw(JsonConvert.SerializeObject(Model.WeightHistory));
+        const bmiData = @Html.Raw(JsonConvert.SerializeObject(Model.BmiHistory));
+        const caloriesConsumed = @Html.Raw(JsonConvert.SerializeObject(Model.CaloriesConsumedHistory));
+        const caloriesBurned = @Html.Raw(JsonConvert.SerializeObject(Model.CaloriesBurnedHistory));
+        const activityMinutes = @Html.Raw(JsonConvert.SerializeObject(Model.ActivityMinutesHistory));
+
+        const completedCount = @Model.TotalWorkoutsCompleted;
+        const missedCount = @(Model.TotalWorkoutsScheduled - Model.TotalWorkoutsCompleted);
+
+        // 1. Weight & BMI Trends Dual-Axis Chart
+        const ctxWeight = document.getElementById('weightBmiChart').getContext('2d');
+        new Chart(ctxWeight, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Weight (kg)',
+                        data: weightData,
+                        borderColor: '#dc3545',
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.35,
+                        fill: true,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'BMI',
+                        data: bmiData,
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        tension: 0.35,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: { display: true, text: 'Weight (kg)' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        grid: { drawOnChartArea: false },
+                        title: { display: true, text: 'BMI' }
+                    }
+                }
+            }
+        });
+
+        // 2. Workout Completion Donut Chart
+        const ctxDonut = document.getElementById('completionDonutChart').getContext('2d');
+        new Chart(ctxDonut, {
+            type: 'doughnut',
+            data: {
+                labels: ['Completed Sessions', 'Missed Sessions'],
+                datasets: [{
+                    data: [completedCount, missedCount],
+                    backgroundColor: ['#198754', '#dc3545'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                },
+                cutout: '72%'
+            }
+        });
+
+        // 3. Calorie Intake vs Burn Bar Chart
+        const ctxCal = document.getElementById('calorieChart').getContext('2d');
+        new Chart(ctxCal, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Calories Consumed',
+                        data: caloriesConsumed,
+                        backgroundColor: 'rgba(255, 193, 7, 0.85)',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Calories Burned',
+                        data: caloriesBurned,
+                        backgroundColor: 'rgba(220, 53, 69, 0.85)',
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Calories (kcal)' }
+                    }
+                }
+            }
+        });
+
+        // 4. Activity Minutes Trend
+        const ctxAct = document.getElementById('activityChart').getContext('2d');
+        new Chart(ctxAct, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Active Minutes',
+                    data: activityMinutes,
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.15)',
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Minutes' }
+                    }
+                }
+            }
+        });
+    });
+</script>

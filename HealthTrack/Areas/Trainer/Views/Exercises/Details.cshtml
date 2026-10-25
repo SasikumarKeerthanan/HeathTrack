@@ -1,0 +1,226 @@
+@model HealthTrack.Models.Exercises
+
+@{
+    ViewBag.Title = Model.Name + " - Exercise Details";
+}
+
+<div class="container-fluid px-4 py-3" style="max-width: 1000px;">
+
+    <!-- Breadcrumb & Navigation -->
+    <nav aria-label="breadcrumb" class="mb-2">
+        <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a href="@Url.Action("Index")" class="text-decoration-none">Exercise Library</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@Model.Name</li>
+        </ol>
+    </nav>
+
+    <!-- Header & Action Row -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge @(Model.Category == "Strength" ? "bg-primary-subtle text-primary border border-primary-subtle" :
+                                    Model.Category == "Cardio" ? "bg-danger-subtle text-danger border border-danger-subtle" :
+                                    Model.Category == "Core" ? "bg-success-subtle text-success border border-success-subtle" :
+                                    Model.Category == "HIIT" ? "bg-warning-subtle text-dark border border-warning-subtle" : "bg-info-subtle text-info border border-info-subtle") fw-semibold">
+                    @Model.Category
+                </span>
+                <span class="badge @(Model.DifficultyLevel == "Beginner" ? "bg-success-subtle text-success" :
+                                    Model.DifficultyLevel == "Intermediate" ? "bg-warning-subtle text-dark" : "bg-danger-subtle text-danger") border">
+                    @Model.DifficultyLevel
+                </span>
+            </div>
+            <h2 class="h3 fw-bold mb-0 text-dark">@Model.Name</h2>
+            <p class="text-muted small mb-0">Primary Target: <strong>@Model.TargetMuscle</strong> &bull; Equipment: <strong>@Model.Equipment</strong></p>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+            <!-- Select Library Exercise into a Workout Plan -->
+            <a href="@Url.Action("Create", "WorkoutPlans", new { exerciseId = Model.ExerciseId })" 
+               class="btn btn-primary d-inline-flex align-items-center gap-1 shadow-sm">
+                <i class="bi bi-calendar-plus me-1"></i> Use in Workout Plan
+            </a>
+
+            <a href="@Url.Action("Edit", new { id = Model.ExerciseId })" class="btn btn-outline-secondary">
+                <i class="bi bi-pencil me-1"></i> Edit
+            </a>
+
+            <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Library
+            </a>
+        </div>
+    </div>
+
+    <!-- Feedback Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+            <div>@TempData["SuccessMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Specifications Grid -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold text-dark mb-3">Overview & Movement Profile</h5>
+
+                    @if (!string.IsNullOrEmpty(Model.ImagePath))
+                    {
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-7">
+                                <div class="rounded-3 overflow-hidden shadow-sm border" style="max-height: 220px; background-color: #0f172a;">
+                                    <img src="@Url.Content(Model.ImagePath)" alt="@Model.Name" class="w-100 object-fit-cover" style="max-height: 220px; display: block;" 
+                                         onerror="this.onerror=null;this.src='@Url.Content("~/Content/images/exercises/placeholder-exercise.png")';" />
+                                </div>
+                            </div>
+                            <div class="col-md-5 d-flex flex-column gap-2">
+                                @if (!string.IsNullOrEmpty(Model.StartImagePath))
+                                {
+                                    <div class="position-relative rounded-2 overflow-hidden border shadow-2xs" style="height: 104px;">
+                                        <img src="@Url.Content(Model.StartImagePath)" alt="Start Stage" class="w-100 h-100 object-fit-cover" 
+                                             onerror="this.onerror=null;this.src='@Url.Content("~/Content/images/exercises/placeholder-exercise.png")';" />
+                                        <span class="position-absolute top-0 start-0 badge bg-dark bg-opacity-75 text-white m-1" style="font-size: 0.62rem;">STAGE 1: START</span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.MovementImagePath))
+                                {
+                                    <div class="position-relative rounded-2 overflow-hidden border shadow-2xs" style="height: 104px;">
+                                        <img src="@Url.Content(Model.MovementImagePath)" alt="Movement Stage" class="w-100 h-100 object-fit-cover" 
+                                             onerror="this.onerror=null;this.src='@Url.Content("~/Content/images/exercises/placeholder-exercise.png")';" />
+                                        <span class="position-absolute top-0 start-0 badge bg-dark bg-opacity-75 text-white m-1" style="font-size: 0.62rem;">STAGE 2: MOVEMENT</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <p class="text-secondary mb-4" style="line-height: 1.6;">
+                        @Model.Description
+                    </p>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.KeyGuidance))
+                    {
+                        <div class="p-3 bg-light rounded-3 border mb-4">
+                            <div class="fw-bold text-dark small mb-2"><i class="bi bi-card-checklist text-primary me-1"></i>Key Guidance Points</div>
+                            <ul class="list-unstyled mb-0 d-flex flex-column gap-2 small text-secondary">
+                                @foreach (var cue in Model.KeyGuidance.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+                                {
+                                    <li class="d-flex align-items-start gap-2">
+                                        <i class="bi bi-check-circle-fill text-success fs-6 flex-shrink-0 mt-n1"></i>
+                                        <span>@cue.Trim()</span>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    <div class="row g-3">
+                        <div class="col-4">
+                            <div class="p-3 bg-light rounded-3 text-center">
+                                <div class="text-muted small fw-semibold text-uppercase">Primary Muscle</div>
+                                <div class="fs-5 fw-bold text-primary mt-1">@Model.TargetMuscle</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-3 bg-light rounded-3 text-center">
+                                <div class="text-muted small fw-semibold text-uppercase">Equipment</div>
+                                <div class="fs-5 fw-bold text-success mt-1">@Model.Equipment</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-3 bg-light rounded-3 text-center">
+                                <div class="text-muted small fw-semibold text-uppercase">Est. Burn</div>
+                                <div class="fs-5 fw-bold text-danger mt-1">~@Model.DefaultCaloriesBurnEstimate kcal</div>
+                                <div class="x-small text-muted">per 10 minutes</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold text-dark mb-3">Muscular Anatomy</h5>
+                    
+                    <ul class="list-unstyled mb-0 d-flex flex-column gap-3 small">
+                        <li class="d-flex justify-content-between align-items-center pb-2 border-bottom">
+                            <span class="text-muted">Primary Focus:</span>
+                            <span class="fw-bold text-dark">@Model.TargetMuscle</span>
+                        </li>
+                        <li class="d-flex justify-content-between align-items-center pb-2 border-bottom">
+                            <span class="text-muted">Secondary Focus:</span>
+                            <span class="text-secondary fw-semibold">@(string.IsNullOrWhiteSpace(Model.SecondaryMuscles) ? "Direct Single Joint" : Model.SecondaryMuscles)</span>
+                        </li>
+                        <li class="d-flex justify-content-between align-items-center pb-2 border-bottom">
+                            <span class="text-muted">Category:</span>
+                            <span class="badge bg-light text-dark border">@Model.Category</span>
+                        </li>
+                        <li class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Difficulty:</span>
+                            <span class="badge bg-light text-dark border">@Model.DifficultyLevel</span>
+                        </li>
+                    </ul>
+
+                    <div class="mt-4 p-3 bg-primary bg-opacity-10 rounded-3 border border-primary border-opacity-25 text-center">
+                        <div class="small fw-semibold text-primary mb-2">Want to prescribe this exercise?</div>
+                        <a href="@Url.Action("Create", "WorkoutPlans", new { exerciseId = Model.ExerciseId })" 
+                           class="btn btn-sm btn-primary w-100 shadow-sm">
+                            <i class="bi bi-plus-circle me-1"></i> Add to New Workout Plan
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step-by-Step Execution Instructions -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex align-items-center gap-2">
+            <i class="bi bi-list-ol fs-5 text-primary"></i>
+            <h5 class="fw-bold mb-0 text-dark">Step-by-Step Technique Instructions</h5>
+        </div>
+        <div class="card-body p-4">
+            @if (string.IsNullOrWhiteSpace(Model.Instructions))
+            {
+                <p class="text-muted mb-0">No specific instructions recorded for this movement.</p>
+            }
+            else
+            {
+                var steps = Model.Instructions.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                <div class="d-flex flex-column gap-3">
+                    @foreach (var step in steps)
+                    {
+                        <div class="d-flex align-items-start gap-3 p-3 bg-light rounded-3 border">
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px; font-size: 0.8rem;">
+                                <i class="bi bi-check2"></i>
+                            </div>
+                            <div class="text-dark small pt-1" style="line-height: 1.5;">@step</div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Form Tips & Common Mistakes -->
+    @if (!string.IsNullOrWhiteSpace(Model.TipsAndPrecautions))
+    {
+        <div class="card border-0 shadow-sm rounded-3 mb-4 border-start border-4 border-warning">
+            <div class="card-header bg-white py-3 border-bottom d-flex align-items-center gap-2">
+                <i class="bi bi-shield-exclamation fs-5 text-warning"></i>
+                <h5 class="fw-bold mb-0 text-dark">Coaching Tips & Common Mistakes</h5>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-secondary small mb-0" style="line-height: 1.6;">
+                    @Model.TipsAndPrecautions
+                </p>
+            </div>
+        </div>
+    }
+
+</div>

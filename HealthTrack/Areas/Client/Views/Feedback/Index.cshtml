@@ -1,0 +1,353 @@
+@model HealthTrack.Areas.Client.ViewModels.ClientFeedbackDashboardViewModel
+
+@{
+    ViewBag.Title = "Coach Feedback & History";
+    var latest = Model.LatestFeedback;
+    var currentCat = Model.SelectedCategory != null ? Model.SelectedCategory.ToLower() : "all";
+}
+
+<div class="container-fluid px-4 py-3">
+
+    <!-- ========================================================
+         PAGE HEADER
+         ======================================================== -->
+    <div class="row align-items-center justify-content-between mb-4 pb-3 border-bottom g-3">
+        <div class="col-md-7">
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-info-subtle text-info border border-info-subtle d-inline-flex align-items-center gap-1">
+                    <i class="bi bi-chat-heart-fill"></i> Coach Guidance &amp; Reviews
+                </span>
+                <span class="badge bg-light text-secondary border">
+                    <i class="bi bi-shield-check text-success me-1"></i>Assigned Trainer: @Model.AssignedTrainer.FullName
+                </span>
+            </div>
+            <h2 class="h3 fw-bold mb-1 text-dark d-flex align-items-center gap-2">
+                Trainer Feedback &amp; Advice
+            </h2>
+            <p class="text-muted small mb-0">
+                Review personalized evaluations, workout recommendations, and nutrition guidance directly from your coach.
+            </p>
+        </div>
+
+        <div class="col-md-5 d-flex justify-content-md-end align-items-center gap-2">
+            <a href="@Url.Action("Index", "Workout", new { area = "Client" })" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 shadow-sm">
+                <i class="bi bi-speedometer2"></i> Workout Hub
+            </a>
+            <a href="@Url.Action("Index", "Diet", new { area = "Client" })" class="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-1 shadow-sm">
+                <i class="bi bi-egg-fried"></i> Diet Hub
+            </a>
+        </div>
+    </div>
+
+    <!-- ========================================================
+         COACH PROFILE BANNER & QUICK STATS
+         ======================================================== -->
+    <div class="row g-3 mb-4">
+        <!-- Coach Info Card -->
+        <div class="col-lg-5 col-xl-4">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 54px; height: 54px;">
+                        <i class="bi bi-person-badge fs-2"></i>
+                    </div>
+                    <div class="overflow-hidden">
+                        <div class="d-flex align-items-center gap-2">
+                            <h5 class="fw-bold mb-0 text-dark text-truncate">@Model.AssignedTrainer.FullName</h5>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle x-small">Active Coach</span>
+                        </div>
+                        <div class="text-muted small text-truncate mt-1">
+                            <i class="bi bi-award me-1 text-warning"></i>@Model.AssignedTrainer.Specialization
+                        </div>
+                        <div class="text-muted x-small text-truncate mt-1">
+                            <i class="bi bi-envelope me-1"></i>@Model.AssignedTrainer.Email
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3 KPI Metric Cards -->
+        <div class="col-lg-7 col-xl-8">
+            <div class="row g-2 h-100">
+                <!-- Total Feedback -->
+                <div class="col-sm-3 col-6">
+                    <div class="card border-0 shadow-sm rounded-4 p-3 bg-white text-center h-100 d-flex flex-column justify-content-center">
+                        <div class="text-muted x-small fw-bold text-uppercase mb-1">Total Notes</div>
+                        <div class="h3 fw-bold text-dark mb-0">@Model.TotalCount</div>
+                        <div class="text-muted x-small mt-1">Coach reviews</div>
+                    </div>
+                </div>
+
+                <!-- Workout Advice -->
+                <div class="col-sm-3 col-6">
+                    <div class="card border-0 shadow-sm rounded-4 p-3 bg-white text-center h-100 d-flex flex-column justify-content-center">
+                        <div class="text-primary x-small fw-bold text-uppercase mb-1">
+                            <i class="bi bi-lightning-charge-fill me-1"></i>Workout
+                        </div>
+                        <div class="h3 fw-bold text-primary mb-0">@Model.WorkoutCount</div>
+                        <div class="text-muted x-small mt-1">Routine notes</div>
+                    </div>
+                </div>
+
+                <!-- Diet & Nutrition -->
+                <div class="col-sm-3 col-6">
+                    <div class="card border-0 shadow-sm rounded-4 p-3 bg-white text-center h-100 d-flex flex-column justify-content-center">
+                        <div class="text-success x-small fw-bold text-uppercase mb-1">
+                            <i class="bi bi-egg-fried me-1"></i>Diet &amp; Meals
+                        </div>
+                        <div class="h3 fw-bold text-success mb-0">@Model.DietCount</div>
+                        <div class="text-muted x-small mt-1">Nutrition tips</div>
+                    </div>
+                </div>
+
+                <!-- General Progress -->
+                <div class="col-sm-3 col-6">
+                    <div class="card border-0 shadow-sm rounded-4 p-3 bg-white text-center h-100 d-flex flex-column justify-content-center">
+                        <div class="text-info x-small fw-bold text-uppercase mb-1">
+                            <i class="bi bi-graph-up-arrow me-1"></i>Progress
+                        </div>
+                        <div class="h3 fw-bold text-info mb-0">@Model.GeneralCount</div>
+                        <div class="text-muted x-small mt-1">Milestones</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================
+         FEATURED LATEST FEEDBACK HERO CARD
+         ======================================================== -->
+    @if (latest != null && currentCat == "all" && string.IsNullOrWhiteSpace(Model.SearchTerm))
+    {
+        <div class="card border-0 shadow-sm rounded-4 bg-white mb-4 overflow-hidden position-relative">
+            <div class="card-header bg-primary bg-opacity-10 border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-primary text-white d-inline-flex align-items-center gap-1 px-2 py-1">
+                        <i class="bi bi-stars"></i> Latest Advice from Coach
+                    </span>
+                    <span class="badge @latest.CategoryBadgeClass">
+                        <i class="@latest.CategoryIconClass me-1"></i>@latest.Category
+                    </span>
+                </div>
+                <div class="text-muted small d-flex align-items-center gap-2">
+                    <i class="bi bi-calendar-event text-primary"></i>
+                    <span>@latest.SentDateFormatted</span>
+                    <span>&bull;</span>
+                    <span class="badge bg-light text-dark border">@latest.RelativeTime</span>
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                <h4 class="fw-bold text-dark mb-2">@latest.Title</h4>
+
+                <!-- Coach Observations -->
+                <div class="mb-3">
+                    <div class="text-uppercase x-small fw-bold text-muted mb-1 d-flex align-items-center gap-1">
+                        <i class="bi bi-chat-left-quote-fill text-primary"></i> Coach Observations
+                    </div>
+                    <p class="text-secondary mb-0" style="line-height: 1.65; font-size: 0.95rem;">
+                        @latest.FeedbackText
+                    </p>
+                </div>
+
+                <!-- Actionable Recommendations Callout -->
+                @if (!string.IsNullOrWhiteSpace(latest.Recommendations))
+                {
+                    <div class="p-3 rounded-3 bg-success bg-opacity-10 border-start border-4 border-success mt-3">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                            <span class="fw-bold text-success">Recommended Action Steps for You</span>
+                        </div>
+                        <ul class="mb-0 text-dark small ps-3" style="line-height: 1.7;">
+                            @foreach (var rec in latest.RecommendationsList)
+                            {
+                                <li>@rec</li>
+                            }
+                        </ul>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- ========================================================
+         SEARCH & CATEGORY FILTER BAR
+         ======================================================== -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white p-3 mb-4">
+        <div class="row g-3 align-items-center justify-content-between">
+            <!-- Category Pills -->
+            <div class="col-md-7 col-12">
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="@Url.Action("Index", "Feedback", new { area = "Client", category = "all", search = Model.SearchTerm })" 
+                       class="btn btn-sm rounded-pill px-3 @(currentCat == "all" ? "btn-dark shadow-sm" : "btn-light border")">
+                        All Feedback <span class="badge bg-secondary ms-1">@Model.TotalCount</span>
+                    </a>
+                    <a href="@Url.Action("Index", "Feedback", new { area = "Client", category = "Workout", search = Model.SearchTerm })" 
+                       class="btn btn-sm rounded-pill px-3 @(currentCat == "workout" ? "btn-primary shadow-sm" : "btn-light border")">
+                        <i class="bi bi-lightning-charge-fill me-1"></i>Workout <span class="badge bg-secondary ms-1">@Model.WorkoutCount</span>
+                    </a>
+                    <a href="@Url.Action("Index", "Feedback", new { area = "Client", category = "Diet", search = Model.SearchTerm })" 
+                       class="btn btn-sm rounded-pill px-3 @(currentCat == "diet" ? "btn-success shadow-sm" : "btn-light border")">
+                        <i class="bi bi-egg-fried me-1"></i>Diet &amp; Nutrition <span class="badge bg-secondary ms-1">@Model.DietCount</span>
+                    </a>
+                    <a href="@Url.Action("Index", "Feedback", new { area = "Client", category = "General Progress", search = Model.SearchTerm })" 
+                       class="btn btn-sm rounded-pill px-3 @(currentCat == "general progress" || currentCat == "general" ? "btn-info text-white shadow-sm" : "btn-light border")">
+                        <i class="bi bi-graph-up-arrow me-1"></i>General Progress <span class="badge bg-secondary ms-1">@Model.GeneralCount</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Search Form -->
+            <div class="col-md-5 col-12">
+                @using (Html.BeginForm("Index", "Feedback", new { area = "Client" }, FormMethod.Get, new { @class = "d-flex gap-2" }))
+                {
+                    <input type="hidden" name="category" value="@Model.SelectedCategory" />
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="bi bi-search text-muted"></i>
+                        </span>
+                        <input type="text" name="search" class="form-control bg-light border-start-0" 
+                               placeholder="Search advice, workouts, diet..." value="@Model.SearchTerm" />
+                        <button type="submit" class="btn btn-primary px-3">Filter</button>
+                        @if (!string.IsNullOrWhiteSpace(Model.SearchTerm))
+                        {
+                            <a href="@Url.Action("Index", "Feedback", new { area = "Client", category = Model.SelectedCategory })" 
+                               class="btn btn-outline-secondary" title="Clear search">
+                                <i class="bi bi-x-lg"></i>
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================
+         FEEDBACK HISTORY FEED / TIMELINE
+         ======================================================== -->
+    <div class="d-flex align-items-center justify-content-between mb-3 px-1">
+        <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+            <i class="bi bi-clock-history text-primary"></i> Feedback History
+            <span class="badge bg-light text-secondary border fw-normal fs-6">@Model.FeedbackHistory.Count entries</span>
+        </h5>
+
+        @if (!string.IsNullOrWhiteSpace(Model.SearchTerm) || (currentCat != "all"))
+        {
+            <a href="@Url.Action("Index", "Feedback", new { area = "Client", category = "all" })" 
+               class="btn btn-sm btn-link text-decoration-none text-muted">
+                <i class="bi bi-arrow-counterclockwise"></i> Reset Filters
+            </a>
+        }
+    </div>
+
+    @if (Model.FeedbackHistory != null && Model.FeedbackHistory.Any())
+    {
+        <div class="row g-3">
+            @foreach (var item in Model.FeedbackHistory)
+            {
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm rounded-4 bg-white p-3 p-md-4 transition-hover">
+                        <!-- Top Header Row -->
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2 pb-2 border-bottom">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge @item.CategoryBadgeClass">
+                                    <i class="@item.CategoryIconClass me-1"></i>@item.Category
+                                </span>
+                                @if (item.ParentFeedbackId.HasValue)
+                                {
+                                    <span class="badge bg-light text-dark border">
+                                        <i class="bi bi-reply-fill me-1"></i>Follow-up Note
+                                    </span>
+                                }
+                            </div>
+
+                            <div class="d-flex align-items-center gap-2 text-muted small">
+                                <i class="bi bi-calendar3 text-primary"></i>
+                                <span class="fw-medium">@item.SentDateFormatted</span>
+                                <span>&bull;</span>
+                                <span class="text-secondary">@item.SentTimeFormatted</span>
+                                <span class="badge bg-light text-dark border ms-1">@item.RelativeTime</span>
+                            </div>
+                        </div>
+
+                        <!-- Title -->
+                        <h5 class="fw-bold text-dark mb-2">@item.Title</h5>
+
+                        <!-- Coach Observations -->
+                        <div class="mb-3">
+                            <div class="text-uppercase x-small fw-bold text-muted mb-1 d-flex align-items-center gap-1">
+                                <i class="bi bi-chat-text-fill text-primary"></i> Coach Observations
+                            </div>
+                            <p class="text-secondary mb-0" style="line-height: 1.6; font-size: 0.95rem;">
+                                @item.FeedbackText
+                            </p>
+                        </div>
+
+                        <!-- Recommendations Box -->
+                        @if (!string.IsNullOrWhiteSpace(item.Recommendations))
+                        {
+                            <div class="p-3 rounded-3 bg-light border-start border-4 border-@item.CategoryColor mt-2">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <i class="bi bi-check-circle-fill text-@item.CategoryColor"></i>
+                                    <span class="fw-bold text-@item.CategoryColor small text-uppercase">Actionable Recommendations &amp; Guidance</span>
+                                </div>
+                                <ul class="mb-0 text-dark small ps-3" style="line-height: 1.65;">
+                                    @foreach (var step in item.RecommendationsList)
+                                    {
+                                        <li>@step</li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+
+                        <!-- Footer: Coach Signature -->
+                        <div class="d-flex align-items-center justify-content-between mt-3 pt-2 text-muted x-small border-top">
+                            <div class="d-flex align-items-center gap-1">
+                                <i class="bi bi-person-check text-success"></i>
+                                <span>Provided by <strong>@item.TrainerName</strong> (@item.TrainerSpecialization)</span>
+                            </div>
+                            <div>
+                                <span class="text-muted">Feedback #@item.FeedbackId</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <!-- Empty State -->
+        <div class="card border-0 shadow-sm rounded-4 bg-white p-5 text-center my-3">
+            <div class="rounded-circle bg-light text-muted mx-auto d-flex align-items-center justify-content-center mb-3" style="width: 72px; height: 72px;">
+                <i class="bi bi-chat-heart text-secondary fs-1"></i>
+            </div>
+            <h5 class="fw-bold text-dark mb-2">No Feedback Found</h5>
+            <p class="text-muted small max-w-md mx-auto mb-4" style="max-width: 480px;">
+                @if (!string.IsNullOrWhiteSpace(Model.SearchTerm))
+                {
+                    <span>No feedback records matched your search query "<strong>@Model.SearchTerm</strong>". Try using different keywords or clearing your search filter.</span>
+                }
+                else
+                {
+                    <span>Your coach hasn't added any feedback in the <strong>@Model.SelectedCategory</strong> category yet. Keep completing your scheduled workouts and logging your meals to receive personalized recommendations!</span>
+                }
+            </p>
+            <div>
+                <a href="@Url.Action("Index", "Feedback", new { area = "Client", category = "all" })" class="btn btn-sm btn-primary px-3 rounded-pill shadow-sm">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> View All Feedback
+                </a>
+            </div>
+        </div>
+    }
+
+</div>
+
+<style>
+    .transition-hover {
+        transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    .transition-hover:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
+    }
+</style>

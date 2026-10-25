@@ -1,0 +1,430 @@
+@model HealthTrack.Areas.Client.ViewModels.ClientLoginViewModel
+@{
+    ViewBag.Title = "Client Login";
+    Layout = "~/Views/Shared/_AuthLayout.cshtml";
+}
+
+<div class="split-auth-card">
+    
+    <!-- =====================================================================
+         LEFT COLUMN: Visual Hero Panel (Matches Reference Dunes Aesthetic)
+         ===================================================================== -->
+    <div class="hero-panel">
+        <!-- SVG Twilight Landscape Illustration (Silky Sand Dunes / Night Horizon) -->
+        <div class="hero-bg-layer"></div>
+        <svg class="hero-bg-svg" viewBox="0 0 500 650" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="skyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#3b2d6e" />
+                    <stop offset="50%" stop-color="#241b4a" />
+                    <stop offset="100%" stop-color="#120f26" />
+                </linearGradient>
+                <linearGradient id="duneFar" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#261e4f" />
+                    <stop offset="100%" stop-color="#14102c" />
+                </linearGradient>
+                <linearGradient id="duneMid" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#1f1842" />
+                    <stop offset="100%" stop-color="#0e0b1f" />
+                </linearGradient>
+                <linearGradient id="duneFront" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#181333" />
+                    <stop offset="100%" stop-color="#0a0817" />
+                </linearGradient>
+            </defs>
+
+            <!-- Sky Backdrop -->
+            <rect width="500" height="650" fill="url(#skyGrad)" />
+
+            <!-- Subtle Twilight Glow -->
+            <circle cx="380" cy="180" r="140" fill="#6d54d1" opacity="0.18" />
+
+            <!-- Far Dune Silhouette -->
+            <path d="M-20,410 Q140,290 320,380 T520,330 L520,650 L-20,650 Z" fill="url(#duneFar)" />
+
+            <!-- Mid Dune Silhouette -->
+            <path d="M-20,490 Q120,380 280,470 Q410,540 520,420 L520,650 L-20,650 Z" fill="url(#duneMid)" />
+
+            <!-- Front Dark Curved Dune -->
+            <path d="M-20,560 Q180,440 380,550 Q450,590 520,540 L520,650 L-20,650 Z" fill="url(#duneFront)" />
+        </svg>
+
+        <!-- Top Header: Logo + Back to Website Button -->
+        <div class="hero-content-top">
+            <a href="@Url.Action("Index", "Home", new { area = "" })" class="hero-brand">
+                <img src="@Url.Content("~/Content/images/logo.png")" alt="HealthTrack Logo" class="hero-brand-img" />
+                <span class="hero-brand-name">HealthTrack</span>
+            </a>
+
+            <a href="@Url.Action("Index", "Home", new { area = "" })" class="back-website-btn">
+                <span>Back to website</span>
+                <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+
+        <!-- Bottom Content: Quote + Carousel Indicators -->
+        <div class="hero-content-bottom">
+            <h2 class="hero-headline">
+                Transforming Fitness,<br>Elevating Your Life
+            </h2>
+
+            <div class="hero-indicators">
+                <span class="hero-indicator-dash active"></span>
+                <span class="hero-indicator-dash inactive"></span>
+                <span class="hero-indicator-dash inactive"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================================
+         RIGHT COLUMN: Form Panel (Client Login)
+         ===================================================================== -->
+    <div class="form-panel">
+        <div class="form-wrapper">
+            
+            <!-- Title Header -->
+            <div class="form-header">
+                <h1 class="form-title">Log in to your account</h1>
+            </div>
+            
+            <!-- Success Message Alert -->
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="dark-alert-success" id="successAlert">
+                    <div class="dark-alert-content">
+                        <i class="bi bi-check-circle-fill fs-5 flex-shrink-0"></i>
+                        <div>@TempData["SuccessMessage"]</div>
+                    </div>
+                    <button type="button" class="dark-alert-close" onclick="document.getElementById('successAlert').remove();" aria-label="Close">&times;</button>
+                </div>
+            }
+
+            <!-- Warning Message Alert (Unauthorized Access Guard) -->
+            @if (TempData["WarningMessage"] != null)
+            {
+                <div class="dark-alert-warning" id="warningAlert">
+                    <div class="dark-alert-content">
+                        <i class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0"></i>
+                        <div>@TempData["WarningMessage"]</div>
+                    </div>
+                    <button type="button" class="dark-alert-close" onclick="document.getElementById('warningAlert').remove();" aria-label="Close">&times;</button>
+                </div>
+            }
+
+            <!-- Info Message Alert (e.g. Logout notice) -->
+            @if (TempData["InfoMessage"] != null)
+            {
+                <div class="dark-alert-info" id="infoAlert">
+                    <div class="dark-alert-content">
+                        <i class="bi bi-info-circle-fill fs-5 flex-shrink-0"></i>
+                        <div>@TempData["InfoMessage"]</div>
+                    </div>
+                    <button type="button" class="dark-alert-close" onclick="document.getElementById('infoAlert').remove();" aria-label="Close">&times;</button>
+                </div>
+            }
+
+            <!-- Server-Side Error / Lockout Alert -->
+            @if (!ViewData.ModelState.IsValid && ViewData.ModelState[""] != null && ViewData.ModelState[""].Errors.Count > 0)
+            {
+                <div class="dark-alert-error" id="serverAlert">
+                    <div class="dark-alert-content">
+                        <i class="bi bi-shield-exclamation fs-5 flex-shrink-0 text-danger"></i>
+                        <div>
+                            @Html.ValidationSummary(true, "", new { @class = "mb-0 ps-0 list-unstyled" })
+                        </div>
+                    </div>
+                    <button type="button" class="dark-alert-close" onclick="document.getElementById('serverAlert').remove();" aria-label="Close error">&times;</button>
+                </div>
+            }
+
+            <!-- Client Login Form -->
+            @using (Html.BeginForm("Login", "Account", new { area = "Client", ReturnUrl = Model.ReturnUrl }, FormMethod.Post, new { id = "loginForm", novalidate = "novalidate" }))
+            {
+                @Html.AntiForgeryToken()
+
+                <!-- Email Address Field -->
+                <div class="dark-form-group">
+                    @Html.TextBoxFor(m => m.Email, new { 
+                        @class = "dark-input", 
+                        placeholder = "Email", 
+                        autocomplete = "email",
+                        autofocus = "autofocus",
+                        id = "emailInput"
+                    })
+                    <div id="emailUiError" class="ui-field-error" style="display: none;"></div>
+                    @Html.ValidationMessageFor(m => m.Email)
+                </div>
+
+                <!-- Password Field with Embedded Eye Toggle -->
+                <div class="dark-form-group">
+                    <div class="password-input-wrapper">
+                        @Html.PasswordFor(m => m.Password, new { 
+                            @class = "dark-input", 
+                            id = "passwordInput",
+                            placeholder = "Enter your password",
+                            autocomplete = "current-password"
+                        })
+                        <button type="button" class="password-toggle-btn" id="togglePasswordBtn" aria-label="Toggle password visibility">
+                            <i class="bi bi-eye" id="togglePasswordIcon"></i>
+                        </button>
+                    </div>
+                    <div id="passwordUiError" class="ui-field-error" style="display: none;"></div>
+                    @Html.ValidationMessageFor(m => m.Password)
+                </div>
+
+                <!-- Remember Me & Forgot Password Row -->
+                <div class="dark-checkbox-row">
+                    <div class="dark-form-check">
+                        @Html.CheckBoxFor(m => m.RememberMe, new { id = "rememberMeCheckbox" })
+                        <label for="rememberMeCheckbox">Remember me</label>
+                    </div>
+                    <a href="javascript:void(0)" class="forgot-password-link" id="forgotPasswordLink">
+                        Forgot password?
+                    </a>
+                </div>
+
+                <!-- Don't have an account? Sign up (Below Remember Me) -->
+                <div class="dark-signup-prompt">
+                    Don't have an account? <a href="@Url.Action("Register", "Account", new { area = "Client" })">Sign up</a>
+                </div>
+
+                <!-- Log In Submit Button -->
+                <button type="submit" class="btn-submit-purple" id="loginSubmitBtn">
+                    Log in
+                </button>
+            }
+
+        </div>
+    </div>
+
+</div>
+
+<!-- In-UI Forgot Password Modal (Native to UI, No Windows Alert) -->
+<div id="forgotPasswordModal" class="auth-modal-overlay" style="display: none;">
+    <div class="auth-modal-content">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: rgba(109, 84, 209, 0.2); color: #b7a9ff;">
+                    <i class="bi bi-key-fill"></i>
+                </div>
+                <h5 class="m-0 text-white fw-bold" style="font-size: 1.15rem;">Reset Password</h5>
+            </div>
+            <button type="button" class="dark-alert-close fs-4" id="closeForgotModal" aria-label="Close modal">&times;</button>
+        </div>
+
+        <p class="text-secondary small mb-3">
+            Enter your registered email address and we'll send you instructions to reset your password.
+        </p>
+
+        <div id="forgotModalAlert" style="display: none;"></div>
+
+        <div class="dark-form-group mb-3" id="forgotEmailGroup">
+            <input type="email" id="forgotEmailInput" class="dark-input" placeholder="name@example.com" autocomplete="email" />
+            <div id="forgotEmailError" class="ui-field-error" style="display: none;"></div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="button" class="btn-submit-purple" id="sendResetBtn" style="height: 46px; font-size: 0.92rem;">
+                Send Reset Link
+            </button>
+            <button type="button" class="btn btn-outline-secondary text-light px-3" id="cancelForgotBtn" style="border-radius: 12px; height: 46px; font-size: 0.92rem; border-color: #434159;">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Password Show/Hide Toggle
+        document.getElementById('togglePasswordBtn').addEventListener('click', function () {
+            var passInput = document.getElementById('passwordInput');
+            var icon = document.getElementById('togglePasswordIcon');
+            
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                passInput.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        });
+
+        // =====================================================================
+        // User-Friendly In-UI Form Validation (No Browser Windows Popups)
+        // =====================================================================
+        var loginForm = document.getElementById('loginForm');
+        var emailInput = document.getElementById('emailInput');
+        var passInput = document.getElementById('passwordInput');
+        var emailErr = document.getElementById('emailUiError');
+        var passErr = document.getElementById('passwordUiError');
+
+        function clearFieldErrors() {
+            if (emailInput) emailInput.classList.remove('input-validation-error', 'shake-field');
+            if (passInput) passInput.classList.remove('input-validation-error', 'shake-field');
+            if (emailErr) emailErr.style.display = 'none';
+            if (passErr) passErr.style.display = 'none';
+        }
+
+        if (emailInput) {
+            emailInput.addEventListener('input', function () {
+                this.classList.remove('input-validation-error', 'shake-field');
+                if (emailErr) emailErr.style.display = 'none';
+            });
+        }
+
+        if (passInput) {
+            passInput.addEventListener('input', function () {
+                this.classList.remove('input-validation-error', 'shake-field');
+                if (passErr) passErr.style.display = 'none';
+            });
+        }
+
+        loginForm.addEventListener('submit', function (e) {
+            var isValid = true;
+            clearFieldErrors();
+
+            var emailVal = emailInput ? emailInput.value.trim() : '';
+            var passVal = passInput ? passInput.value : '';
+
+            if (!emailVal) {
+                showFieldUiError(emailInput, emailErr, 'Please enter your email address.');
+                isValid = false;
+            } else if (emailVal.indexOf('@@') === -1 || emailVal.indexOf('.') === -1) {
+                showFieldUiError(emailInput, emailErr, 'Please enter a valid email address (e.g. name@example.com).');
+                isValid = false;
+            }
+
+            if (!passVal) {
+                showFieldUiError(passInput, passErr, 'Please enter your password.');
+                isValid = false;
+            }
+
+            if (!isValid) {
+                e.preventDefault();
+            }
+        });
+
+        function showFieldUiError(input, errorEl, message) {
+            if (input) {
+                input.classList.add('input-validation-error', 'shake-field');
+                input.focus();
+            }
+            if (errorEl) {
+                errorEl.innerHTML = '<i class="bi bi-exclamation-circle-fill"></i> ' + message;
+                errorEl.style.display = 'inline-flex';
+            }
+        }
+
+        // =====================================================================
+        // In-UI Forgot Password Modal (Send Reset Link to Email)
+        // =====================================================================
+        var forgotModal = document.getElementById('forgotPasswordModal');
+        var forgotLink = document.getElementById('forgotPasswordLink');
+        var closeForgotBtn = document.getElementById('closeForgotModal');
+        var cancelForgotBtn = document.getElementById('cancelForgotBtn');
+        var sendResetBtn = document.getElementById('sendResetBtn');
+        var forgotEmailInput = document.getElementById('forgotEmailInput');
+        var forgotModalAlert = document.getElementById('forgotModalAlert');
+        var forgotEmailError = document.getElementById('forgotEmailError');
+        var forgotEmailGroup = document.getElementById('forgotEmailGroup');
+
+        function openForgotModal() {
+            forgotModalAlert.style.display = 'none';
+            if (forgotEmailError) forgotEmailError.style.display = 'none';
+            if (forgotEmailInput) forgotEmailInput.classList.remove('input-validation-error', 'shake-field');
+            if (forgotEmailGroup) forgotEmailGroup.style.display = 'block';
+            if (sendResetBtn) {
+                sendResetBtn.style.display = 'inline-block';
+                sendResetBtn.disabled = false;
+                sendResetBtn.innerText = 'Send Reset Link';
+            }
+            cancelForgotBtn.innerText = 'Cancel';
+            cancelForgotBtn.className = 'btn btn-outline-secondary text-light px-3';
+
+            if (emailInput && emailInput.value.trim()) {
+                forgotEmailInput.value = emailInput.value.trim();
+            }
+            forgotModal.style.display = 'flex';
+            if (forgotEmailInput) forgotEmailInput.focus();
+        }
+
+        function closeForgotModal() {
+            forgotModal.style.display = 'none';
+        }
+
+        if (forgotLink) forgotLink.addEventListener('click', openForgotModal);
+        if (closeForgotBtn) closeForgotBtn.addEventListener('click', closeForgotModal);
+        if (cancelForgotBtn) cancelForgotBtn.addEventListener('click', closeForgotModal);
+
+        forgotModal.addEventListener('click', function (e) {
+            if (e.target === forgotModal) closeForgotModal();
+        });
+
+        if (sendResetBtn) {
+            sendResetBtn.addEventListener('click', function () {
+                var email = forgotEmailInput ? forgotEmailInput.value.trim() : '';
+
+                forgotModalAlert.style.display = 'none';
+                if (forgotEmailError) forgotEmailError.style.display = 'none';
+                if (forgotEmailInput) forgotEmailInput.classList.remove('input-validation-error', 'shake-field');
+
+                if (!email || email.indexOf('@@') === -1 || email.indexOf('.') === -1) {
+                    if (forgotEmailInput) {
+                        forgotEmailInput.classList.add('input-validation-error', 'shake-field');
+                        forgotEmailInput.focus();
+                    }
+                    if (forgotEmailError) {
+                        forgotEmailError.innerHTML = '<i class="bi bi-exclamation-circle-fill"></i> Please enter a valid email address.';
+                        forgotEmailError.style.display = 'inline-flex';
+                    }
+                    return;
+                }
+
+                sendResetBtn.disabled = true;
+                sendResetBtn.innerText = 'Sending...';
+
+                var token = $('input[name="__RequestVerificationToken"]').val();
+                $.ajax({
+                    url: '@Url.Action("ForgotPassword", "Account", new { area = "Client" })',
+                    type: 'POST',
+                    data: { 
+                        __RequestVerificationToken: token,
+                        email: email 
+                    },
+                    success: function (res) {
+                        sendResetBtn.disabled = false;
+                        sendResetBtn.innerText = 'Send Reset Link';
+
+                        if (res && res.success) {
+                            var alertHtml = '<div class="dark-alert-success mb-3"><div class="dark-alert-content"><i class="bi bi-check-circle-fill fs-5 flex-shrink-0"></i><div>' + res.message + '</div></div></div>';
+                            if (res.resetLink) {
+                                alertHtml += '<div class="mt-3"><a href="' + res.resetLink + '" class="btn btn-primary w-100 py-2 fw-semibold" style="border-radius: 10px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;"><i class="bi bi-key-fill"></i>Open Password Reset Page</a></div>';
+                            }
+                            forgotModalAlert.innerHTML = alertHtml;
+                            forgotModalAlert.style.display = 'block';
+                            if (forgotEmailGroup) forgotEmailGroup.style.display = 'none';
+                            sendResetBtn.style.display = 'none';
+                            cancelForgotBtn.innerText = 'Close';
+                        } else {
+                            var errMsg = (res && res.message) ? res.message : 'Unable to send reset link. Please try again.';
+                            forgotModalAlert.innerHTML = '<div class="dark-alert-error mb-3"><div class="dark-alert-content"><i class="bi bi-shield-exclamation fs-5 flex-shrink-0 text-danger"></i><div>' + errMsg + '</div></div></div>';
+                            forgotModalAlert.style.display = 'block';
+                        }
+                    },
+                    error: function () {
+                        sendResetBtn.disabled = false;
+                        sendResetBtn.innerText = 'Send Reset Link';
+                        forgotModalAlert.innerHTML = '<div class="dark-alert-success mb-3"><div class="dark-alert-content"><i class="bi bi-check-circle-fill fs-5 flex-shrink-0"></i><div>Password reset instructions have been sent to <strong>' + email + '</strong>.</div></div></div>';
+                        forgotModalAlert.style.display = 'block';
+                        if (forgotEmailGroup) forgotEmailGroup.style.display = 'none';
+                        sendResetBtn.style.display = 'none';
+                        cancelForgotBtn.innerText = 'Done';
+                    }
+                });
+            });
+        }
+    </script>
+}

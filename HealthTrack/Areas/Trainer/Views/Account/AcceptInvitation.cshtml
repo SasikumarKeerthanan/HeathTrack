@@ -1,0 +1,173 @@
+@model HealthTrack.Areas.Trainer.ViewModels.AcceptInvitationViewModel
+@{
+    ViewBag.Title = "Activate Trainer Account";
+    Layout = "~/Views/Shared/_AuthLayout.cshtml";
+}
+
+<div class="split-auth-card">
+    
+    <!-- LEFT COLUMN: Visual Hero Panel -->
+    <div class="hero-panel">
+        <div class="hero-bg-layer"></div>
+        <svg class="hero-bg-svg" viewBox="0 0 500 650" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="skyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#3b2d6e" />
+                    <stop offset="50%" stop-color="#241b4a" />
+                    <stop offset="100%" stop-color="#120f26" />
+                </linearGradient>
+                <linearGradient id="duneFar" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#261e4f" />
+                    <stop offset="100%" stop-color="#14102c" />
+                </linearGradient>
+                <linearGradient id="duneMid" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#1f1842" />
+                    <stop offset="100%" stop-color="#0e0b1f" />
+                </linearGradient>
+                <linearGradient id="duneFront" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#181333" />
+                    <stop offset="100%" stop-color="#0a0817" />
+                </linearGradient>
+            </defs>
+            <rect width="500" height="650" fill="url(#skyGrad)" />
+            <circle cx="380" cy="180" r="140" fill="#dc3545" opacity="0.16" />
+            <path d="M-20,410 Q140,290 320,380 T520,330 L520,650 L-20,650 Z" fill="url(#duneFar)" />
+            <path d="M-20,490 Q120,380 280,470 Q410,540 520,420 L520,650 L-20,650 Z" fill="url(#duneMid)" />
+            <path d="M-20,560 Q180,440 380,550 Q450,590 520,540 L520,650 L-20,650 Z" fill="url(#duneFront)" />
+        </svg>
+
+        <div class="hero-content-top">
+            <a href="@Url.Action("Login", "Account", new { area = "Client" })" class="hero-brand">
+                <img src="@Url.Content("~/Content/images/logo.png")" alt="HealthTrack Logo" class="hero-brand-img" />
+                <span class="hero-brand-name">HealthTrack</span>
+            </a>
+
+            <a href="@Url.Action("Login", "Account", new { area = "Client" })" class="back-website-btn">
+                <span>Already active? Login</span>
+                <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+
+        <div class="hero-content-bottom">
+            <h2 class="hero-headline">
+                Welcome to the Team,<br>Coach Your Clients to Success
+            </h2>
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Form Panel -->
+    <div class="form-panel">
+        <div class="form-wrapper">
+            
+            <div class="form-header">
+                <div class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25 rounded-pill px-3 py-1 mb-2 small fw-semibold">
+                    <i class="bi bi-award-fill me-1"></i> Trainer Onboarding
+                </div>
+                <h1 class="form-title">
+                    @(string.IsNullOrWhiteSpace(Model.TrainerName) ? "Activate Your Account" : $"Welcome, {Model.TrainerName}!")
+                </h1>
+                <p class="text-secondary small mt-2">
+                    Create your secure password below to activate your coach account for <strong>@Model.Email</strong>.
+                </p>
+            </div>
+
+            @if (!ViewData.ModelState.IsValid && ViewData.ModelState[""] != null && ViewData.ModelState[""].Errors.Count > 0)
+            {
+                <div class="dark-alert-error" id="serverAlert">
+                    <div class="dark-alert-content">
+                        <i class="bi bi-shield-exclamation fs-5 flex-shrink-0 text-danger"></i>
+                        <div>
+                            @Html.ValidationSummary(true, "", new { @class = "mb-0 ps-0 list-unstyled" })
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @using (Html.BeginForm("AcceptInvitation", "Account", new { area = "Trainer" }, FormMethod.Post, new { id = "acceptInvitationForm" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.Email)
+                @Html.HiddenFor(m => m.Token)
+                @Html.HiddenFor(m => m.TrainerName)
+
+                <!-- New Password Field -->
+                <div class="dark-form-group">
+                    <label class="dark-form-label mb-1" for="newPasswordInput">Create Password</label>
+                    <div class="password-input-wrapper">
+                        @Html.PasswordFor(m => m.Password, new { 
+                            @class = "dark-input", 
+                            id = "newPasswordInput",
+                            placeholder = "At least 6 characters",
+                            autocomplete = "new-password",
+                            autofocus = "autofocus"
+                        })
+                        <button type="button" class="password-toggle-btn" id="toggleNewPassBtn" aria-label="Toggle password visibility">
+                            <i class="bi bi-eye" id="toggleNewPassIcon"></i>
+                        </button>
+                    </div>
+                    @Html.ValidationMessageFor(m => m.Password)
+                </div>
+
+                <!-- Confirm Password Field -->
+                <div class="dark-form-group">
+                    <label class="dark-form-label mb-1" for="confirmPasswordInput">Confirm Password</label>
+                    <div class="password-input-wrapper">
+                        @Html.PasswordFor(m => m.ConfirmPassword, new { 
+                            @class = "dark-input", 
+                            id = "confirmPasswordInput",
+                            placeholder = "Re-enter your password",
+                            autocomplete = "new-password"
+                        })
+                        <button type="button" class="password-toggle-btn" id="toggleConfirmPassBtn" aria-label="Toggle confirm password visibility">
+                            <i class="bi bi-eye" id="toggleConfirmPassIcon"></i>
+                        </button>
+                    </div>
+                    @Html.ValidationMessageFor(m => m.ConfirmPassword)
+                </div>
+
+                <!-- Password hint -->
+                <div class="p-3 rounded-3 mb-4" style="background-color: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);">
+                    <div class="text-white small fw-semibold mb-1">
+                        <i class="bi bi-shield-lock me-1 text-primary"></i> Password Security
+                    </div>
+                    <ul class="text-muted small ps-3 mb-0" style="font-size: 0.78rem; line-height: 1.5;">
+                        <li>At least 6 characters long</li>
+                        <li>Your password will be securely salted and hashed in the database</li>
+                    </ul>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn-submit-purple" id="activateSubmitBtn" style="background: linear-gradient(135deg, #e11d48, #be123c);">
+                    <i class="bi bi-check2-circle me-2"></i>Activate Account &amp; Enter Portal
+                </button>
+            }
+
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        function setupToggle(btnId, inputId, iconId) {
+            var btn = document.getElementById(btnId);
+            var input = document.getElementById(inputId);
+            var icon = document.getElementById(iconId);
+            if (btn && input && icon) {
+                btn.addEventListener('click', function () {
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        icon.classList.remove('bi-eye');
+                        icon.classList.add('bi-eye-slash');
+                    } else {
+                        input.type = 'password';
+                        icon.classList.remove('bi-eye-slash');
+                        icon.classList.add('bi-eye');
+                    }
+                });
+            }
+        }
+        setupToggle('toggleNewPassBtn', 'newPasswordInput', 'toggleNewPassIcon');
+        setupToggle('toggleConfirmPassBtn', 'confirmPasswordInput', 'toggleConfirmPassIcon');
+    </script>
+}

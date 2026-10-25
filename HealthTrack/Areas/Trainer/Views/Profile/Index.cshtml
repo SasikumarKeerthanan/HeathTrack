@@ -1,0 +1,290 @@
+@model HealthTrack.Areas.Trainer.ViewModels.TrainerProfileViewModel
+@{
+    ViewBag.Title = "Trainer Profile";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-3 py-2">
+
+    <!-- HERO HEADER -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #2563eb 100%);">
+        <div class="card-body p-4 text-white">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-white bg-opacity-10 text-white border border-2 border-white border-opacity-25 d-flex align-items-center justify-content-center shadow" style="width: 58px; height: 58px;">
+                        <i class="bi bi-person-badge-fill fs-3 text-warning"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold text-white mb-1">Coach Profile &amp; Credentials</h4>
+                        <p class="text-white-50 mb-0 small">
+                            Update your professional bio, primary specialization, contact details, and photo.
+                        </p>
+                    </div>
+                </div>
+                <div>
+                    <a href="@Url.Action("Index", "Dashboard", new { area = "Trainer" })" class="btn btn-sm btn-outline-light rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-arrow-left"></i>
+                        <span>Back to Dashboard</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ALERTS -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm d-flex align-items-center gap-2 mb-4" role="alert">
+            <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+            <div>@TempData["SuccessMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show rounded-4 border-0 shadow-sm d-flex align-items-center gap-2 mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-5 text-danger"></i>
+            <div>@TempData["ErrorMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- TWO-COLUMN LAYOUT -->
+    <div class="row g-4">
+
+        <!-- ========================================================
+             LEFT COLUMN: Coach Overview & Capacity
+             ======================================================== -->
+        <div class="col-lg-4">
+            <div class="d-flex flex-column gap-4">
+
+                <!-- 1. Trainer Profile Card -->
+                <div class="card border-0 shadow-sm rounded-4 bg-white text-center p-4">
+                    <div class="position-relative mx-auto mb-3" style="width: 100px; height: 100px;">
+                        @if (!string.IsNullOrEmpty(Model.Trainer?.ProfilePicturePath))
+                        {
+                            <img id="trainerSummaryAvatar" src="@Url.Content(Model.Trainer.ProfilePicturePath)" alt="Coach" 
+                                 class="rounded-circle border border-3 border-light shadow" style="width: 100px; height: 100px; object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <div class="rounded-circle bg-primary bg-opacity-10 text-primary border border-3 border-light d-flex align-items-center justify-content-center shadow" style="width: 100px; height: 100px;">
+                                <i class="bi bi-person-fill fs-1"></i>
+                            </div>
+                        }
+                    </div>
+
+                    <h5 class="fw-bold text-dark mb-1">@Model.Trainer.FullName</h5>
+                    <div class="mb-2">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 small">
+                            <i class="bi bi-award-fill me-1"></i> Certified Coach
+                        </span>
+                    </div>
+                    <p class="text-muted small mb-3">@Model.Trainer.Email</p>
+
+                    <div class="p-3 rounded-3 bg-light text-start border mb-3">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <span class="x-small text-muted fw-semibold">Specialization</span>
+                            <span class="badge bg-info-subtle text-info rounded-pill x-small">Primary</span>
+                        </div>
+                        <div class="fw-bold small text-dark">
+                            @(Model.Trainer.PrimarySpecialization ?? Model.Trainer.Specialization ?? "Not Specified")
+                        </div>
+                    </div>
+
+                    <!-- Metrics Grid -->
+                    <div class="row g-2 text-start">
+                        <div class="col-6">
+                            <div class="p-2 rounded-3 bg-light border text-center">
+                                <span class="x-small text-muted d-block">Trainer ID</span>
+                                <strong class="small text-dark">@Model.Trainer.TrainerId</strong>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 rounded-3 bg-light border text-center">
+                                <span class="x-small text-muted d-block">Experience</span>
+                                <strong class="small text-dark">@(Model.Trainer.ExperienceYears.HasValue ? Model.Trainer.ExperienceYears.Value + " yrs" : "--")</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Client Capacity & Load -->
+                <div class="card border-0 shadow-sm rounded-4 bg-white p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-people-fill text-success fs-5"></i>
+                            <h6 class="fw-bold text-dark mb-0">Client Capacity</h6>
+                        </div>
+                        <span class="badge bg-success-subtle text-success rounded-pill x-small">Active Load</span>
+                    </div>
+
+                    @{
+                        int pct = Model.MaxClientCapacity > 0 ? (int)Math.Round((double)Model.ActiveClientsCount / Model.MaxClientCapacity * 100) : 0;
+                        string barColor = pct >= 90 ? "bg-danger" : (pct >= 70 ? "bg-warning" : "bg-success");
+                    }
+
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="small text-muted">Assigned Active Clients</span>
+                        <strong class="small text-dark">@Model.ActiveClientsCount / @(Model.MaxClientCapacity > 0 ? Model.MaxClientCapacity.ToString() : "--")</strong>
+                    </div>
+
+                    <div class="progress mb-3" style="height: 8px;">
+                        <div class="progress-bar @barColor rounded-pill" role="progressbar" style="width: @pct%;" aria-valuenow="@pct" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+
+                    <a href="@Url.Action("Index", "Clients", new { area = "Trainer" })" class="btn btn-sm btn-outline-primary w-100 rounded-pill fw-semibold">
+                        <i class="bi bi-person-lines-fill me-1"></i> View Assigned Clients
+                    </a>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ========================================================
+             RIGHT COLUMN: Edit Trainer Profile Form
+             ======================================================== -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 bg-white h-100">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-pencil-square text-primary fs-5"></i>
+                        <h5 class="fw-bold text-dark mb-0">Edit Trainer Profile</h5>
+                    </div>
+                    <p class="text-muted small mb-0 mt-1">
+                        Update your professional bio, specialization, and contact phone visible across HealthTrack.
+                    </p>
+                </div>
+
+                <div class="card-body p-4 pt-2">
+                    @using (Html.BeginForm("Update", "Profile", new { area = "Trainer" }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+                    {
+                        @Html.AntiForgeryToken()
+
+                        <!-- Avatar Upload Box with Live Preview -->
+                        <div class="mb-4 p-3 rounded-4 bg-light border">
+                            <label class="form-label small fw-bold text-dark mb-2">
+                                <i class="bi bi-camera me-1 text-primary"></i> Update Coach Photo
+                            </label>
+                            <div class="d-flex flex-wrap align-items-center gap-3">
+                                <div class="position-relative">
+                                    <img id="trainerAvatarEditPreview" 
+                                         src="@(!string.IsNullOrEmpty(Model.Trainer?.ProfilePicturePath) ? Url.Content(Model.Trainer.ProfilePicturePath) : "https://ui-avatars.com/api/?name=" + Server.UrlEncode(Model.FullName ?? "Coach") + "&background=2563eb&color=fff")" 
+                                         alt="Avatar Preview" class="rounded-circle border border-2 border-primary shadow-sm" style="width: 64px; height: 64px; object-fit: cover;" />
+                                </div>
+                                <div class="flex-grow-1" style="min-width: 200px;">
+                                    <input type="file" name="ProfileImage" id="trainerProfileImageInput" class="form-control form-control-sm rounded-3" accept=".jpg,.jpeg,.png,.webp" onchange="previewTrainerImage(this)" />
+                                    <div class="x-small text-muted mt-1">
+                                        Optional. Upload a headshot (JPG, PNG, WEBP - Max 4MB).
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Full Name & Email -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-secondary">Full Name <span class="text-danger">*</span></label>
+                                @Html.TextBoxFor(m => m.FullName, new { @class = "form-control rounded-3", placeholder = "Coach Full Name", required = "required" })
+                                @Html.ValidationMessageFor(m => m.FullName, "", new { @class = "text-danger x-small" })
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-secondary">Email Address (Trainer ID)</label>
+                                @Html.TextBoxFor(m => m.Email, new { @class = "form-control rounded-3 bg-light", @readonly = "readonly" })
+                                <span class="x-small text-muted">Trainer login identifier.</span>
+                            </div>
+                        </div>
+
+                        <!-- Phone Number & Gender -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-secondary">Phone Number</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-telephone text-muted"></i></span>
+                                    @Html.TextBoxFor(m => m.PhoneNumber, new { @class = "form-control border-start-0 ps-0 rounded-end-3", placeholder = "+1 (555) 000-0000" })
+                                </div>
+                                @Html.ValidationMessageFor(m => m.PhoneNumber, "", new { @class = "text-danger x-small" })
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-secondary">Gender</label>
+                                @Html.DropDownListFor(m => m.Gender, new List<SelectListItem>
+                                {
+                                    new SelectListItem { Text = "-- Select Gender --", Value = "" },
+                                    new SelectListItem { Text = "Male", Value = "Male" },
+                                    new SelectListItem { Text = "Female", Value = "Female" }
+                                }, new { @class = "form-select rounded-3" })
+                            </div>
+                        </div>
+
+                        <!-- Specialization & Experience Years -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-7">
+                                <label class="form-label small fw-semibold text-secondary">Primary Specialization</label>
+                                @Html.DropDownListFor(m => m.PrimarySpecialization, new List<SelectListItem>
+                                {
+                                    new SelectListItem { Text = "-- Select Specialization --", Value = "" },
+                                    new SelectListItem { Text = "Strength & Conditioning", Value = "Strength & Conditioning" },
+                                    new SelectListItem { Text = "Hypertrophy & Muscle Building", Value = "Hypertrophy & Muscle Building" },
+                                    new SelectListItem { Text = "Fat Loss & Metabolic Conditioning", Value = "Fat Loss & Metabolic Conditioning" },
+                                    new SelectListItem { Text = "Functional Movement & Mobility", Value = "Functional Movement & Mobility" },
+                                    new SelectListItem { Text = "Endurance & Athletic Performance", Value = "Endurance & Athletic Performance" },
+                                    new SelectListItem { Text = "Rehabilitation & Posture Correction", Value = "Rehabilitation & Posture Correction" }
+                                }, new { @class = "form-select rounded-3" })
+                            </div>
+
+                            <div class="col-md-5">
+                                <label class="form-label small fw-semibold text-secondary">Experience (Years)</label>
+                                <div class="input-group">
+                                    @Html.TextBoxFor(m => m.ExperienceYears, new { @class = "form-control border-end-0 rounded-start-3", type = "number", min = "0", max = "50" })
+                                    <span class="input-group-text bg-light rounded-end-3">years</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bio -->
+                        <div class="mb-4">
+                            <label class="form-label small fw-semibold text-secondary">Professional Biography</label>
+                            @Html.TextAreaFor(m => m.Bio, 4, 10, new { @class = "form-control rounded-3", placeholder = "Share your training philosophy, certifications, and background..." })
+                            <span class="x-small text-muted">Visible to prospective clients and administrator.</span>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex align-items-center justify-content-end gap-2 pt-3 border-top">
+                            <a href="@Url.Action("Index", "Dashboard", new { area = "Trainer" })" class="btn btn-light rounded-pill px-4">Cancel</a>
+                            <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm">
+                                <i class="bi bi-check2-circle me-1"></i> Save Changes
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        function previewTrainerImage(input) {
+            if (input.files && input.files[0]) {
+                var file = input.files[0];
+                if (file.size > 4 * 1024 * 1024) {
+                    alert('Profile image size cannot exceed 4MB.');
+                    input.value = '';
+                    return;
+                }
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    var preview = document.getElementById('trainerAvatarEditPreview');
+                    if (preview) {
+                        preview.src = e.target.result;
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+    </script>
+}

@@ -1,0 +1,254 @@
+@model HealthTrack.Areas.Admin.ViewModels.AddTrainerViewModel
+@{
+    ViewBag.Title = "Add New Trainer";
+}
+
+<div class="container-fluid py-4 px-md-4">
+
+    <!-- Page Header & Back Button -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <a href="@Url.Action("Index", "Trainers", new { area = "Admin" })" class="btn btn-sm btn-outline-secondary py-1 px-2 rounded-2">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <h2 class="h3 fw-bold text-dark mb-0">Create Trainer Account</h2>
+            </div>
+            <p class="text-muted small mb-0 ps-4 ms-2">
+                Register a new personal coach with matching preferences and send an initial password-reset invitation.
+            </p>
+        </div>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger shadow-sm mb-4" role="alert" style="border-radius: 10px;">
+            <div class="d-flex align-items-center gap-2 fw-semibold mb-1">
+                <i class="bi bi-shield-exclamation text-danger fs-5"></i>
+                <span>Please correct the errors below:</span>
+            </div>
+            @Html.ValidationSummary(false, "", new { @class = "mb-0 ps-3" })
+        </div>
+    }
+
+    @using (Html.BeginForm("Create", "Trainers", new { area = "Admin" }, FormMethod.Post, new { id = "createTrainerForm" }))
+    {
+        @Html.AntiForgeryToken()
+
+        <div class="row g-4">
+            
+            <!-- LEFT COLUMN: Profile & Contact Details -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-white py-3 px-4 border-bottom">
+                        <h5 class="card-title mb-0 fw-bold fs-6 text-dark">
+                            <i class="bi bi-person-circle me-2" style="color: #00A3FF;"></i>1. Coach Profile &amp; Contact
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        
+                        <!-- Full Name -->
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.FullName, new { @class = "form-label fw-semibold text-dark small" }) <span class="text-danger">*</span>
+                            @Html.TextBoxFor(m => m.FullName, new { @class = "form-control", placeholder = "e.g. Alex Morgan", autofocus = "autofocus" })
+                            @Html.ValidationMessageFor(m => m.FullName, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <!-- Email Address -->
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.Email, new { @class = "form-label fw-semibold text-dark small" }) <span class="text-danger">*</span>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-envelope"></i></span>
+                                @Html.TextBoxFor(m => m.Email, new { @class = "form-control", placeholder = "trainer@example.com", type = "email" })
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                <i class="bi bi-info-circle me-1"></i>An initial password-reset invitation email with a secure 48h activation link will be sent here.
+                            </small>
+                            @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <!-- Phone Number -->
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.PhoneNumber, new { @class = "form-label fw-semibold text-dark small" })
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-telephone"></i></span>
+                                @Html.TextBoxFor(m => m.PhoneNumber, new { @class = "form-control", placeholder = "+1 (555) 000-0000" })
+                            </div>
+                            @Html.ValidationMessageFor(m => m.PhoneNumber, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <!-- Gender (Strictly Male / Female) -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark small">Gender <span class="text-danger">*</span></label>
+                            <div class="d-flex gap-3 mt-1">
+                                <div class="form-check form-check-inline border rounded-3 px-3 py-2 flex-fill d-flex align-items-center gap-2">
+                                    <input class="form-check-input mt-0" type="radio" name="Gender" id="genderMale" value="Male" @(Model.Gender == "Male" || string.IsNullOrEmpty(Model.Gender) ? "checked" : "") />
+                                    <label class="form-check-label fw-semibold text-dark d-flex align-items-center gap-1 mb-0" for="genderMale">
+                                        <i class="bi bi-gender-male text-primary"></i> Male
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline border rounded-3 px-3 py-2 flex-fill d-flex align-items-center gap-2">
+                                    <input class="form-check-input mt-0" type="radio" name="Gender" id="genderFemale" value="Female" @(Model.Gender == "Female" ? "checked" : "") />
+                                    <label class="form-check-label fw-semibold text-dark d-flex align-items-center gap-1 mb-0" for="genderFemale">
+                                        <i class="bi bi-gender-female text-danger"></i> Female
+                                    </label>
+                                </div>
+                            </div>
+                            @Html.ValidationMessageFor(m => m.Gender, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <!-- Experience Years & Capacity -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-sm-6">
+                                @Html.LabelFor(m => m.ExperienceYears, new { @class = "form-label fw-semibold text-dark small" })
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-award"></i></span>
+                                    @Html.TextBoxFor(m => m.ExperienceYears, new { @class = "form-control", type = "number", min = "0", max = "50", placeholder = "5" })
+                                    <span class="input-group-text bg-light text-muted small">years</span>
+                                </div>
+                                @Html.ValidationMessageFor(m => m.ExperienceYears, "", new { @class = "text-danger small" })
+                            </div>
+
+                            <div class="col-sm-6">
+                                @Html.LabelFor(m => m.MaxClientCapacity, new { @class = "form-label fw-semibold text-dark small" }) <span class="text-danger">*</span>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-people"></i></span>
+                                    @Html.TextBoxFor(m => m.MaxClientCapacity, new { @class = "form-control", type = "number", min = "1", max = "100", value = "15" })
+                                    <span class="input-group-text bg-light text-muted small">clients</span>
+                                </div>
+                                @Html.ValidationMessageFor(m => m.MaxClientCapacity, "", new { @class = "text-danger small" })
+                            </div>
+                        </div>
+
+                        <!-- Bio -->
+                        <div class="mb-0">
+                            @Html.LabelFor(m => m.Bio, new { @class = "form-label fw-semibold text-dark small" })
+                            @Html.TextAreaFor(m => m.Bio, new { @class = "form-control", rows = "3", placeholder = "Brief background, certifications (e.g. NASM-CPT, ACE), and coaching philosophy..." })
+                            @Html.ValidationMessageFor(m => m.Bio, "", new { @class = "text-danger small" })
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Preferences & Client Matching Attributes -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-white py-3 px-4 border-bottom">
+                        <h5 class="card-title mb-0 fw-bold fs-6 text-dark">
+                            <i class="bi bi-sliders me-2" style="color: #22C55E;"></i>2. Specializations &amp; Matching Engine
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        
+                        <!-- Primary Specialization -->
+                        <div class="mb-4">
+                            @Html.LabelFor(m => m.PrimarySpecialization, new { @class = "form-label fw-semibold text-dark small" }) <span class="text-danger">*</span>
+                            @Html.DropDownListFor(m => m.PrimarySpecialization, new List<SelectListItem>
+                            {
+                                new SelectListItem { Text = "-- Select Primary Focus --", Value = "" },
+                                new SelectListItem { Text = "Weight Loss & Fat Burning", Value = "Weight Loss" },
+                                new SelectListItem { Text = "Muscle Building & Hypertrophy", Value = "Muscle Building" },
+                                new SelectListItem { Text = "Strength & Conditioning", Value = "Strength & Conditioning" },
+                                new SelectListItem { Text = "HIIT & Functional Fitness", Value = "HIIT & Functional" },
+                                new SelectListItem { Text = "Endurance & Marathon Prep", Value = "Endurance" },
+                                new SelectListItem { Text = "Mobility & Rehabilitation", Value = "Rehabilitation" },
+                                new SelectListItem { Text = "General Fitness & Health", Value = "General Fitness" }
+                            }, new { @class = "form-select" })
+                            <small class="text-muted d-block mt-1">Used as the core 35% factor when matching against Client Primary Goals.</small>
+                            @Html.ValidationMessageFor(m => m.PrimarySpecialization, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <!-- Supported Workout Types -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold text-dark small mb-2">Supported Workout Types</label>
+                            <div class="row g-2">
+                                @{
+                                    var workoutOptions = new[] { "Strength", "Cardio", "HIIT", "Yoga / Flexibility", "Functional", "Pilates" };
+                                    foreach (var wType in workoutOptions)
+                                    {
+                                        <div class="col-sm-6">
+                                            <div class="form-check border rounded-2 px-3 py-2 bg-light bg-opacity-50">
+                                                <input class="form-check-input" type="checkbox" name="SelectedWorkoutTypes" value="@wType" id="w_@wType" 
+                                                       @(Model.SelectedWorkoutTypes != null && Model.SelectedWorkoutTypes.Contains(wType) ? "checked" : "") />
+                                                <label class="form-check-label small fw-semibold text-dark" for="w_@wType">
+                                                    @wType
+                                                </label>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Supported Fitness Levels -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold text-dark small mb-2">Target Client Fitness Levels</label>
+                            <div class="row g-2">
+                                @{
+                                    var levels = new[] { "Beginner", "Intermediate", "Advanced" };
+                                    foreach (var lvl in levels)
+                                    {
+                                        <div class="col-4">
+                                            <div class="form-check border rounded-2 px-3 py-2 bg-light bg-opacity-50 text-center">
+                                                <input class="form-check-input" type="checkbox" name="SelectedFitnessLevels" value="@lvl" id="lvl_@lvl" 
+                                                       @(Model.SelectedFitnessLevels != null && Model.SelectedFitnessLevels.Contains(lvl) ? "checked" : (lvl == "Beginner" || lvl == "Intermediate" ? "checked" : "")) />
+                                                <label class="form-check-label small fw-semibold text-dark d-block" for="lvl_@lvl">
+                                                    @lvl
+                                                </label>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Supported Diet Coaching -->
+                        <div class="mb-0">
+                            <label class="form-label fw-semibold text-dark small mb-2">Supported Diet Coaching Specialties</label>
+                            <div class="row g-2">
+                                @{
+                                    var diets = new[] { "High-Protein", "Balanced", "Keto", "Vegetarian / Vegan" };
+                                    foreach (var d in diets)
+                                    {
+                                        <div class="col-sm-6">
+                                            <div class="form-check border rounded-2 px-3 py-2 bg-light bg-opacity-50">
+                                                <input class="form-check-input" type="checkbox" name="SelectedDietTypes" value="@d" id="diet_@d" 
+                                                       @(Model.SelectedDietTypes != null && Model.SelectedDietTypes.Contains(d) ? "checked" : "") />
+                                                <label class="form-check-label small fw-semibold text-dark" for="diet_@d">
+                                                    @d
+                                                </label>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Sticky Submit Footer Bar -->
+        <div class="card border-0 shadow-sm rounded-3 mt-4 p-3 bg-white">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div class="text-muted small">
+                    <i class="bi bi-shield-check text-success me-1"></i>
+                    Initial password is securely set by the trainer via email verification.
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="@Url.Action("Index", "Trainers", new { area = "Admin" })" class="btn btn-outline-secondary px-4 fw-semibold" style="border-radius: 8px;">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm" style="border-radius: 8px; background: linear-gradient(135deg, #00A3FF 0%, #0284c7 100%); border: none;">
+                        <i class="bi bi-send-fill"></i>
+                        <span>Create Trainer &amp; Send Invitation</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+</div>

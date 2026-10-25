@@ -1,0 +1,292 @@
+@model HealthTrack.Areas.Trainer.ViewModels.ClientReportViewModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HealthTrack_Report_@(Model.ClientName.Replace(" ", "_"))_@Model.ReportId</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <style>
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+            padding: 20px;
+        }
+        .report-page {
+            max-width: 960px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 40px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-radius: 8px;
+        }
+        .print-btn-bar {
+            max-width: 960px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        @@media print {
+            body {
+                background: #ffffff !important;
+                padding: 0 !important;
+            }
+            .report-page {
+                box-shadow: none !important;
+                padding: 0 !important;
+                max-width: 100% !important;
+            }
+            .print-btn-bar {
+                display: none !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Non-printing Control Toolbar -->
+    <div class="print-btn-bar no-print" id="printToolbar" data-return-url="@Url.Action("Reports", "Progress", new { clientId = Model.ClientId, preset = Model.DatePreset })">
+        <a href="javascript:history.back()" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to System
+        </a>
+        <div class="d-flex gap-2">
+            <button onclick="window.print()" class="btn btn-danger shadow-sm">
+                <i class="bi bi-printer-fill me-1"></i> Print / Save as PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Official Report Document -->
+    <div class="report-page">
+
+        <!-- Top Header & Branding -->
+        <div class="row align-items-center pb-3 mb-4 border-bottom">
+            <div class="col-7">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <img src="@Url.Content("~/Content/images/logo.png")" alt="HealthTrack Logo" class="rounded-3 shadow-sm" style="width: 38px; height: 38px; object-fit: cover;" />
+                    <div>
+                        <h4 class="fw-bold mb-0 text-dark">HealthTrack</h4>
+                        <div class="x-small text-uppercase text-muted fw-bold" style="font-size: 0.75rem; letter-spacing: 0.8px;">Personal Fitness & Nutrition Portal</div>
+                    </div>
+                </div>
+                <div class="small text-muted">Certified Client Progress & Physiological Summary</div>
+            </div>
+            <div class="col-5 text-end">
+                <div class="fw-bold text-dark fs-5">Client Health Progress Report</div>
+                <div class="small text-muted">Document ID: <strong class="font-monospace">@Model.ReportId</strong></div>
+                <div class="small text-muted">Generated: <strong>@Model.GeneratedAt.ToString("MMMM dd, yyyy - HH:mm")</strong></div>
+            </div>
+        </div>
+
+        <!-- Metadata Card -->
+        <div class="row g-2 p-3 bg-light rounded-3 border mb-4" style="font-size: 0.9rem;">
+            <div class="col-3">
+                <span class="text-muted text-uppercase fw-semibold d-block" style="font-size: 0.75rem;">Client Name</span>
+                <span class="fw-bold text-dark">@Model.ClientName</span>
+            </div>
+            <div class="col-3">
+                <span class="text-muted text-uppercase fw-semibold d-block" style="font-size: 0.75rem;">Client Identifier</span>
+                <span class="font-monospace text-secondary">@Model.ClientId</span>
+            </div>
+            <div class="col-3">
+                <span class="text-muted text-uppercase fw-semibold d-block" style="font-size: 0.75rem;">Program Goal</span>
+                <span class="badge bg-danger-subtle text-danger border">@Model.PrimaryGoal</span>
+            </div>
+            <div class="col-3">
+                <span class="text-muted text-uppercase fw-semibold d-block" style="font-size: 0.75rem;">Assigned Coach</span>
+                <span class="fw-semibold text-dark">@Model.CoachName</span>
+            </div>
+        </div>
+
+        <!-- 1. Anthropometric Benchmarks -->
+        <div class="mb-4">
+            <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">1. Anthropometric & Body Composition Benchmarks</h6>
+            <div class="row g-2 text-center">
+                <div class="col-3">
+                    <div class="p-2 bg-light rounded border">
+                        <small class="text-muted text-uppercase d-block" style="font-size: 0.7rem;">Baseline Weight</small>
+                        <strong class="fs-5 text-dark">@Model.BaselineWeightKg kg</strong>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="p-2 bg-light rounded border">
+                        <small class="text-muted text-uppercase d-block" style="font-size: 0.7rem;">Current Weight</small>
+                        <strong class="fs-5 text-danger">@Model.CurrentWeightKg kg</strong>
+                        <div class="text-muted" style="font-size: 0.75rem;">@(Model.WeightChangeKg > 0 ? $"+{Model.WeightChangeKg} kg" : $"{Model.WeightChangeKg} kg") net</div>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="p-2 bg-light rounded border">
+                        <small class="text-muted text-uppercase d-block" style="font-size: 0.7rem;">Current BMI</small>
+                        <strong class="fs-5 text-dark">@Model.CurrentBmi</strong>
+                        <div class="text-muted" style="font-size: 0.75rem;">@Model.BmiCategory</div>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="p-2 bg-light rounded border">
+                        <small class="text-muted text-uppercase d-block" style="font-size: 0.7rem;">Target Weight</small>
+                        <strong class="fs-5 text-primary">@Model.TargetWeightKg kg</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Training Adherence & Activity Volume -->
+        <div class="mb-4">
+            <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">2. Workout Adherence & Energy Expenditure</h6>
+            <div class="row g-2 text-center">
+                <div class="col-3">
+                    <div class="p-2 bg-light rounded border">
+                        <small class="text-muted text-uppercase d-block" style="font-size: 0.7rem;">Workouts Completed</small>
+                        <strong class="fs-5 text-success">@Model.TotalWorkoutsCompleted / @Model.TotalWorkoutsScheduled</strong>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="p-2 bg-light rounded border">
+                        <small class="text-muted text-uppercase d-block" style="font-size: 0.7rem;">Adherence Rate</small>
+                        <strong class="fs-5 text-success">@Model.FormattedAdherenceRate</strong>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="p-2 bg-light rounded border">
+                        <small class="text-muted text-uppercase d-block" style="font-size: 0.7rem;">Active Exercise Time</small>
+                        <strong class="fs-5 text-dark">@Model.TotalExerciseMinutes mins</strong>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="p-2 bg-light rounded border">
+                        <small class="text-muted text-uppercase d-block" style="font-size: 0.7rem;">Total Calories Expended</small>
+                        <strong class="fs-5 text-danger">@Model.TotalCaloriesBurned kcal</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Nutritional Compliance -->
+        <div class="mb-4">
+            <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">3. Nutrition & Hydration Compliance</h6>
+            <div class="row g-2">
+                <div class="col-4">
+                    <div class="p-2 bg-light rounded border text-center">
+                        <small class="text-muted text-uppercase d-block" style="font-size: 0.7rem;">Daily Caloric Budget</small>
+                        <strong class="fs-5 text-dark">@Model.PrescribedDailyCalories kcal</strong>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="p-2 bg-light rounded border text-center">
+                        <small class="text-muted text-uppercase d-block" style="font-size: 0.7rem;">Average Daily Intake</small>
+                        <strong class="fs-5 text-dark">@Model.AverageConsumedCalories kcal</strong>
+                        <div class="text-muted" style="font-size: 0.75rem;">Variance: @Model.CalorieVariance kcal</div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="p-2 bg-light rounded border text-center">
+                        <small class="text-muted text-uppercase d-block" style="font-size: 0.7rem;">Hydration Level</small>
+                        <strong class="fs-5 text-info">@Model.AverageWaterLiters L / @Model.PrescribedWaterLiters L</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Goal Milestones Table -->
+        <div class="mb-4">
+            <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">4. Milestone Achievements</h6>
+            <table class="table table-bordered table-sm mb-0" style="font-size: 0.85rem;">
+                <thead class="table-light">
+                    <tr>
+                        <th>Goal Description</th>
+                        <th>Baseline</th>
+                        <th>Current</th>
+                        <th>Target</th>
+                        <th>Progress %</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var g in Model.GoalMilestones)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@g.GoalName</td>
+                            <td>@g.BaselineValue @g.Unit</td>
+                            <td class="fw-bold">@g.CurrentValue @g.Unit</td>
+                            <td>@g.TargetValue @g.Unit</td>
+                            <td>@g.ProgressPercentage%</td>
+                            <td>@g.StatusMessage</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 5. Training Log Table -->
+        <div class="mb-4">
+            <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">5. Verified Session Logs (Recent)</h6>
+            <table class="table table-bordered table-sm mb-0" style="font-size: 0.85rem;">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Session Name</th>
+                        <th>Duration</th>
+                        <th>Calories</th>
+                        <th>RPE</th>
+                        <th>Status</th>
+                        <th>Feedback</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in Model.SessionLogs.Take(8))
+                    {
+                        <tr>
+                            <td class="font-monospace">@s.LogDate.ToString("yyyy-MM-dd")</td>
+                            <td>@s.SessionName</td>
+                            <td>@s.DurationMinutes min</td>
+                            <td>@s.CaloriesBurned kcal</td>
+                            <td>@s.PerceivedExertion / 10</td>
+                            <td>@(s.IsCompleted ? "Completed" : "Missed")</td>
+                            <td>@s.CoachFeedback</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 6. Evaluation & Recommendations -->
+        <div class="p-3 bg-light rounded border mb-4" style="font-size: 0.85rem;">
+            <div class="fw-bold text-dark mb-1">Coach Clinical Evaluation:</div>
+            <p class="text-secondary mb-2">@Model.CoachEvaluationNotes</p>
+
+            <div class="fw-bold text-dark mb-1">Next-Phase Prescriptions:</div>
+            <div class="text-secondary" style="white-space: pre-line;">@Model.NextPhaseRecommendations</div>
+        </div>
+
+        <!-- Signoff -->
+        <div class="row pt-3 border-top mt-4" style="font-size: 0.8rem;">
+            <div class="col-6">
+                <div>Coach / Personal Trainer: <strong>@Model.CoachName</strong></div>
+                <div class="text-muted">HealthTrack Exercise Science & Nutrition</div>
+            </div>
+            <div class="col-6 text-end">
+                <div class="text-success font-monospace fw-bold">[VERIFIED CLINICAL RECORD]</div>
+                <div class="text-muted">Certified Timestamp: @Model.GeneratedAt.ToString("yyyy-MM-dd HH:mm:ss")</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        window.addEventListener("afterprint", function () {
+            window.location.replace(document.getElementById("printToolbar").getAttribute("data-return-url"));
+        });
+    </script>
+</body>
+</html>

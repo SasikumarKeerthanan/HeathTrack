@@ -1,0 +1,420 @@
+@model HealthTrack.Areas.Admin.ViewModels.AdminTrainerChangeIndexViewModel
+@{
+    ViewBag.Title = "Trainer Change Requests";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid py-4 px-md-4">
+
+    <!-- PAGE HEADER -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <a href="@Url.Action("Index", "Assignments", new { area = "Admin" })" class="btn btn-sm btn-outline-secondary py-1 px-2 rounded-2" title="Back to Assignments">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <h2 class="h3 fw-bold text-dark mb-0">Trainer Change Requests</h2>
+                @if (Model.PendingCount > 0)
+                {
+                    <span class="badge bg-warning text-dark rounded-pill px-2 py-1 small">
+                        @Model.PendingCount Action Required
+                    </span>
+                }
+            </div>
+            <p class="text-muted small mb-0 ps-4 ms-2">
+                Evaluate client requests to change their assigned personal coach, approve reassignments, or record rejection reasons.
+            </p>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("Index", "Assignments", new { area = "Admin" })" class="btn btn-outline-primary d-inline-flex align-items-center gap-2 shadow-sm px-3 py-2 fw-semibold" style="border-radius: 8px;">
+                <i class="bi bi-person-check-fill"></i>
+                <span>Client Assignments Roster</span>
+            </a>
+            <a href="@Url.Action("History", "Assignments", new { area = "Admin" })" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2 shadow-sm px-3 py-2 fw-semibold" style="border-radius: 8px;">
+                <i class="bi bi-clock-history text-info"></i>
+                <span>Assignment History</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- ALERTS -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm mb-4" role="alert" style="border-radius: 10px;">
+            <i class="bi bi-check-circle-fill fs-5 text-success flex-shrink-0"></i>
+            <div>@TempData["SuccessMessage"]</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm mb-4" role="alert" style="border-radius: 10px;">
+            <i class="bi bi-exclamation-triangle-fill fs-5 text-danger flex-shrink-0"></i>
+            <div>@TempData["ErrorMessage"]</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm mb-4" role="alert" style="border-radius: 10px;">
+            <i class="bi bi-exclamation-circle-fill fs-5 text-warning flex-shrink-0"></i>
+            <div>@TempData["WarningMessage"]</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- KPI STAT METRIC CARDS -->
+    <div class="row g-3 mb-4">
+        <!-- Total Requests -->
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="x-small text-uppercase fw-bold text-secondary">Total Requests</span>
+                    <div class="rounded-3 bg-primary bg-opacity-10 text-primary p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                        <i class="bi bi-collection-fill"></i>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-dark mb-0">@Model.TotalRequests</h3>
+                <span class="text-muted x-small">Lifetime submissions</span>
+            </div>
+        </div>
+
+        <!-- Pending Decisions -->
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white p-3 border-start border-warning border-4">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="x-small text-uppercase fw-bold text-warning">Pending Review</span>
+                    <div class="rounded-3 bg-warning bg-opacity-10 text-warning p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-warning mb-0">@Model.PendingCount</h3>
+                <span class="text-muted x-small">Awaiting decision</span>
+            </div>
+        </div>
+
+        <!-- Approved -->
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white p-3 border-start border-success border-4">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="x-small text-uppercase fw-bold text-success">Approved</span>
+                    <div class="rounded-3 bg-success bg-opacity-10 text-success p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-success mb-0">@Model.ApprovedCount</h3>
+                <span class="text-muted x-small">Reassignments finalized</span>
+            </div>
+        </div>
+
+        <!-- Rejected -->
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white p-3 border-start border-danger border-4">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="x-small text-uppercase fw-bold text-danger">Rejected</span>
+                    <div class="rounded-3 bg-danger bg-opacity-10 text-danger p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-danger mb-0">@Model.RejectedCount</h3>
+                <span class="text-muted x-small">Reasons logged</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CARD & FILTER PILLS -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+        <div class="card-header bg-white border-0 pt-4 px-4 pb-3">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <!-- Filter Pills -->
+                <ul class="nav nav-pills gap-2">
+                    <li class="nav-item">
+                        <a href="@Url.Action("Requests", "Assignments", new { area = "Admin", filter = "all" })" 
+                           class="nav-link rounded-pill py-1 px-3 small @(Model.ActiveFilter == "all" ? "active bg-dark" : "bg-light text-secondary")">
+                            All Requests (@Model.TotalRequests)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="@Url.Action("Requests", "Assignments", new { area = "Admin", filter = "pending" })" 
+                           class="nav-link rounded-pill py-1 px-3 small @(Model.ActiveFilter == "pending" ? "active bg-warning text-dark fw-bold" : "bg-light text-secondary")">
+                            Pending (@Model.PendingCount)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="@Url.Action("Requests", "Assignments", new { area = "Admin", filter = "approved" })" 
+                           class="nav-link rounded-pill py-1 px-3 small @(Model.ActiveFilter == "approved" ? "active bg-success text-white" : "bg-light text-secondary")">
+                            Approved (@Model.ApprovedCount)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="@Url.Action("Requests", "Assignments", new { area = "Admin", filter = "rejected" })" 
+                           class="nav-link rounded-pill py-1 px-3 small @(Model.ActiveFilter == "rejected" ? "active bg-danger text-white" : "bg-light text-secondary")">
+                            Rejected (@Model.RejectedCount)
+                        </a>
+                    </li>
+                </ul>
+
+                <span class="text-muted x-small">
+                    Showing @Model.Requests.Count items
+                </span>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            @if (Model.Requests.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light x-small text-uppercase text-secondary">
+                            <tr>
+                                <th class="ps-4">Request # / Client</th>
+                                <th>Current Coach</th>
+                                <th>Reason &amp; Preferences</th>
+                                <th>Requested</th>
+                                <th>Status</th>
+                                <th class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model.Requests)
+                            {
+                                <tr>
+                                    <!-- Client info -->
+                                    <td class="ps-4 py-3">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="rounded-circle bg-primary bg-opacity-10 text-primary fw-bold d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                                                @(string.IsNullOrEmpty(r.ClientName) ? "C" : r.ClientName.Substring(0, 1))
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-dark">@r.ClientName</div>
+                                                <div class="x-small text-muted">@r.ClientEmail &bull; @r.ClientId</div>
+                                                <div class="x-small text-primary fw-semibold">Goal: @r.ClientGoal</div>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <!-- Current Coach -->
+                                    <td>
+                                        <div class="fw-semibold text-dark">@r.CurrentTrainerName</div>
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle x-small">
+                                            @r.CurrentTrainerSpecialization
+                                        </span>
+                                    </td>
+
+                                    <!-- Reason -->
+                                    <td style="max-width: 320px;">
+                                        <div class="fw-semibold text-dark small mb-1">
+                                            <i class="bi bi-tag-fill text-secondary me-1"></i>@r.ReasonCategory
+                                        </div>
+                                        <p class="x-small text-muted mb-1" style="line-height: 1.4;">
+                                            @r.ReasonDetails
+                                        </p>
+                                        <div class="x-small text-secondary">
+                                            Preferred Gender: <strong>@r.PreferredGender</strong>
+                                        </div>
+                                    </td>
+
+                                    <!-- Requested Date -->
+                                    <td class="x-small text-muted">
+                                        <div>@r.RequestedAt.ToString("MMM dd, yyyy")</div>
+                                        <div>@r.RequestedAt.ToString("hh:mm tt")</div>
+                                    </td>
+
+                                    <!-- Status Badge -->
+                                    <td>
+                                        @if (r.Status == "Pending")
+                                        {
+                                            <span class="badge bg-warning text-dark px-3 py-1 rounded-pill x-small fw-semibold">
+                                                <i class="bi bi-hourglass-split me-1"></i> Pending
+                                            </span>
+                                        }
+                                        else if (r.Status == "Approved")
+                                        {
+                                            <span class="badge bg-success text-white px-3 py-1 rounded-pill x-small fw-semibold d-block mb-1">
+                                                <i class="bi bi-check-circle-fill me-1"></i> Approved
+                                            </span>
+                                            <div class="x-small text-success">
+                                                <i class="bi bi-arrow-right-short"></i><strong>@r.NewTrainerName</strong>
+                                            </div>
+                                            if (!string.IsNullOrEmpty(r.AdminNotes))
+                                            {
+                                                <div class="x-small text-muted fst-italic mt-1" title="@r.AdminNotes">
+                                                    "@r.AdminNotes"
+                                                </div>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger text-white px-3 py-1 rounded-pill x-small fw-semibold d-block mb-1">
+                                                <i class="bi bi-x-circle-fill me-1"></i> Rejected
+                                            </span>
+                                            if (!string.IsNullOrEmpty(r.AdminNotes))
+                                            {
+                                                <div class="x-small text-danger fst-italic" title="@r.AdminNotes">
+                                                    Reason: "@r.AdminNotes"
+                                                </div>
+                                            }
+                                        }
+                                    </td>
+
+                                    <!-- Action Buttons -->
+                                    <td class="text-end pe-4">
+                                        @if (r.Status == "Pending")
+                                        {
+                                            <div class="d-inline-flex gap-2">
+                                                <button type="button" class="btn btn-sm btn-success rounded-pill px-3 fw-semibold shadow-sm"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#approveModal_@r.RequestId">
+                                                    <i class="bi bi-check-lg me-1"></i>Approve &amp; Reassign
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#rejectModal_@r.RequestId">
+                                                    <i class="bi bi-x-lg me-1"></i>Reject
+                                                </button>
+                                            </div>
+
+                                            <!-- ============================================================= -->
+                                            <!-- MODAL: APPROVE & REASSIGN                                     -->
+                                            <!-- ============================================================= -->
+                                            <div class="modal fade text-start" id="approveModal_@r.RequestId" tabindex="-1" aria-labelledby="approveModalLabel_@r.RequestId" aria-hidden="true">
+                                                <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+                                                    <div class="modal-content border-0 shadow rounded-4">
+                                                        @using (Html.BeginForm("ApproveRequest", "Assignments", new { area = "Admin" }, FormMethod.Post))
+                                                        {
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="requestId" value="@r.RequestId" />
+
+                                                            <div class="modal-header border-0 pb-0">
+                                                                <div class="d-flex align-items-center gap-2">
+                                                                    <div class="rounded-3 bg-success bg-opacity-10 text-success p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                                                                        <i class="bi bi-person-check-fill fs-5"></i>
+                                                                    </div>
+                                                                    <div>
+                                                                        <h6 class="modal-title fw-bold text-dark mb-0">Approve &amp; Reassign Coach</h6>
+                                                                        <span class="x-small text-muted">Select an active trainer for @r.ClientName</span>
+                                                                    </div>
+                                                                </div>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+
+                                                            <div class="modal-body pt-3 pb-2">
+                                                                <!-- Request Context Box -->
+                                                                <div class="p-3 rounded-3 bg-light border mb-3 x-small">
+                                                                    <div class="mb-1"><strong>Client:</strong> @r.ClientName (@r.ClientEmail)</div>
+                                                                    <div class="mb-1"><strong>Current Coach:</strong> @r.CurrentTrainerName</div>
+                                                                    <div class="mb-1"><strong>Reason Category:</strong> @r.ReasonCategory</div>
+                                                                    <div class="mb-1"><strong>Client Request Details:</strong> "@r.ReasonDetails"</div>
+                                                                    <div><strong>Gender Preference:</strong> @r.PreferredGender</div>
+                                                                </div>
+
+                                                                <!-- Select New Trainer Dropdown -->
+                                                                <div class="mb-3">
+                                                                    <label class="form-label small fw-semibold text-secondary">Assign New Trainer <span class="text-danger">*</span></label>
+                                                                    <select name="newTrainerId" class="form-select" required>
+                                                                        <option value="">-- Choose New Active Coach --</option>
+                                                                        @foreach (var trainer in Model.ActiveTrainers.Where(t => t.TrainerId != r.CurrentTrainerId))
+                                                                        {
+                                                                            <option value="@trainer.TrainerId" @(trainer.IsFull ? "disabled" : "")>
+                                                                                @trainer.FullName (@trainer.Specialization, @trainer.Gender) — [@trainer.CurrentClientsCount/@trainer.MaxCapacity clients] @(trainer.IsFull ? "- FULL" : "")
+                                                                            </option>
+                                                                        }
+                                                                    </select>
+                                                                    <div class="form-text x-small text-muted">Excludes current coach. Displays current client capacity.</div>
+                                                                </div>
+
+                                                                <!-- Admin Notes -->
+                                                                <div class="mb-2">
+                                                                    <label class="form-label small fw-semibold text-secondary">Approval Remarks / Notes (Optional)</label>
+                                                                    <textarea name="adminNotes" class="form-control" rows="2" placeholder="e.g. Reassigned based on schedule compatibility and weight loss specialization." maxlength="500"></textarea>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="modal-footer border-0 pt-0">
+                                                                <button type="button" class="btn btn-sm btn-light rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                                                                <button type="submit" class="btn btn-sm btn-success rounded-pill px-4 fw-semibold">
+                                                                    <i class="bi bi-check-circle-fill me-1"></i>Confirm &amp; Reassign
+                                                                </button>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- ============================================================= -->
+                                            <!-- MODAL: REJECT REQUEST                                         -->
+                                            <!-- ============================================================= -->
+                                            <div class="modal fade text-start" id="rejectModal_@r.RequestId" tabindex="-1" aria-labelledby="rejectModalLabel_@r.RequestId" aria-hidden="true">
+                                                <div class="modal-dialog modal-dialog-centered" style="max-width: 460px;">
+                                                    <div class="modal-content border-0 shadow rounded-4">
+                                                        @using (Html.BeginForm("RejectRequest", "Assignments", new { area = "Admin" }, FormMethod.Post))
+                                                        {
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="requestId" value="@r.RequestId" />
+
+                                                            <div class="modal-header border-0 pb-0">
+                                                                <div class="d-flex align-items-center gap-2">
+                                                                    <div class="rounded-3 bg-danger bg-opacity-10 text-danger p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                                                                        <i class="bi bi-x-circle-fill fs-5"></i>
+                                                                    </div>
+                                                                    <div>
+                                                                        <h6 class="modal-title fw-bold text-dark mb-0">Reject Trainer Change Request</h6>
+                                                                        <span class="x-small text-muted">Provide a clear explanation for the client</span>
+                                                                    </div>
+                                                                </div>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+
+                                                            <div class="modal-body pt-3 pb-2">
+                                                                <div class="p-3 rounded-3 bg-light border mb-3 x-small">
+                                                                    <div class="mb-1"><strong>Client:</strong> @r.ClientName</div>
+                                                                    <div class="mb-1"><strong>Current Coach:</strong> @r.CurrentTrainerName</div>
+                                                                    <div><strong>Request Reason:</strong> "@r.ReasonDetails"</div>
+                                                                </div>
+
+                                                                <div class="mb-3">
+                                                                    <label class="form-label small fw-semibold text-secondary">Rejection Reason <span class="text-danger">*</span></label>
+                                                                    <textarea name="rejectionReason" class="form-control" rows="3" placeholder="e.g. Currently all other coaches matching your evening schedule are at full workload capacity. Please contact support or retry next month." required maxlength="500"></textarea>
+                                                                    <div class="form-text x-small text-muted">This reason will be recorded and visible to the client on their status page.</div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="modal-footer border-0 pt-0">
+                                                                <button type="button" class="btn btn-sm btn-light rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                                                                <button type="submit" class="btn btn-sm btn-danger rounded-pill px-4 fw-semibold">
+                                                                    <i class="bi bi-slash-circle me-1"></i>Confirm Rejection
+                                                                </button>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted x-small">
+                                                Reviewed on @(r.ReviewedAt.HasValue ? r.ReviewedAt.Value.ToString("MMM dd, yyyy") : "N/A")
+                                            </span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <div class="rounded-circle bg-light text-muted d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
+                        <i class="bi bi-inbox fs-2"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-1">No Requests Found</h5>
+                    <p class="text-muted small mb-0">There are no trainer-change requests matching the selected filter.</p>
+                </div>
+            }
+        </div>
+    </div>
+
+</div>

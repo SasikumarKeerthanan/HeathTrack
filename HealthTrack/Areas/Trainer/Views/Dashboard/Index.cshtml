@@ -1,0 +1,397 @@
+@model HealthTrack.Areas.Trainer.ViewModels.TrainerDashboardViewModel
+
+@{
+    ViewBag.Title = "Trainer Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-3 py-1">
+
+    <!-- HERO HEADER BANNER -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 60%, #1e1b4b 100%);">
+        <div class="card-body p-4 text-white">
+            <div class="row align-items-center g-3">
+                <div class="col-lg-8 col-md-7">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-primary bg-opacity-25 text-white border border-2 border-white d-flex align-items-center justify-content-center shadow" style="width: 72px; height: 72px;">
+                            <i class="bi bi-person-badge-fill fs-2"></i>
+                        </div>
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <h3 class="fw-bold text-white mb-0">@(Model.Trainer?.FullName ?? "Coach")</h3>
+                                <span class="badge bg-primary text-white rounded-pill px-2 py-1 small">
+                                    <i class="bi bi-award-fill me-1"></i> Head Coach
+                                </span>
+                            </div>
+                            <p class="text-white-50 mb-0 small">
+                                <strong class="text-white">@(Model.Trainer?.PrimarySpecialization ?? Model.Trainer?.Specialization ?? "Fitness Coach")</strong> &bull; 
+                                Assigned Clients: <strong class="text-white">@Model.AssignedClientCount</strong> &bull; 
+                                Active Training Plans: <strong class="text-white">@Model.ActiveWorkoutPlansCount</strong>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-5 text-md-end">
+                    <div class="d-flex align-items-center justify-content-md-end gap-2">
+                        <a href="@Url.Action("Create", "WorkoutPlans", new { area = "Trainer" })" class="btn btn-primary rounded-3 px-3 py-2 btn-sm fw-semibold">
+                            <i class="bi bi-plus-circle me-1"></i> New Workout Plan
+                        </a>
+                        <a href="@Url.Action("Create", "DietPlans", new { area = "Trainer" })" class="btn btn-outline-light rounded-3 px-3 py-2 btn-sm fw-semibold">
+                            <i class="bi bi-plus-circle me-1"></i> New Diet Plan
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. METRIC CARDS -->
+    <div class="row g-3 mb-4">
+        <!-- Assigned Clients -->
+        <div class="col-xl-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="x-small text-uppercase fw-bold text-secondary">Assigned Clients</span>
+                        <div class="rounded-3 bg-success bg-opacity-10 text-success p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            <i class="bi bi-people-fill fs-6"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2 mb-1">
+                        <h3 class="fw-bold text-dark mb-0">@Model.AssignedClientCount</h3>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle x-small ms-auto">
+                            Active Rostered
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between text-muted x-small mt-2 pt-2 border-top">
+                        <span>Clients Managed: <strong>@Model.AssignedClientCount</strong></span>
+                        <a href="@Url.Action("Index", "Clients", new { area = "Trainer" })" class="text-primary text-decoration-none">View All &rarr;</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Workout Plans -->
+        <div class="col-xl-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="x-small text-uppercase fw-bold text-secondary">Active Workout Plans</span>
+                        <div class="rounded-3 bg-primary bg-opacity-10 text-primary p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            <i class="bi bi-card-checklist fs-6"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2 mb-1">
+                        <h3 class="fw-bold text-dark mb-0">@Model.ActiveWorkoutPlansCount</h3>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle x-small ms-auto">
+                            Active
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between text-muted x-small mt-2 pt-2 border-top">
+                        <span>Routines: <strong>@Model.CommonWorkoutSplit</strong></span>
+                        <a href="@Url.Action("Index", "WorkoutPlans", new { area = "Trainer" })" class="text-primary text-decoration-none">Manage &rarr;</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Diet Plans -->
+        <div class="col-xl-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="x-small text-uppercase fw-bold text-secondary">Active Diet Plans</span>
+                        <div class="rounded-3 bg-warning bg-opacity-10 text-warning p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            <i class="bi bi-egg-fried fs-6"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2 mb-1">
+                        <h3 class="fw-bold text-dark mb-0">@Model.ActiveDietPlansCount</h3>
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle x-small ms-auto">
+                            @(Model.AverageDietPlanCalories > 0 ? $"Avg {Model.AverageDietPlanCalories} kcal" : "Active")
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between text-muted x-small mt-2 pt-2 border-top">
+                        <span>Plans Assigned: <strong>@Model.ActiveDietPlansCount Active</strong></span>
+                        <a href="@Url.Action("Index", "DietPlans", new { area = "Trainer" })" class="text-primary text-decoration-none">Manage &rarr;</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exercise Library -->
+        <div class="col-xl-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="x-small text-uppercase fw-bold text-secondary">Exercise Library</span>
+                        <div class="rounded-3 bg-info bg-opacity-10 text-info p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            <i class="bi bi-collection-play-fill fs-6"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2 mb-1">
+                        <h3 class="fw-bold text-dark mb-0">@Model.TotalExercisesCount</h3>
+                        <span class="badge bg-info-subtle text-info border border-info-subtle x-small ms-auto">
+                            Standard Catalog
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between text-muted x-small mt-2 pt-2 border-top">
+                        <span>Strength: <strong>@Model.StrengthExercisesCount</strong> &bull; Cardio: <strong>@Model.CardioExercisesCount</strong></span>
+                        <a href="@Url.Action("Index", "Exercises", new { area = "Trainer" })" class="text-primary text-decoration-none">Browse &rarr;</a>
+                    </div>
+                </div>
+            </div>
+    </div>
+
+    <!-- CONSULTATION APPOINTMENTS BANNER -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white p-3">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-3 bg-warning bg-opacity-10 text-warning p-3 d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                    <i class="bi bi-calendar2-check-fill fs-4"></i>
+                </div>
+                <div>
+                    <div class="x-small text-uppercase fw-bold text-muted">Consultations &amp; Schedule</div>
+                    <h5 class="fw-bold text-dark mb-0">
+                        @Model.TodayAppointmentsCount Sessions Today &bull; 
+                        <span class="@(Model.PendingAppointmentsCount > 0 ? "text-warning" : "text-muted")">@Model.PendingAppointmentsCount Pending Requests</span>
+                    </h5>
+                    <span class="x-small text-muted">Review upcoming client consultations and manage your open availability slots</span>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <a href="@Url.Action("Index", "Appointments", new { area = "Trainer" })" class="btn btn-warning text-dark fw-semibold rounded-pill px-4 shadow-sm">
+                    <i class="bi bi-calendar-event me-1"></i> Manage Appointments &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. ASSIGNED CLIENTS SNAPSHOT & LIVE ACTIVITY FEED -->
+    <div class="row g-4 mb-4">
+        <!-- Assigned Clients Snapshot -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-0 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-3 bg-success bg-opacity-10 text-success p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-person-lines-fill fs-5"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold text-dark mb-0">Assigned Clients</h5>
+                            <span class="x-small text-muted">Members assigned to your coaching roster</span>
+                        </div>
+                    </div>
+                    <a href="@Url.Action("Index", "Clients", new { area = "Trainer" })" class="btn btn-outline-secondary btn-sm rounded-3">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body p-4">
+                    @foreach (var c in Model.AssignedClients)
+                    {
+                        var pref = c.ClientPreferences?.FirstOrDefault();
+                        var health = c.ClientHealthProfile?.FirstOrDefault();
+
+                        <div class="p-3 rounded-4 bg-light border mb-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-0">@c.FullName</h6>
+                                    <span class="x-small text-muted">@c.Email &bull; Joined @c.CreatedAt.ToString("MMM yyyy")</span>
+                                </div>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle x-small">
+                                    <i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Active
+                                </span>
+                            </div>
+                            <div class="x-small text-secondary mb-3">
+                                <strong>Goal:</strong> @(pref != null && !string.IsNullOrWhiteSpace(pref.PrimaryGoal) ? pref.PrimaryGoal : "General Fitness") &bull; 
+                                <strong>Height:</strong> @(health != null && health.BaselineHeightCm > 0 ? health.BaselineHeightCm.ToString("F0") + " cm" : "N/A") &bull; 
+                                <strong>Days/Wk:</strong> @(pref != null && pref.TargetDaysPerWeek > 0 ? pref.TargetDaysPerWeek.ToString() : "N/A")
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="@Url.Action("Index", "Progress", new { area = "Trainer", clientId = c.ClientId })" class="btn btn-primary btn-sm rounded-3 flex-grow-1">
+                                    <i class="bi bi-pie-chart me-1"></i> Progress Analytics
+                                </a>
+                                <a href="@Url.Action("History", "Feedback", new { area = "Trainer", clientId = c.ClientId })" class="btn btn-outline-secondary btn-sm rounded-3">
+                                    <i class="bi bi-chat-quote me-1"></i> Feedback
+                                </a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Client Activity Stream -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-0 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-3 bg-primary bg-opacity-10 text-primary p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-broadcast fs-5"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold text-dark mb-0">Recent Client Activity Feed</h5>
+                            <span class="x-small text-muted">Real-time log submissions from assigned clients</span>
+                        </div>
+                    </div>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle x-small">Live Feed</span>
+                </div>
+                <div class="card-body p-4">
+                    <div class="list-group list-group-flush">
+                        @foreach (var w in Model.RecentWorkoutLogs)
+                        {
+                            <div class="list-group-item px-0 py-2 border-bottom">
+                                <div class="d-flex align-items-start gap-2">
+                                    <div class="rounded-3 p-2 bg-light border d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px;">
+                                        <i class="bi bi-lightning-charge-fill text-warning"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between">
+                                            <span class="small fw-bold text-dark">@(w.Clients?.FullName ?? "Client"): @w.SessionName</span>
+                                            <span class="x-small text-muted">@w.LogDate.ToString("MMM dd")</span>
+                                        </div>
+                                        <div class="x-small text-secondary">
+                                            @w.DurationMinutes mins &bull; @w.CaloriesBurned kcal &bull; Perceived exertion: @w.PerceivedExertion/10
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        @foreach (var m in Model.RecentMealLogs)
+                        {
+                            <div class="list-group-item px-0 py-2 border-bottom">
+                                <div class="d-flex align-items-start gap-2">
+                                    <div class="rounded-3 p-2 bg-light border d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px;">
+                                        <i class="bi bi-egg-fried text-success"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between">
+                                            @{
+                                                var clientName = Model.AssignedClients.FirstOrDefault(c => c.ClientId == m.ClientId)?.FullName ?? "Client";
+                                            }
+                                            <span class="small fw-bold text-dark">@clientName: Logged @m.MealType</span>
+                                            <span class="x-small text-muted">@m.LogDate.ToString("MMM dd")</span>
+                                        </div>
+                                        <div class="x-small text-secondary">
+                                            @m.MealName &bull; @m.Calories kcal &bull; @m.ProteinGrams g Protein
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. COACH FEEDBACK HISTORY & QUICK SHORTCUTS -->
+    <div class="row g-4">
+        <!-- Coach Feedback History -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-2 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-chat-quote-fill text-info fs-5"></i>
+                        <h5 class="fw-bold text-dark mb-0">Coach Feedback History</h5>
+                    </div>
+                    <a href="@Url.Action("History", "Feedback", new { area = "Trainer" })" class="x-small text-primary text-decoration-none fw-semibold">
+                        View Audit Log &rarr;
+                    </a>
+                </div>
+                <div class="card-body p-4 pt-1">
+                    @if (Model.RecentFeedbackHistory.Any())
+                    {
+                        foreach (var fb in Model.RecentFeedbackHistory)
+                        {
+                            <div class="p-3 rounded-4 bg-light border mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small fw-bold text-dark">To: @(fb.Clients?.FullName ?? "Client")</span>
+                                    <span class="x-small text-muted">@fb.SentAt.ToString("MMM dd, yyyy")</span>
+                                </div>
+                                <h6 class="fw-bold text-dark small mb-1">@fb.Title</h6>
+                                <p class="x-small text-secondary mb-1">@fb.FeedbackText</p>
+                                @if (!string.IsNullOrWhiteSpace(fb.Recommendations))
+                                {
+                                    <div class="x-small text-dark fw-semibold pt-1 border-top">
+                                        <i class="bi bi-lightbulb-fill text-warning me-1"></i> Recommendation: @fb.Recommendations
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-chat-dots fs-3 d-block mb-1"></i>
+                            <span class="small">No feedback messages recorded yet.</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Management Shortcuts -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-2">
+                    <h5 class="fw-bold text-dark mb-0">Trainer Shortcuts</h5>
+                </div>
+                <div class="card-body p-4 pt-1">
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <a href="@Url.Action("Index", "Clients", new { area = "Trainer" })" class="btn btn-outline-secondary w-100 rounded-3 text-start p-3 d-flex align-items-center justify-content-between">
+                                <span class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-people-fill text-success fs-5"></i>
+                                    <span>
+                                        <strong class="d-block small text-dark">Assigned Clients Directory</strong>
+                                        <span class="x-small text-muted">Review client biometrics and health profiles</span>
+                                    </span>
+                                </span>
+                                <i class="bi bi-chevron-right text-muted"></i>
+                            </a>
+                        </div>
+                        <div class="col-12">
+                            <a href="@Url.Action("Index", "WorkoutPlans", new { area = "Trainer" })" class="btn btn-outline-secondary w-100 rounded-3 text-start p-3 d-flex align-items-center justify-content-between">
+                                <span class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-card-checklist text-primary fs-5"></i>
+                                    <span>
+                                        <strong class="d-block small text-dark">Workout Plans Management</strong>
+                                        <span class="x-small text-muted">Build, edit, and assign exercise routines</span>
+                                    </span>
+                                </span>
+                                <i class="bi bi-chevron-right text-muted"></i>
+                            </a>
+                        </div>
+                        <div class="col-12">
+                            <a href="@Url.Action("Index", "DietPlans", new { area = "Trainer" })" class="btn btn-outline-secondary w-100 rounded-3 text-start p-3 d-flex align-items-center justify-content-between">
+                                <span class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-journal-plus text-warning fs-5"></i>
+                                    <span>
+                                        <strong class="d-block small text-dark">Diet &amp; Nutrition Plans</strong>
+                                        <span class="x-small text-muted">Assign calorie targets and meal blueprints</span>
+                                    </span>
+                                </span>
+                                <i class="bi bi-chevron-right text-muted"></i>
+                            </a>
+                        </div>
+                        <div class="col-12">
+                            <a href="@Url.Action("Index", "Progress", new { area = "Trainer" })" class="btn btn-outline-secondary w-100 rounded-3 text-start p-3 d-flex align-items-center justify-content-between">
+                                <span class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-pie-chart text-danger fs-5"></i>
+                                    <span>
+                                        <strong class="d-block small text-dark">Progress &amp; Adherence Analytics</strong>
+                                        <span class="x-small text-muted">Weekly weigh-ins, body fat, and calorie curves</span>
+                                    </span>
+                                </span>
+                                <i class="bi bi-chevron-right text-muted"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

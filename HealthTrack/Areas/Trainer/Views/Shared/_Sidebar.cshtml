@@ -1,0 +1,161 @@
+@{
+    var currentController = ViewContext.RouteData.Values["controller"] != null ? ViewContext.RouteData.Values["controller"].ToString() : "";
+    var currentAction = ViewContext.RouteData.Values["action"] != null ? ViewContext.RouteData.Values["action"].ToString() : "";
+}
+
+<div class="d-flex flex-column h-100 p-2 text-white bg-dark sidebar-inner">
+    <!-- Brand / System Title -->
+    <a href="@Url.Action("Index", "Dashboard", new { area = "Trainer" })" class="d-flex align-items-center mb-1 text-white text-decoration-none px-2 py-1 rounded-3 brand-header-link">
+        <img src="@Url.Content("~/Content/images/logo.png")" alt="HealthTrack Logo" class="rounded-2 me-2 shadow-sm flex-shrink-0" style="width: 32px; height: 32px; object-fit: contain;" />
+        <div class="d-flex flex-column justify-content-center" style="min-width: 0;">
+            <div class="fw-bold tracking-tight" style="font-size: 1.15rem; line-height: 1.1; color: #009dff; letter-spacing: -0.3px;">HealthTrack</div>
+            <div class="text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.7px; line-height: 1.1; color: #22c55e; margin-top: 1px; white-space: nowrap;">Workout &amp; Nutrition</div>
+        </div>
+    </a>
+
+    <!-- Nav Links (Scrollable Container) -->
+    <div class="sidebar-nav-container gap-1 pt-2 d-flex flex-column">
+        <!-- 1. COMMAND CENTER (Member 3) -->
+        <div class="nav-section-title">
+            <i class="bi bi-grid-fill me-1 text-primary"></i> Command Center
+        </div>
+        <ul class="nav nav-pills flex-column mb-1 gap-1">
+            <li class="nav-item">
+                <a href="@Url.Action("Index", "Dashboard", new { area = "Trainer" })" 
+                   class="nav-link text-white @(currentController == "Dashboard" ? "active" : "")">
+                    <i class="bi bi-speedometer2 me-2 fs-6 text-primary"></i>
+                    <span>Trainer Dashboard</span>
+                </a>
+            </li>
+        </ul>
+
+        <!-- 2. CLIENT MANAGEMENT (Member 3) -->
+        <div class="nav-section-title">
+            <i class="bi bi-people-fill me-1 text-success"></i> Client Management
+        </div>
+        <ul class="nav nav-pills flex-column mb-1 gap-1">
+            <li class="nav-item">
+                <a href="@Url.Action("Index", "Clients", new { area = "Trainer" })" 
+                   class="nav-link text-white @(currentController == "Clients" ? "active" : "")">
+                    <i class="bi bi-person-lines-fill me-2 fs-6 text-success"></i>
+                    <span>Assigned Clients</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="@Url.Action("History", "Feedback", new { area = "Trainer" })" 
+                   class="nav-link text-white @(currentController == "Feedback" ? "active" : "")">
+                    <i class="bi bi-chat-quote-fill me-2 fs-6 text-info"></i>
+                    <span>Client Feedback</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="@Url.Action("Index", "Appointments", new { area = "Trainer" })" 
+                   class="nav-link text-white @(currentController == "Appointments" && currentAction != "ActivityReport" ? "active" : "")">
+                    <i class="bi bi-calendar2-check-fill me-2 fs-6 text-warning"></i>
+                    <span>Appointments &amp; Slots</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="@Url.Action("ActivityReport", "Appointments", new { area = "Trainer" })" 
+                   class="nav-link text-white @(currentController == "Appointments" && currentAction == "ActivityReport" ? "active" : "")">
+                    <i class="bi bi-calendar2-range me-2 fs-6 text-warning"></i>
+                    <span>Appointment Activity</span>
+                </a>
+            </li>
+        </ul>
+
+        <!-- 3. WORKOUT MANAGEMENT (Member 2) -->
+        <div class="nav-section-title">
+            <i class="bi bi-stopwatch-fill me-1 text-primary"></i> Workout Management
+        </div>
+        <ul class="nav nav-pills flex-column mb-1 gap-1">
+            <li class="nav-item">
+                <a href="@Url.Action("Index", "WorkoutPlans", new { area = "Trainer" })" 
+                   class="nav-link text-white @(currentController == "WorkoutPlans" && currentAction != "PopularRoutines" ? "active" : "")">
+                    <i class="bi bi-card-checklist me-2 fs-6 text-primary"></i>
+                    <span>Workout Plans</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="@Url.Action("PopularRoutines", "WorkoutPlans", new { area = "Trainer" })" 
+                   class="nav-link text-white @(currentController == "WorkoutPlans" && currentAction == "PopularRoutines" ? "active" : "")">
+                    <i class="bi bi-trophy me-2 fs-6 text-warning"></i>
+                    <span>Popular Routines</span>
+                </a>
+            </li>
+        </ul>
+
+        <!-- 4. EXERCISE LIBRARY (Member 2) -->
+        <div class="nav-section-title">
+            <i class="bi bi-collection-play-fill me-1 text-info"></i> Exercise Library
+        </div>
+        <ul class="nav nav-pills flex-column mb-1 gap-1">
+            <li class="nav-item">
+                <a href="@Url.Action("Index", "Exercises", new { area = "Trainer" })" 
+                   class="nav-link text-white @(currentController == "Exercises" ? "active" : "")">
+                    <i class="bi bi-grid-3x3-gap me-2 fs-6 text-info"></i>
+                    <span>Exercise Library</span>
+                </a>
+            </li>
+        </ul>
+
+        <!-- 5. DIET MANAGEMENT (Member 2) -->
+        <div class="nav-section-title">
+            <i class="bi bi-egg-fried me-1 text-warning"></i> Diet Management
+        </div>
+        <ul class="nav nav-pills flex-column mb-1 gap-1">
+            <li class="nav-item">
+                <a href="@Url.Action("Index", "DietPlans", new { area = "Trainer" })" 
+                   class="nav-link text-white @(currentController == "DietPlans" ? "active" : "")">
+                    <i class="bi bi-journal-plus me-2 fs-6 text-warning"></i>
+                    <span>Diet Plans</span>
+                </a>
+            </li>
+        </ul>
+
+        <!-- 6. PROGRESS & REPORTS (Member 2) -->
+        <div class="nav-section-title">
+            <i class="bi bi-graph-up-arrow me-1 text-danger"></i> Progress &amp; Reports
+        </div>
+        <ul class="nav nav-pills flex-column mb-1 gap-1">
+            <li class="nav-item">
+                <a href="@Url.Action("Index", "Progress", new { area = "Trainer" })" 
+                   class="nav-link text-white @(currentController == "Progress" && currentAction == "Index" ? "active" : "")">
+                    <i class="bi bi-pie-chart me-2 fs-6 text-danger"></i>
+                    <span>Progress Analytics</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="@Url.Action("Reports", "Progress", new { area = "Trainer" })" 
+                   class="nav-link text-white @(currentController == "Progress" && currentAction == "Reports" ? "active" : "")">
+                    <i class="bi bi-file-earmark-pdf me-2 fs-6 text-danger"></i>
+                    <span>Client Reports</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="@Url.Action("PopularRoutines", "WorkoutPlans", new { area = "Trainer" })" 
+                   class="nav-link text-white @(currentController == "WorkoutPlans" && currentAction == "PopularRoutines" ? "active" : "")">
+                    <i class="bi bi-bar-chart-line me-2 fs-6 text-warning"></i>
+                    <span>Popular Routines Report</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="@Url.Action("ActivityReport", "Appointments", new { area = "Trainer" })" 
+                   class="nav-link text-white @(currentController == "Appointments" && currentAction == "ActivityReport" ? "active" : "")">
+                    <i class="bi bi-calendar2-range me-2 fs-6 text-danger"></i>
+                    <span>Appointment Activity</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Trainer Logout Footer -->
+    <div class="pt-2 mt-auto border-top border-secondary border-opacity-25 px-2">
+        <a href="@Url.Action("Logout", "Account", new { area = "Trainer" })" 
+           class="nav-link text-danger d-flex align-items-center gap-2 py-2 px-2 rounded-2"
+           style="transition: background-color 0.2s;">
+            <i class="bi bi-box-arrow-right fs-6"></i>
+            <span>Sign Out</span>
+        </a>
+    </div>
+</div>

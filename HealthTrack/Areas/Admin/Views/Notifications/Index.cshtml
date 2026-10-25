@@ -1,0 +1,473 @@
+@model HealthTrack.Areas.Admin.ViewModels.AdminNotificationIndexViewModel
+@{
+    ViewBag.Title = "System Notifications & Announcements";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-3 py-2">
+
+    <!-- HERO HEADER -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0369a1 100%);">
+        <div class="card-body p-4 text-white">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-white bg-opacity-10 text-white border border-2 border-white border-opacity-25 d-flex align-items-center justify-content-center shadow" style="width: 58px; height: 58px;">
+                        <i class="bi bi-bell-fill fs-3 text-warning"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <h4 class="fw-bold text-white mb-0">System Notifications &amp; Announcements</h4>
+                            @if (Model.UnreadCount > 0)
+                            {
+                                <span class="badge bg-danger text-white rounded-pill px-2 py-1 small">
+                                    @Model.UnreadCount Unread
+                                </span>
+                            }
+                        </div>
+                        <p class="text-white-50 mb-0 small">
+                            Broadcast in-app announcements (FR-A-37), monitor persistent alerts, support tickets, and member onboarding.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <!-- Create Announcement Trigger (FR-A-37) -->
+                    <button type="button" class="btn btn-sm btn-warning rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm text-dark" data-bs-toggle="modal" data-bs-target="#createAnnouncementModal">
+                        <i class="bi bi-megaphone-fill"></i>
+                        <span>Publish Announcement</span>
+                    </button>
+
+                    @if (Model.UnreadCount > 0)
+                    {
+                        using (Html.BeginForm("MarkAllAsRead", "Notifications", new { area = "Admin" }, FormMethod.Post, new { @class = "d-inline" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="returnUrl" value="@Request.RawUrl" />
+                            <button type="submit" class="btn btn-sm btn-light rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1 shadow-sm">
+                                <i class="bi bi-check2-all text-primary"></i>
+                                <span>Mark All as Read</span>
+                            </button>
+                        }
+                    }
+                    <a href="@Url.Action("Index", "Dashboard", new { area = "Admin" })" class="btn btn-sm btn-outline-light rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FEEDBACK ALERTS -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm d-flex align-items-center gap-2 mb-4" role="alert">
+            <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+            <div>@TempData["SuccessMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show rounded-4 border-0 shadow-sm d-flex align-items-center gap-2 mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-5 text-danger"></i>
+            <div>@TempData["ErrorMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- MAIN NOTIFICATION CARD -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4">
+        <div class="card-header bg-white border-0 pt-4 px-4 pb-3">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <!-- Filter Pills -->
+                <ul class="nav nav-pills gap-2">
+                    <li class="nav-item">
+                        <a href="@Url.Action("Index", "Notifications", new { area = "Admin", filter = "all" })" 
+                           class="nav-link rounded-pill py-1 px-3 small @(Model.Filter == "all" ? "active bg-dark" : "bg-light text-secondary")">
+                            All (@Model.TotalCount)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="@Url.Action("Index", "Notifications", new { area = "Admin", filter = "unread" })" 
+                           class="nav-link rounded-pill py-1 px-3 small @(Model.Filter == "unread" ? "active bg-danger text-white fw-semibold" : "bg-light text-secondary")">
+                            Unread (@Model.UnreadCount)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="@Url.Action("Index", "Notifications", new { area = "Admin", filter = "announcements" })" 
+                           class="nav-link rounded-pill py-1 px-3 small @(Model.Filter == "announcements" ? "active bg-primary text-white fw-semibold" : "bg-light text-secondary")">
+                            <i class="bi bi-megaphone-fill me-1"></i> Announcements (@(Model.PublishedAnnouncements != null ? Model.PublishedAnnouncements.Count : 0))
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="@Url.Action("Index", "Notifications", new { area = "Admin", filter = "support" })" 
+                           class="nav-link rounded-pill py-1 px-3 small @(Model.Filter == "support" ? "active bg-warning text-dark fw-semibold" : "bg-light text-secondary")">
+                            <i class="bi bi-headset me-1"></i> Support Tickets
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="@Url.Action("Index", "Notifications", new { area = "Admin", filter = "requests" })" 
+                           class="nav-link rounded-pill py-1 px-3 small @(Model.Filter == "requests" ? "active bg-info text-white" : "bg-light text-secondary")">
+                            <i class="bi bi-arrow-left-right me-1"></i> Coach Requests
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="@Url.Action("Index", "Notifications", new { area = "Admin", filter = "assignments" })" 
+                           class="nav-link rounded-pill py-1 px-3 small @(Model.Filter == "assignments" ? "active bg-primary text-white" : "bg-light text-secondary")">
+                            <i class="bi bi-person-plus me-1"></i> Client Assignments
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="@Url.Action("Index", "Notifications", new { area = "Admin", filter = "security" })" 
+                           class="nav-link rounded-pill py-1 px-3 small @(Model.Filter == "security" ? "active bg-danger text-white" : "bg-light text-secondary")">
+                            <i class="bi bi-shield-exclamation me-1"></i> Security Logs
+                        </a>
+                    </li>
+                </ul>
+
+                <span class="text-muted small">
+                    Showing @Model.Notifications.Count notification@(Model.Notifications.Count == 1 ? "" : "s")
+                </span>
+            </div>
+        </div>
+
+        <div class="card-body p-4 pt-1">
+            @if (Model.Filter == "announcements")
+            {
+                <!-- PUBLISHED ANNOUNCEMENTS MANAGEMENT SECTION (FR-A-37) -->
+                <div class="mb-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h6 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-megaphone-fill text-primary me-2"></i>Published Administrator Announcements
+                        </h6>
+                        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#createAnnouncementModal">
+                            <i class="bi bi-plus-circle-fill"></i>
+                            <span>Create New</span>
+                        </button>
+                    </div>
+
+                    @if (Model.PublishedAnnouncements != null && Model.PublishedAnnouncements.Any())
+                    {
+                        <div class="table-responsive rounded-4 border">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light text-secondary small">
+                                    <tr>
+                                        <th style="width: 25%;">Title</th>
+                                        <th style="width: 35%;">Message</th>
+                                        <th style="width: 15%;">Target Roles</th>
+                                        <th style="width: 13%;">Published</th>
+                                        <th style="width: 12%; text-align: right;">Delivered</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var ann in Model.PublishedAnnouncements)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="fw-bold text-dark text-truncate" style="max-width: 220px;" title="@ann.Title">
+                                                    @ann.Title
+                                                </div>
+                                                <span class="text-muted x-small">By: @ann.CreatedByAdminName</span>
+                                            </td>
+                                            <td>
+                                                <div class="small text-secondary text-truncate" style="max-width: 320px;" title="@ann.Message">
+                                                    @ann.Message
+                                                </div>
+                                            </td>
+                                            <td>
+                                                @foreach (var role in ann.TargetRoles.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                                                {
+                                                    string badgeClass = role.Trim() == "Client" ? "bg-success-subtle text-success border border-success-subtle" :
+                                                                       (role.Trim() == "Trainer" ? "bg-info-subtle text-info border border-info-subtle" : "bg-primary-subtle text-primary border border-primary-subtle");
+                                                    <span class="badge rounded-pill small @badgeClass me-1">@role.Trim()</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="small text-dark">@ann.TimeAgo</div>
+                                                <span class="text-muted x-small">@ann.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                            </td>
+                                            <td class="text-end">
+                                                <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1 small">
+                                                    <i class="bi bi-send-check me-1"></i>@ann.TotalDelivered
+                                                </span>
+                                                <div class="x-small text-muted mt-1">@ann.ReadCount read</div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-light border rounded-4 text-center py-4 mb-4">
+                            <i class="bi bi-megaphone fs-3 text-muted d-block mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">No Announcements Published Yet</h6>
+                            <p class="text-muted small mb-3">Keep clients, coaches, or team admins informed by publishing your first broadcast.</p>
+                            <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#createAnnouncementModal">
+                                <i class="bi bi-plus-circle-fill me-1"></i>Publish First Announcement
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (Model.Notifications.Any())
+            {
+                <div class="d-flex flex-column gap-3">
+                    @foreach (var item in Model.Notifications)
+                    {
+                        string unreadBorder = item.IsRead ? "bg-white border" : "bg-light border border-danger border-opacity-25 shadow-sm";
+                        
+                        <div class="card rounded-4 @unreadBorder p-3">
+                            <div class="d-flex align-items-start gap-3">
+                                <!-- Category Icon -->
+                                <div class="rounded-circle bg-@item.Color bg-opacity-10 text-@item.Color p-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;">
+                                    <i class="bi @item.Icon fs-5"></i>
+                                </div>
+
+                                <!-- Content Body -->
+                                <div class="flex-grow-1">
+                                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <h6 class="fw-bold text-dark mb-0">@item.Title</h6>
+                                            <span class="badge bg-secondary-subtle text-secondary rounded-pill small">
+                                                @item.Category
+                                            </span>
+                                            @if (!item.IsRead)
+                                            {
+                                                <span class="badge bg-danger rounded-pill small" style="font-size: 0.65rem;">NEW</span>
+                                            }
+                                        </div>
+                                        <span class="small text-muted">
+                                            <i class="bi bi-clock me-1"></i>@item.TimeAgo &bull; @item.FormattedTime
+                                        </span>
+                                    </div>
+
+                                    <p class="small text-secondary mb-3" style="line-height: 1.45;">
+                                        @item.Message
+                                    </p>
+
+                                    <!-- Action Buttons -->
+                                    <div class="d-flex align-items-center gap-2">
+                                        @if (!string.IsNullOrEmpty(item.ActionUrl))
+                                        {
+                                            <a href="@item.ActionUrl" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold small">
+                                                <span>Open Section</span>
+                                                <i class="bi bi-arrow-right ms-1"></i>
+                                            </a>
+                                        }
+
+                                        @if (!item.IsRead)
+                                        {
+                                            using (Html.BeginForm("MarkAsRead", "Notifications", new { area = "Admin" }, FormMethod.Post, new { @class = "d-inline" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@item.Id" />
+                                                <input type="hidden" name="returnUrl" value="@Request.RawUrl" />
+                                                <button type="submit" class="btn btn-sm btn-link text-muted text-decoration-none small px-2">
+                                                    <i class="bi bi-check2 me-1"></i>Mark as Read
+                                                </button>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small px-2">
+                                                <i class="bi bi-check2-all text-success me-1"></i>Read
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else if (Model.Filter != "announcements")
+            {
+                <div class="text-center py-5">
+                    <div class="rounded-circle bg-light text-muted d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
+                        <i class="bi bi-bell-slash fs-2"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-1">No Notifications In This Filter</h5>
+                    <p class="text-muted small mb-0">All system requests, support tickets, and alerts have been processed.</p>
+                </div>
+            }
+        </div>
+    </div>
+
+</div>
+
+<!-- =========================================================================
+     MODAL: CREATE IN-APP ANNOUNCEMENT (FR-A-37)
+     ========================================================================= -->
+<div class="modal fade" id="createAnnouncementModal" tabindex="-1" aria-labelledby="createAnnouncementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+            <!-- Modal Header -->
+            <div class="modal-header p-3 text-white border-0" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0369a1 100%);">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle p-2 d-flex align-items-center justify-content-center bg-white bg-opacity-10" style="width: 38px; height: 38px;">
+                        <i class="bi bi-megaphone-fill text-warning fs-6"></i>
+                    </div>
+                    <div>
+                        <h6 class="modal-title fw-bold text-white mb-0" id="createAnnouncementModalLabel">Publish In-App Announcement</h6>
+                        <span class="text-white-50 small" style="font-size: 0.75rem;">Deliver persistent broadcast alerts to selected user roles</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- Modal Form -->
+            @using (Html.BeginForm("PublishAnnouncement", "Notifications", new { area = "Admin" }, FormMethod.Post, new { id = "publishAnnouncementForm" }))
+            {
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4 bg-light">
+                    <!-- Title Input -->
+                    <div class="mb-3">
+                        <label for="announcementTitle" class="form-label fw-bold small text-dark">
+                            Announcement Title <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" 
+                               name="Title" 
+                               id="announcementTitle" 
+                               class="form-control rounded-3" 
+                               placeholder="e.g. Scheduled Gym Facility Maintenance / Holiday Working Hours" 
+                               maxlength="200" 
+                               required />
+                        <div class="form-text small">Max 200 characters. Keep it clear and concise.</div>
+                    </div>
+
+                    <!-- Message Body -->
+                    <div class="mb-3">
+                        <label for="announcementMessage" class="form-label fw-bold small text-dark">
+                            Announcement Message <span class="text-danger">*</span>
+                        </label>
+                        <textarea name="Message" 
+                                  id="announcementMessage" 
+                                  class="form-control rounded-3" 
+                                  rows="4" 
+                                  placeholder="Provide the details of your announcement here. All recipients in selected roles will receive this notification immediately." 
+                                  maxlength="4000" 
+                                  required></textarea>
+                        <div class="form-text small">Max 4000 characters. Encoded safely against cross-site scripting.</div>
+                    </div>
+
+                    <!-- Target Roles Selection (FR-A-37 Requirement 3, 4 & 5) -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark mb-2">
+                            Target Recipient Roles <span class="text-danger">*</span>
+                        </label>
+                        <p class="text-muted small mb-2">Select one or multiple roles who should receive this announcement:</p>
+
+                        <div class="row g-2">
+                            <!-- Clients Role -->
+                            <div class="col-md-4">
+                                <label class="card h-100 p-3 rounded-3 border role-select-card cursor-pointer" for="roleClients">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <input class="form-check-input mt-0" type="checkbox" name="TargetClients" id="roleClients" value="true" checked />
+                                        <span class="fw-bold text-dark small">Clients</span>
+                                    </div>
+                                    <span class="text-muted x-small">Active Members (@Model.ActiveClientsCount active)</span>
+                                </label>
+                            </div>
+
+                            <!-- Trainers Role -->
+                            <div class="col-md-4">
+                                <label class="card h-100 p-3 rounded-3 border role-select-card cursor-pointer" for="roleTrainers">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <input class="form-check-input mt-0" type="checkbox" name="TargetTrainers" id="roleTrainers" value="true" checked />
+                                        <span class="fw-bold text-dark small">Trainers</span>
+                                    </div>
+                                    <span class="text-muted x-small">Fitness Coaches (@Model.ActiveTrainersCount active)</span>
+                                </label>
+                            </div>
+
+                            <!-- Administrators Role -->
+                            <div class="col-md-4">
+                                <label class="card h-100 p-3 rounded-3 border role-select-card cursor-pointer" for="roleAdmins">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <input class="form-check-input mt-0" type="checkbox" name="TargetAdmins" id="roleAdmins" value="true" />
+                                        <span class="fw-bold text-dark small">Admins</span>
+                                    </div>
+                                    <span class="text-muted x-small">Management Staff (@Model.ActiveAdminsCount active)</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div id="roleSelectionError" class="text-danger small mt-1 d-none">
+                            Please select at least one recipient user role.
+                        </div>
+                    </div>
+
+                    <!-- Confirmation Notice Box (FR-A-37 Requirement 6 & 7) -->
+                    <div class="card rounded-3 border-0 bg-white p-3 shadow-sm">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-info-circle-fill text-primary mt-1"></i>
+                            <div class="small">
+                                <span class="fw-bold text-dark">Confirmation Notice:</span>
+                                Each user in the selected roles will receive an individual, persistent notification record in their activity inbox. 
+                                Each user's read/unread state is preserved independently across login sessions.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="modal-footer p-3 bg-white d-flex align-items-center justify-content-between border-top">
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="button" id="btnConfirmPublish" class="btn btn-sm btn-primary rounded-pill px-4 fw-semibold shadow-sm d-inline-flex align-items-center gap-1">
+                        <i class="bi bi-send-fill"></i>
+                        <span>Confirm &amp; Broadcast</span>
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var btnConfirm = document.getElementById("btnConfirmPublish");
+        var form = document.getElementById("publishAnnouncementForm");
+        var titleInput = document.getElementById("announcementTitle");
+        var msgInput = document.getElementById("announcementMessage");
+        var roleClients = document.getElementById("roleClients");
+        var roleTrainers = document.getElementById("roleTrainers");
+        var roleAdmins = document.getElementById("roleAdmins");
+        var roleError = document.getElementById("roleSelectionError");
+
+        if (btnConfirm && form) {
+            btnConfirm.addEventListener("click", function (e) {
+                // Validation checks
+                if (!titleInput.value || !titleInput.value.trim()) {
+                    titleInput.focus();
+                    alert("Please provide an Announcement Title.");
+                    return;
+                }
+                if (!msgInput.value || !msgInput.value.trim()) {
+                    msgInput.focus();
+                    alert("Please provide an Announcement Message.");
+                    return;
+                }
+                if (!roleClients.checked && !roleTrainers.checked && !roleAdmins.checked) {
+                    if (roleError) roleError.classList.remove("d-none");
+                    alert("Please select at least one recipient role.");
+                    return;
+                } else {
+                    if (roleError) roleError.classList.add("d-none");
+                }
+
+                // Confirmation prompt (FR-A-37 Requirement 6)
+                var confirmed = confirm("Are you sure you want to broadcast this announcement? Intended users will receive it in their in-app notifications.");
+                if (confirmed) {
+                    btnConfirm.disabled = true;
+                    btnConfirm.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Publishing...';
+                    form.submit();
+                }
+            });
+        }
+    });
+</script>

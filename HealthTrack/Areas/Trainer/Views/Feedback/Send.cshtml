@@ -1,0 +1,362 @@
+@model HealthTrack.Areas.Trainer.ViewModels.SendFeedbackViewModel
+
+@{
+    ViewBag.Title = Model.FeedbackId.HasValue && Model.IsDraft ? "Edit Feedback Draft" : "Send Client Feedback";
+}
+
+<div class="container-fluid px-4 py-3">
+
+    <!-- Header Row -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                    <i class="bi bi-chat-quote me-1"></i>Coaching Communication
+                </span>
+                @if (Model.ParentFeedbackId.HasValue)
+                {
+                    <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1">
+                        <i class="bi bi-reply-fill me-1"></i>Follow-Up Mode
+                    </span>
+                }
+            </div>
+            <h2 class="h3 fw-bold mb-0 text-dark">
+                @(Model.FeedbackId.HasValue && Model.IsDraft ? "Edit Feedback Draft" : "Send Client Feedback")
+            </h2>
+            <p class="text-muted small mb-0">Provide structured guidance, critique, and actionable suggestions to your assigned clients</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("History", "Feedback")" class="btn btn-outline-secondary d-inline-flex align-items-center gap-1 shadow-sm">
+                <i class="bi bi-clock-history"></i>
+                <span>Feedback History</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm mb-4" role="alert">
+            <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+            <div>@TempData["SuccessMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-5 text-danger"></i>
+            <div>@TempData["ErrorMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Follow-up Banner (if replying to a previous feedback) -->
+    @if (Model.ParentFeedbackId.HasValue)
+    {
+        <div class="alert alert-light border shadow-sm rounded-3 d-flex align-items-center justify-content-between mb-4 py-3 px-4">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-2 text-primary">
+                    <i class="bi bi-reply-fill fs-4"></i>
+                </div>
+                <div>
+                    <div class="text-muted x-small text-uppercase fw-semibold">Sending Follow-Up To Previous Feedback</div>
+                    <div class="fw-bold text-dark">@Model.ParentFeedbackTitle</div>
+                    @if (Model.ParentFeedbackDate.HasValue)
+                    {
+                        <div class="text-muted x-small">Originally sent on @Model.ParentFeedbackDate.Value.ToString("MMMM dd, yyyy")</div>
+                    }
+                </div>
+            </div>
+            <a href="@Url.Action("Send", "Feedback")" class="btn btn-sm btn-outline-secondary">Cancel Follow-Up</a>
+        </div>
+    }
+
+    <div class="row g-4">
+
+        <!-- LEFT COLUMN: Feedback Creation Form -->
+        <div class="col-lg-8">
+            <div class="card border shadow-sm rounded-3 bg-white">
+                <div class="card-body p-4">
+                    @using (Html.BeginForm("Send", "Feedback", FormMethod.Post, new { id = "feedbackForm" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.FeedbackId)
+                        @Html.HiddenFor(m => m.ParentFeedbackId)
+
+                        <!-- 1. SELECT CLIENT -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark small text-uppercase">
+                                <i class="bi bi-person-check text-primary me-1"></i> Select Assigned Client <span class="text-danger">*</span>
+                            </label>
+                            @Html.DropDownListFor(m => m.ClientId, Model.AvailableClients, "-- Select an Assigned Client --", new { 
+                                @class = "form-select form-select-lg shadow-sm border", 
+                                id = "clientSelectDropdown" 
+                            })
+                            @Html.ValidationMessageFor(m => m.ClientId, "", new { @class = "text-danger small mt-1 d-block" })
+                        </div>
+
+                        <!-- 2. SELECT CATEGORY (3 Main Types) -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark small text-uppercase d-block mb-2">
+                                <i class="bi bi-tags text-primary me-1"></i> Feedback Category <span class="text-danger">*</span>
+                            </label>
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <label class="card h-100 p-3 border rounded-3 cursor-pointer category-card @(Model.Category == "Workout" ? "border-primary bg-primary-subtle" : "")" for="catWorkout">
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <input type="radio" name="Category" id="catWorkout" value="Workout" class="form-check-input" @(Model.Category == "Workout" ? "checked" : "") />
+                                            <span class="fw-bold text-dark"><i class="bi bi-stopwatch text-primary me-1"></i>Workout</span>
+                                        </div>
+                                        <p class="text-muted x-small mb-0">Routines, consistency, exercise exertion &amp; form</p>
+                                    </label>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="card h-100 p-3 border rounded-3 cursor-pointer category-card @(Model.Category == "Diet" ? "border-success bg-success-subtle" : "")" for="catDiet">
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <input type="radio" name="Category" id="catDiet" value="Diet" class="form-check-input" @(Model.Category == "Diet" ? "checked" : "") />
+                                            <span class="fw-bold text-dark"><i class="bi bi-egg-fried text-success me-1"></i>Diet &amp; Nutrition</span>
+                                        </div>
+                                        <p class="text-muted x-small mb-0">Meal logging, daily calories, macros &amp; water</p>
+                                    </label>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="card h-100 p-3 border rounded-3 cursor-pointer category-card @(Model.Category == "General Progress" ? "border-info bg-info-subtle" : "")" for="catProgress">
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <input type="radio" name="Category" id="catProgress" value="General Progress" class="form-check-input" @(Model.Category == "General Progress" ? "checked" : "") />
+                                            <span class="fw-bold text-dark"><i class="bi bi-graph-up-arrow text-info me-1"></i>General Progress</span>
+                                        </div>
+                                        <p class="text-muted x-small mb-0">Weight, BMI, goal milestones &amp; habits</p>
+                                    </label>
+                                </div>
+                            </div>
+                            @Html.ValidationMessageFor(m => m.Category, "", new { @class = "text-danger small mt-1 d-block" })
+                        </div>
+
+                        <!-- 3. TITLE / SUBJECT -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark small text-uppercase">
+                                <i class="bi bi-card-heading text-primary me-1"></i> Feedback Title / Subject <span class="text-danger">*</span>
+                            </label>
+                            @Html.TextBoxFor(m => m.Title, new { 
+                                @class = "form-control shadow-sm", 
+                                placeholder = "e.g., Week 3 Workout Consistency & Exertion Adjustments",
+                                maxlength = "200" 
+                            })
+                            @Html.ValidationMessageFor(m => m.Title, "", new { @class = "text-danger small mt-1 d-block" })
+                        </div>
+
+                        <!-- 4. FEEDBACK OBSERVATIONS -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark small text-uppercase">
+                                <i class="bi bi-chat-text text-primary me-1"></i> Observations &amp; Detailed Review <span class="text-danger">*</span>
+                            </label>
+                            @Html.TextAreaFor(m => m.FeedbackText, new { 
+                                @class = "form-control shadow-sm", 
+                                rows = "5", 
+                                placeholder = "Write your analysis of their logged workouts, nutrition adherence, or body measurements..." 
+                            })
+                            @Html.ValidationMessageFor(m => m.FeedbackText, "", new { @class = "text-danger small mt-1 d-block" })
+                        </div>
+
+                        <!-- 5. ACTIONABLE RECOMMENDATIONS -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark small text-uppercase">
+                                <i class="bi bi-list-check text-success me-1"></i> Actionable Recommendations &amp; Next Steps
+                            </label>
+                            @Html.TextAreaFor(m => m.Recommendations, new { 
+                                @class = "form-control shadow-sm", 
+                                rows = "4", 
+                                placeholder = "1. Specific change or target for next week&#10;2. Rest intervals or hydration cue&#10;3. Check-in reminder..." 
+                            })
+                            <div class="form-text text-muted x-small">
+                                Provide 2-3 concrete bullet points that the client can immediately put into practice.
+                            </div>
+                        </div>
+
+                        <!-- ACTION BUTTONS -->
+                        <div class="d-flex flex-wrap align-items-center justify-content-between pt-3 border-top gap-2">
+                            <div class="text-muted small">
+                                <i class="bi bi-shield-lock me-1"></i> Once sent, feedback is locked as read-only.
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" name="submitAction" value="draft" class="btn btn-outline-secondary px-3 shadow-sm">
+                                    <i class="bi bi-save me-1"></i> Save as Draft
+                                </button>
+                                <button type="submit" name="submitAction" value="send" class="btn btn-primary px-4 shadow-sm fw-semibold">
+                                    <i class="bi bi-send-fill me-1"></i> Send Feedback
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Live Client Activity Snapshot Side Panel -->
+        <div class="col-lg-4">
+            <div class="card border shadow-sm rounded-3 bg-white sticky-top" style="top: 1rem;">
+                <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                    <h6 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-activity text-primary me-2"></i>Client Activity Snapshot
+                    </h6>
+                    <span class="badge bg-light text-muted border x-small" id="snapshotStatusBadge">Live Data</span>
+                </div>
+                <div class="card-body p-4" id="clientSnapshotContainer">
+                    @if (Model.ClientSnapshot != null)
+                    {
+                        <!-- Client Header -->
+                        <div class="d-flex align-items-center gap-3 mb-3 pb-3 border-bottom">
+                            @{
+                                var initials = "CL";
+                                if (!string.IsNullOrWhiteSpace(Model.ClientSnapshot.FullName))
+                                {
+                                    var parts = Model.ClientSnapshot.FullName.Trim().Split(' ');
+                                    initials = parts.Length > 1 
+                                        ? (parts[0].Substring(0, 1) + parts[parts.Length - 1].Substring(0, 1)).ToUpper()
+                                        : Model.ClientSnapshot.FullName.Substring(0, Math.Min(2, Model.ClientSnapshot.FullName.Length)).ToUpper();
+                                }
+                            }
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm"
+                                 style="width: 48px; height: 48px; background: linear-gradient(135deg, #0d6efd, #0dcaf0);">
+                                @initials
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0 text-dark" id="snapName">@Model.ClientSnapshot.FullName</h6>
+                                <div class="text-muted x-small" id="snapEmail">@Model.ClientSnapshot.Email</div>
+                            </div>
+                        </div>
+
+                        <!-- Metrics Grid -->
+                        <div class="row g-2 mb-3 text-center">
+                            <div class="col-6">
+                                <div class="p-2 bg-light rounded-3">
+                                    <div class="text-muted x-small text-uppercase">Current Weight</div>
+                                    <div class="fw-bold text-primary" id="snapWeight">
+                                        @(Model.ClientSnapshot.CurrentWeightKg.HasValue ? Model.ClientSnapshot.CurrentWeightKg.Value.ToString("0.0") + " kg" : "—")
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 bg-light rounded-3">
+                                    <div class="text-muted x-small text-uppercase">Current BMI</div>
+                                    <div class="fw-bold text-dark" id="snapBmi">
+                                        @(Model.ClientSnapshot.CurrentBmi.HasValue ? Model.ClientSnapshot.CurrentBmi.Value.ToString("0.0") : "—")
+                                        <span class="badge bg-secondary x-small" id="snapBmiBadge">@Model.ClientSnapshot.BmiCategory</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Key Details List -->
+                        <div class="list-group list-group-flush small border rounded-3 mb-3 overflow-hidden">
+                            <div class="list-group-item py-2">
+                                <div class="text-muted x-small text-uppercase">Primary Goal</div>
+                                <div class="fw-semibold text-dark" id="snapGoal">@Model.ClientSnapshot.PrimaryGoal</div>
+                            </div>
+                            <div class="list-group-item py-2">
+                                <div class="text-muted x-small text-uppercase">Assigned Workout Plan</div>
+                                <div class="fw-medium text-dark text-truncate" id="snapWorkout">@Model.ClientSnapshot.ActiveWorkoutPlan</div>
+                            </div>
+                            <div class="list-group-item py-2">
+                                <div class="text-muted x-small text-uppercase">Assigned Diet Plan</div>
+                                <div class="fw-medium text-dark text-truncate" id="snapDiet">@Model.ClientSnapshot.ActiveDietPlan</div>
+                            </div>
+                            <div class="list-group-item py-2">
+                                <div class="text-muted x-small text-uppercase">Last Workout Session</div>
+                                <div class="fw-medium text-secondary" id="snapLastWorkout">@Model.ClientSnapshot.LastWorkoutSummary</div>
+                            </div>
+                            <div class="list-group-item py-2">
+                                <div class="text-muted x-small text-uppercase">Logged Meals in Database</div>
+                                <div class="fw-bold text-success" id="snapMeals">@Model.ClientSnapshot.LoggedMealsCount recorded meals</div>
+                            </div>
+                        </div>
+
+                        <a href="@Url.Action("Details", "Clients", new { id = Model.ClientSnapshot.ClientId })" 
+                           class="btn btn-outline-primary btn-sm w-100 d-inline-flex align-items-center justify-content-center gap-1" 
+                           id="snapProfileLink" 
+                           target="_blank">
+                            <i class="bi bi-box-arrow-up-right"></i>
+                            <span>View Full Client Profile</span>
+                        </a>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-person-x fs-2 d-block mb-2"></i>
+                            Select an assigned client from the dropdown to preview their activity data.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<style>
+    .cursor-pointer {
+        cursor: pointer;
+    }
+    .x-small {
+        font-size: 0.75rem;
+    }
+    .category-card:hover {
+        border-color: #0d6efd !important;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Radio Category Cards Visual Highlighting
+            const categoryCards = document.querySelectorAll('.category-card');
+            const radios = document.querySelectorAll('input[name="Category"]');
+
+            radios.forEach(radio => {
+                radio.addEventListener('change', function () {
+                    categoryCards.forEach(c => {
+                        c.classList.remove('border-primary', 'bg-primary-subtle', 'border-success', 'bg-success-subtle', 'border-info', 'bg-info-subtle');
+                    });
+                    const parentCard = this.closest('.category-card');
+                    if (this.value === 'Workout') {
+                        parentCard.classList.add('border-primary', 'bg-primary-subtle');
+                    } else if (this.value === 'Diet') {
+                        parentCard.classList.add('border-success', 'bg-success-subtle');
+                    } else if (this.value === 'General Progress') {
+                        parentCard.classList.add('border-info', 'bg-info-subtle');
+                    }
+                });
+            });
+
+            // AJAX: Dynamic Client Snapshot on Dropdown Change
+            const clientSelect = document.getElementById('clientSelectDropdown');
+            if (clientSelect) {
+                clientSelect.addEventListener('change', function () {
+                    const clientId = this.value;
+                    if (!clientId) return;
+
+                    fetch('@Url.Action("GetClientSnapshot", "Feedback")?clientId=' + encodeURIComponent(clientId))
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                document.getElementById('snapName').textContent = data.fullName;
+                                document.getElementById('snapEmail').textContent = data.email;
+                                document.getElementById('snapWeight').textContent = data.currentWeight;
+                                document.getElementById('snapBmi').childNodes[0].nodeValue = data.currentBmi + ' ';
+                                document.getElementById('snapBmiBadge').textContent = data.bmiCategory;
+                                document.getElementById('snapGoal').textContent = data.primaryGoal;
+                                document.getElementById('snapWorkout').textContent = data.activeWorkout;
+                                document.getElementById('snapDiet').textContent = data.activeDiet;
+                                document.getElementById('snapLastWorkout').textContent = data.lastWorkout;
+                                document.getElementById('snapMeals').textContent = data.loggedMeals + ' recorded meals';
+                                document.getElementById('snapProfileLink').href = '@Url.Action("Details", "Clients")/' + encodeURIComponent(data.clientId);
+                            }
+                        })
+                        .catch(err => console.error("Error updating snapshot:", err));
+                });
+            }
+        });
+    </script>
+}

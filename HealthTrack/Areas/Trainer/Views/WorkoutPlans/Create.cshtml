@@ -1,0 +1,616 @@
+@model HealthTrack.Areas.Trainer.ViewModels.WorkoutPlanFormViewModel
+
+@{
+    ViewBag.Title = "Create Client Workout Plan";
+}
+
+<div class="container-fluid px-4 py-3">
+
+    <!-- Breadcrumb & Header -->
+    <nav aria-label="breadcrumb" class="mb-2">
+        <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a href="@Url.Action("Index")" class="text-decoration-none">Client Plans</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Create Personalized Plan</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="h3 fw-bold mb-0 text-dark">Build Client Workout Routine</h2>
+            <p class="text-muted small mb-0">Select an assigned client and tailor an individual training routine to their fitness goals</p>
+        </div>
+        <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Plans
+        </a>
+    </div>
+
+    <form action="@Url.Action("Create")" method="post" id="workoutPlanForm">
+        @Html.AntiForgeryToken()
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="card border-0 shadow-sm rounded-3 mb-4 border-start border-danger border-4" style="border-left: 4px solid #dc3545 !important;">
+                <div class="card-body p-3 d-flex align-items-start gap-3">
+                    <div class="rounded-circle bg-danger bg-opacity-10 p-2 d-flex align-items-center justify-content-center" style="min-width:40px;height:40px;">
+                        <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold text-danger mb-1">Please fix the following errors</h6>
+                        @Html.ValidationSummary(true, "", new { @class = "text-danger small mb-0" })
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="row g-4">
+            
+            <!-- Left Column: Client & Plan Specifications -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                            <i class="bi bi-person-fill text-primary"></i> Client & Program Focus
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+
+                        <!-- Client Selection -->
+                        <div class="mb-3">
+                            <label for="clientSelect" class="form-label fw-semibold">Select Assigned Client <span class="text-danger">*</span></label>
+                            <select name="ClientId" class="form-select form-select-lg" id="clientSelect">
+                                @foreach (var c in Model.AvailableClients)
+                                {
+                                    <option value="@c.Id" 
+                                            data-name="@c.FullName" 
+                                            data-email="@c.Email"
+                                            data-goal="@c.PrimaryGoal"
+                                            data-gender="@c.Gender"
+                                            data-height="@c.HeightCm"
+                                            data-weight="@(c.CurrentWeightKg.HasValue ? c.CurrentWeightKg.Value.ToString("0.0") : "--")"
+                                            data-targetweight="@(c.TargetWeightKg.HasValue ? c.TargetWeightKg.Value.ToString("0.0") : "--")"
+                                            data-bmi="@(c.CurrentBmi.HasValue ? c.CurrentBmi.Value.ToString("0.0") : "--")"
+                                            data-bmicategory="@c.BmiCategory"
+                                            data-allergies="@c.Allergies"
+                                            data-dietary="@c.DietaryRestrictions"
+                                            data-medical="@c.MedicalConditions"
+                                            @(Model.ClientId == c.Id ? "selected" : "")>
+                                        @c.FullName (@c.Email) - Goal: @c.PrimaryGoal
+                                    </option>
+                                }
+                            </select>
+                            @Html.ValidationMessageFor(m => m.ClientId, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <!-- Live Client Health & Medical Safety Snapshot Card -->
+                        <div id="clientHealthSnapshotCard" class="card border rounded-3 mb-3 shadow-sm bg-white" style="display: none;">
+                            <div class="card-header bg-light py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-heart-pulse-fill text-primary"></i>
+                                    <span class="x-small text-uppercase fw-bold text-muted">Client Health & Safety Profile</span>
+                                </div>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle x-small" id="snapshotGoalBadge">Goal</span>
+                            </div>
+                            <div class="card-body p-3">
+                                <div class="fw-bold text-dark fs-6 mb-2" id="snapshotClientName">--</div>
+
+                                <!-- Weight, Target & BMI Benchmarks -->
+                                <div class="row g-2 text-center mb-3">
+                                    <div class="col-4">
+                                        <div class="p-2 bg-light rounded-2 border">
+                                            <span class="x-small text-muted d-block text-truncate">Current Wt</span>
+                                            <strong class="text-dark fs-6" id="snapshotWeight">-- kg</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="p-2 bg-light rounded-2 border">
+                                            <span class="x-small text-muted d-block text-truncate">Target Wt</span>
+                                            <strong class="text-primary fs-6" id="snapshotTargetWeight">-- kg</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="p-2 bg-light rounded-2 border">
+                                            <span class="x-small text-muted d-block text-truncate">BMI</span>
+                                            <strong class="text-dark fs-6" id="snapshotBmi">--</strong>
+                                            <span class="badge x-small d-block mt-1 bg-success" id="snapshotBmiBadge">Normal</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Highlighted Medical Advisory & Injury Warnings Banner -->
+                                <div id="snapshotMedicalContainer" class="p-2 rounded-2 mb-2 border">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i id="snapshotMedicalIcon" class="bi bi-shield-exclamation text-warning fs-5 flex-shrink-0"></i>
+                                        <div>
+                                            <div class="x-small fw-bold text-uppercase" id="snapshotMedicalLabel" style="letter-spacing: 0.5px;">Medical Conditions & Precautions</div>
+                                            <div class="fw-bold fs-6" id="snapshotMedicalValue">None</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Dietary & Allergies Badges -->
+                                <div class="d-flex flex-wrap gap-1">
+                                    <span class="badge bg-light text-dark border" id="snapshotDietaryBadge">
+                                        <i class="bi bi-egg-fried me-1 text-warning"></i>Diet: <span id="snapshotDietaryValue">Balanced</span>
+                                    </span>
+                                    <span class="badge bg-light text-dark border" id="snapshotAllergyBadge">
+                                        <i class="bi bi-exclamation-triangle me-1 text-danger"></i>Allergies: <span id="snapshotAllergyValue">None</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="planTitleInput" class="form-label fw-semibold">Personalized Plan Title <span class="text-danger">*</span></label>
+                            <input type="text" name="Title" class="form-control" id="planTitleInput" value="@Model.Title" placeholder="e.g. 6-Week Hypertrophy & Core Conditioning Routine" />
+                            @Html.ValidationMessageFor(m => m.Title, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label for="goalSelect" class="form-label fw-semibold">Client Goal <span class="text-danger">*</span></label>
+                                <select name="Goal" class="form-select" id="goalSelect">
+                                    @foreach (var g in Model.GoalsList)
+                                    {
+                                        <option value="@g" @(Model.Goal == g ? "selected" : "")>@g</option>
+                                    }
+                                </select>
+                                @Html.ValidationMessageFor(m => m.Goal, "", new { @class = "text-danger small" })
+                            </div>
+
+                            <div class="col-6">
+                                <label for="difficultySelect" class="form-label fw-semibold">Difficulty <span class="text-danger">*</span></label>
+                                <select name="DifficultyLevel" class="form-select" id="difficultySelect">
+                                    @foreach (var d in Model.DifficultiesList)
+                                    {
+                                        <option value="@d" @(Model.DifficultyLevel == d ? "selected" : "")>@d</option>
+                                    }
+                                </select>
+                                @Html.ValidationMessageFor(m => m.DifficultyLevel, "", new { @class = "text-danger small" })
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label for="durationWeeksInput" class="form-label fw-semibold">Duration (Weeks)</label>
+                                <input type="number" name="DurationWeeks" class="form-control" min="1" max="52" id="durationWeeksInput" value="@Model.DurationWeeks" />
+                                @Html.ValidationMessageFor(m => m.DurationWeeks, "", new { @class = "text-danger small" })
+                            </div>
+                            <div class="col-6">
+                                <label for="daysPerWeekInput" class="form-label fw-semibold">Days / Week</label>
+                                <input type="number" name="DaysPerWeek" class="form-control" id="daysPerWeekInput" min="1" max="7" value="@Model.DaysPerWeek" />
+                                @Html.ValidationMessageFor(m => m.DaysPerWeek, "", new { @class = "text-danger small" })
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label for="startDateInput" class="form-label fw-semibold">Start Date</label>
+                                <input type="date" name="StartDate" class="form-control" id="startDateInput" value="@Model.StartDate.ToString("yyyy-MM-dd")" />
+                                @Html.ValidationMessageFor(m => m.StartDate, "", new { @class = "text-danger small" })
+                            </div>
+                            <div class="col-6">
+                                <label for="endDateInput" class="form-label fw-semibold">Target End Date</label>
+                                <input type="date" name="EndDate" class="form-control" id="endDateInput" value="@Model.EndDate.ToString("yyyy-MM-dd")" />
+                                @Html.ValidationMessageFor(m => m.EndDate, "", new { @class = "text-danger small" })
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="scheduledStartTimeInput" class="form-label fw-semibold">
+                                <i class="bi bi-clock me-1 text-primary"></i>Daily Workout Start Time <span class="text-muted fw-normal small">(Optional - for automated 30-min reminders)</span>
+                            </label>
+                            <input type="time" name="ScheduledStartTime" class="form-control" id="scheduledStartTimeInput" value="@(Model.ScheduledStartTime.HasValue ? Model.ScheduledStartTime.Value.ToString(@"hh\:mm") : "")" />
+                            <div class="form-text small text-muted">When configured, client receives an automated reminder notification 30 minutes before workout time. Leave empty if no reminder is needed.</div>
+                            @Html.ValidationMessageFor(m => m.ScheduledStartTime, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="descriptionInput" class="form-label fw-semibold">Program Objectives & Strategy <span class="text-danger">*</span></label>
+                            <textarea name="Description" class="form-control" rows="3" id="descriptionInput" placeholder="Outline why this program is prescribed and the target outcomes for this client...">@Model.Description</textarea>
+                            @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="trainerNotesInput" class="form-label fw-semibold">Special Guidance / Precautions for Client</label>
+                            <textarea name="TrainerNotes" class="form-control" rows="2" id="trainerNotesInput" placeholder="e.g. Foam roll hamstrings; keep heart rate between 130-150 BPM...">@Model.TrainerNotes</textarea>
+                            @Html.ValidationMessageFor(m => m.TrainerNotes, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <!-- Hypertrophy Targets & Strategy -->
+                        <div class="p-3 bg-light rounded-3 border mb-3">
+                            <h6 class="fw-bold text-dark small mb-2 d-flex align-items-center gap-1">
+                                <i class="bi bi-bullseye text-primary"></i> Hypertrophy Guidelines
+                            </h6>
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <label class="form-label x-small fw-semibold text-muted mb-0">Rep Range</label>
+                                    <input type="text" name="TargetRepRange" class="form-control form-control-sm" value="@Model.TargetRepRange" placeholder="6 – 30" />
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label x-small fw-semibold text-muted mb-0">Weekly Sets</label>
+                                    <input type="text" name="WeeklySetVolume" class="form-control form-control-sm" value="@Model.WeeklySetVolume" placeholder="10 – 20" />
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <label class="form-label x-small fw-semibold text-muted mb-0">RIR Target</label>
+                                    <input type="text" name="RirTarget" class="form-control form-control-sm" value="@Model.RirTarget" placeholder="1 – 3" />
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label x-small fw-semibold text-muted mb-0">Rest Period</label>
+                                    <input type="text" name="RecommendedRest" class="form-control form-control-sm" value="@Model.RecommendedRest" placeholder="1 – 2.5 min" />
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label x-small fw-semibold text-muted mb-0">Progression Strategy</label>
+                                <input type="text" name="ProgressionStrategy" class="form-control form-control-sm" value="@Model.ProgressionStrategy" placeholder="e.g. Add 1-2 reps per week" />
+                            </div>
+                            <div>
+                                <label class="form-label x-small fw-semibold text-muted mb-0">Recovery Considerations</label>
+                                <input type="text" name="RecoveryGuidelines" class="form-control form-control-sm" value="@Model.RecoveryGuidelines" placeholder="e.g. 48-72h between sessions" />
+                            </div>
+                        </div>
+
+                        <div class="form-check form-switch pt-2">
+                            <input class="form-check-input" type="checkbox" name="IsActive" id="isActiveSwitch" value="true" @(Model.IsActive ? "checked" : "") />
+                            <input type="hidden" name="IsActive" value="false" />
+                            <label class="form-check-label fw-semibold" for="isActiveSwitch">
+                                Publish as Active Routine
+                            </label>
+                            <div class="form-text small">Client will immediately see this routine in their client portal.</div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Exercise Schedule Builder -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                                <i class="bi bi-calendar-week-fill text-success"></i> Prescribed Exercise Routines
+                            </h5>
+                            <small class="text-muted">Configure daily exercises, target sets, repetitions, duration, and personal form cues</small>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" id="btnAddExercise">
+                            <i class="bi bi-plus-lg"></i> Add Exercise
+                        </button>
+                    </div>
+
+                    <div class="card-body p-4">
+                        <div id="exerciseListContainer">
+                            @for (int i = 0; i < Model.Exercises.Count; i++)
+                            {
+                                <div class="exercise-item-row card mb-3 border bg-light" data-index="@i">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="badge bg-secondary exercise-number-badge">Exercise #@(i + 1)</span>
+                                            <button type="button" class="btn btn-sm btn-outline-danger border-0 btn-remove-row" title="Remove exercise">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+
+                                        <div class="row g-2 mb-2">
+                                            <!-- Schedule Day -->
+                                            <div class="col-md-4">
+                                                <label class="form-label small fw-semibold text-muted mb-1">Schedule Day</label>
+                                                <select name="Exercises[@i].DayOfWeek" class="form-select form-select-sm">
+                                                    @foreach (var day in Model.DaysList)
+                                                    {
+                                                        <option value="@day" @(Model.Exercises[i].DayOfWeek == day ? "selected" : "")>@day</option>
+                                                    }
+                                                </select>
+                                            </div>
+
+                                            <!-- Exercise Select from Library -->
+                                            <div class="col-md-5">
+                                                <label class="form-label small fw-semibold text-muted mb-1">Select Exercise (Library)</label>
+                                                <select name="Exercises[@i].ExerciseId" class="form-select form-select-sm exercise-select">
+                                                    @foreach (var ex in Model.AvailableExercises)
+                                                    {
+                                                        <option value="@ex.ExerciseId" @(Model.Exercises[i].ExerciseId == ex.ExerciseId ? "selected" : "")>
+                                                            @ex.Name (@ex.TargetMuscle - @ex.DifficultyLevel)
+                                                        </option>
+                                                    }
+                                                </select>
+                                            </div>
+
+                                            <div class="col-md-3">
+                                                <label class="form-label small fw-semibold text-muted mb-1">Exercise Role</label>
+                                                <select name="Exercises[@i].ExerciseRole" class="form-select form-select-sm">
+                                                    <option value="Primary Exercise" @(Model.Exercises[i].ExerciseRole == "Primary Exercise" ? "selected" : "")>Primary Exercise</option>
+                                                    <option value="Core Exercise" @(Model.Exercises[i].ExerciseRole == "Core Exercise" ? "selected" : "")>Core Exercise</option>
+                                                    <option value="Accessory Movement" @(Model.Exercises[i].ExerciseRole == "Accessory Movement" ? "selected" : "")>Accessory Movement</option>
+                                                    <option value="Warm-Up" @(Model.Exercises[i].ExerciseRole == "Warm-Up" ? "selected" : "")>Warm-Up</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="row g-2 mb-2">
+                                            <div class="col-3">
+                                                <label class="form-label small fw-semibold text-muted mb-1">Sets</label>
+                                                <input type="number" name="Exercises[@i].Sets" value="@Model.Exercises[i].Sets" min="1" max="20" class="form-control form-control-sm" />
+                                            </div>
+                                            <div class="col-3">
+                                                <label class="form-label small fw-semibold text-muted mb-1">Reps</label>
+                                                <input type="number" name="Exercises[@i].Reps" value="@Model.Exercises[i].Reps" min="1" max="100" class="form-control form-control-sm" />
+                                            </div>
+                                            <div class="col-3">
+                                                <label class="form-label small fw-semibold text-muted mb-1">Duration (Min)</label>
+                                                <input type="number" name="Exercises[@i].DurationMinutes" value="@Model.Exercises[i].DurationMinutes" min="0" max="180" class="form-control form-control-sm" placeholder="Optional" />
+                                            </div>
+                                            <div class="col-3">
+                                                <label class="form-label small fw-semibold text-muted mb-1">Rest (Sec)</label>
+                                                <input type="number" name="Exercises[@i].RestSeconds" value="@Model.Exercises[i].RestSeconds" min="0" max="600" class="form-control form-control-sm" />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label class="form-label small fw-semibold text-muted mb-1">Personal Coaching Instructions for Client</label>
+                                            <input type="text" name="Exercises[@i].Instructions" value="@Model.Exercises[i].Instructions" 
+                                                   class="form-control form-control-sm" placeholder="e.g. Pause 1 sec at bottom; focus on chest stretch" />
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="d-grid mt-3">
+                            <button type="button" class="btn btn-outline-secondary border-dashed py-2" id="btnAddExerciseBottom">
+                                <i class="bi bi-plus-circle me-1"></i> Add Another Exercise to Client's Plan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Action Buttons -->
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a href="@Url.Action("Index")" class="btn btn-light px-4">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                        <i class="bi bi-check-lg me-1"></i> Save & Assign to Client
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </form>
+
+</div>
+
+<!-- Hidden template for dynamically added exercise rows -->
+<template id="exerciseRowTemplate">
+    <div class="exercise-item-row card mb-3 border bg-light" data-index="__INDEX__">
+        <div class="card-body p-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-secondary exercise-number-badge">Exercise #__NUM__</span>
+                <button type="button" class="btn btn-sm btn-outline-danger border-0 btn-remove-row" title="Remove exercise">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold text-muted mb-1">Schedule Day</label>
+                    <select name="Exercises[__INDEX__].DayOfWeek" class="form-select form-select-sm">
+                        @foreach (var day in Model.DaysList)
+                        {
+                            <option value="@day">@day</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-5">
+                    <label class="form-label small fw-semibold text-muted mb-1">Select Exercise (Library)</label>
+                    <select name="Exercises[__INDEX__].ExerciseId" class="form-select form-select-sm">
+                        @foreach (var ex in Model.AvailableExercises)
+                        {
+                            <option value="@ex.ExerciseId">@ex.Name (@ex.TargetMuscle - @ex.DifficultyLevel)</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold text-muted mb-1">Exercise Role</label>
+                    <select name="Exercises[__INDEX__].ExerciseRole" class="form-select form-select-sm">
+                        <option value="Primary Exercise">Primary Exercise</option>
+                        <option value="Core Exercise">Core Exercise</option>
+                        <option value="Accessory Movement">Accessory Movement</option>
+                        <option value="Warm-Up">Warm-Up</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-3">
+                    <label class="form-label small fw-semibold text-muted mb-1">Sets</label>
+                    <input type="number" name="Exercises[__INDEX__].Sets" value="3" min="1" max="20" class="form-control form-control-sm" />
+                </div>
+                <div class="col-3">
+                    <label class="form-label small fw-semibold text-muted mb-1">Reps</label>
+                    <input type="number" name="Exercises[__INDEX__].Reps" value="12" min="1" max="100" class="form-control form-control-sm" />
+                </div>
+                <div class="col-3">
+                    <label class="form-label small fw-semibold text-muted mb-1">Duration (Min)</label>
+                    <input type="number" name="Exercises[__INDEX__].DurationMinutes" min="0" max="180" class="form-control form-control-sm" placeholder="Optional" />
+                </div>
+                <div class="col-3">
+                    <label class="form-label small fw-semibold text-muted mb-1">Rest (Sec)</label>
+                    <input type="number" name="Exercises[__INDEX__].RestSeconds" value="60" min="0" max="600" class="form-control form-control-sm" />
+                </div>
+            </div>
+
+            <div>
+                <label class="form-label small fw-semibold text-muted mb-1">Personal Coaching Instructions for Client</label>
+                <input type="text" name="Exercises[__INDEX__].Instructions" class="form-control form-control-sm" placeholder="e.g. Focus on tempo and full extension" />
+            </div>
+        </div>
+    </div>
+</template>
+
+@section Scripts {
+    @Html.Partial("_ValidationScriptsPartial")
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const container = document.getElementById('exerciseListContainer');
+            const template = document.getElementById('exerciseRowTemplate').innerHTML;
+            const btnAddTop = document.getElementById('btnAddExercise');
+            const btnAddBottom = document.getElementById('btnAddExerciseBottom');
+
+            // Snapshot DOM elements
+            const clientSelect = document.getElementById('clientSelect');
+            const snapshotCard = document.getElementById('clientHealthSnapshotCard');
+            const snapshotClientName = document.getElementById('snapshotClientName');
+            const snapshotGoalBadge = document.getElementById('snapshotGoalBadge');
+            const snapshotWeight = document.getElementById('snapshotWeight');
+            const snapshotTargetWeight = document.getElementById('snapshotTargetWeight');
+            const snapshotBmi = document.getElementById('snapshotBmi');
+            const snapshotBmiBadge = document.getElementById('snapshotBmiBadge');
+            const snapshotMedicalContainer = document.getElementById('snapshotMedicalContainer');
+            const snapshotMedicalIcon = document.getElementById('snapshotMedicalIcon');
+            const snapshotMedicalLabel = document.getElementById('snapshotMedicalLabel');
+            const snapshotMedicalValue = document.getElementById('snapshotMedicalValue');
+            const snapshotDietaryValue = document.getElementById('snapshotDietaryValue');
+            const snapshotAllergyBadge = document.getElementById('snapshotAllergyBadge');
+            const snapshotAllergyValue = document.getElementById('snapshotAllergyValue');
+
+            const planTitleInput = document.getElementById('planTitleInput');
+            const goalSelect = document.getElementById('goalSelect');
+
+            function updateClientHealthSnapshot() {
+                if (!clientSelect) return;
+                const opt = clientSelect.options[clientSelect.selectedIndex];
+                if (!opt || !opt.value) {
+                    if (snapshotCard) snapshotCard.style.display = 'none';
+                    return;
+                }
+
+                const name = opt.getAttribute('data-name') || opt.textContent.split('(')[0].trim();
+                const email = opt.getAttribute('data-email') || '';
+                const goal = opt.getAttribute('data-goal') || 'Fitness';
+                const weight = opt.getAttribute('data-weight') || '--';
+                const targetWeight = opt.getAttribute('data-targetweight') || '--';
+                const bmi = opt.getAttribute('data-bmi') || '--';
+                const bmiCategory = opt.getAttribute('data-bmicategory') || 'Normal';
+                const allergies = opt.getAttribute('data-allergies') || 'None';
+                const dietary = opt.getAttribute('data-dietary') || 'Balanced';
+                const medical = opt.getAttribute('data-medical') || 'None';
+
+                if (snapshotClientName) snapshotClientName.textContent = `${name} (${email})`;
+                if (snapshotGoalBadge) snapshotGoalBadge.textContent = goal;
+                if (snapshotWeight) snapshotWeight.textContent = (weight && weight !== '--') ? `${weight} kg` : '--';
+                if (snapshotTargetWeight) snapshotTargetWeight.textContent = (targetWeight && targetWeight !== '--') ? `${targetWeight} kg` : '--';
+                if (snapshotBmi) snapshotBmi.textContent = bmi;
+                
+                if (snapshotBmiBadge) {
+                    snapshotBmiBadge.textContent = bmiCategory;
+                    snapshotBmiBadge.className = 'badge x-small d-block mt-1';
+                    if (bmiCategory === 'Normal') snapshotBmiBadge.classList.add('bg-success');
+                    else if (bmiCategory === 'Underweight') snapshotBmiBadge.classList.add('bg-info', 'text-dark');
+                    else if (bmiCategory === 'Overweight') snapshotBmiBadge.classList.add('bg-warning', 'text-dark');
+                    else snapshotBmiBadge.classList.add('bg-danger');
+                }
+
+                // Medical Condition Precaution Banner
+                const hasMedical = medical && !medical.toLowerCase().includes('none');
+                if (snapshotMedicalContainer && snapshotMedicalIcon && snapshotMedicalLabel && snapshotMedicalValue) {
+                    if (hasMedical) {
+                        snapshotMedicalContainer.className = 'p-2 rounded-2 mb-2 border bg-warning-subtle border-warning text-dark';
+                        snapshotMedicalIcon.className = 'bi bi-exclamation-triangle-fill text-warning fs-5';
+                        snapshotMedicalLabel.textContent = 'CRITICAL MEDICAL ADVISORY / PRECAUTION';
+                        snapshotMedicalValue.innerHTML = `<strong>${medical}</strong> <div class="x-small text-muted mt-1">Trainer Guidance: Tailor exercise volume and avoid aggravating this condition!</div>`;
+                    } else {
+                        snapshotMedicalContainer.className = 'p-2 rounded-2 mb-2 border bg-success-subtle border-success text-success';
+                        snapshotMedicalIcon.className = 'bi bi-check-circle-fill text-success fs-5';
+                        snapshotMedicalLabel.textContent = 'PHYSICAL HEALTH STATUS';
+                        snapshotMedicalValue.textContent = 'No injuries or physical limitations reported';
+                    }
+                }
+
+                if (snapshotDietaryValue) snapshotDietaryValue.textContent = dietary;
+                if (snapshotAllergyValue) snapshotAllergyValue.textContent = allergies;
+                if (snapshotAllergyBadge) {
+                    const hasAllergies = allergies && !allergies.toLowerCase().includes('none');
+                    if (hasAllergies) {
+                        snapshotAllergyBadge.className = 'badge bg-danger-subtle text-danger border border-danger-subtle';
+                    } else {
+                        snapshotAllergyBadge.className = 'badge bg-light text-dark border';
+                    }
+                }
+
+                if (snapshotCard) snapshotCard.style.display = 'block';
+
+                if (name && planTitleInput && (!planTitleInput.value.trim() || planTitleInput.value.includes("'s Personalized Routine"))) {
+                    planTitleInput.value = `${name}'s Personalized Routine`;
+                }
+                if (goal && goalSelect) {
+                    for (let i = 0; i < goalSelect.options.length; i++) {
+                        if (goalSelect.options[i].value.toLowerCase() === goal.toLowerCase() ||
+                            goal.toLowerCase().includes(goalSelect.options[i].value.toLowerCase())) {
+                            goalSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (clientSelect) {
+                clientSelect.addEventListener('change', updateClientHealthSnapshot);
+            }
+
+            // Exercise Row Add / Remove
+            function addRow() {
+                const rows = container.querySelectorAll('.exercise-item-row');
+                const nextIndex = rows.length;
+                const nextNumber = nextIndex + 1;
+
+                const rowHtml = template
+                    .replace(/__INDEX__/g, nextIndex)
+                    .replace(/__NUM__/g, nextNumber);
+
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = rowHtml.trim();
+                const newRow = tempDiv.firstChild;
+
+                container.appendChild(newRow);
+                updateBadges();
+            }
+
+            function updateBadges() {
+                const rows = container.querySelectorAll('.exercise-item-row');
+                rows.forEach((row, idx) => {
+                    const badge = row.querySelector('.exercise-number-badge');
+                    if (badge) badge.textContent = `Exercise #${idx + 1}`;
+                });
+            }
+
+            if (btnAddTop) btnAddTop.addEventListener('click', addRow);
+            if (btnAddBottom) btnAddBottom.addEventListener('click', addRow);
+
+            if (container) {
+                container.addEventListener('click', function (e) {
+                    const removeBtn = e.target.closest('.btn-remove-row');
+                    if (removeBtn) {
+                        const rows = container.querySelectorAll('.exercise-item-row');
+                        if (rows.length <= 1) {
+                            alert('A workout routine requires at least 1 exercise.');
+                            return;
+                        }
+                        const rowToRemove = removeBtn.closest('.exercise-item-row');
+                        rowToRemove.remove();
+                        updateBadges();
+                    }
+                });
+            }
+
+            // Initial snapshot on page load
+            updateClientHealthSnapshot();
+        });
+    </script>
+}
+
+<style>
+    .border-dashed {
+        border-style: dashed !important;
+    }
+</style>

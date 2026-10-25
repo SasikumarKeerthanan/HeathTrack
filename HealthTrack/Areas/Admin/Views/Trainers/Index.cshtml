@@ -1,0 +1,318 @@
+@model List<HealthTrack.Areas.Admin.ViewModels.TrainerListItemViewModel>
+@{
+    ViewBag.Title = "Trainers Management";
+}
+
+<div class="container-fluid py-4 px-md-4">
+
+    <!-- Page Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <h2 class="h3 fw-bold text-dark mb-1">
+                <i class="bi bi-person-badge-fill me-2" style="color: #22C55E;"></i>Trainers Management
+            </h2>
+            <p class="text-muted small mb-0">
+                Manage personal trainers, view active workload capacities, and dispatch onboarding invitations.
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("Index", "Assignments", new { area = "Admin" })" class="btn btn-outline-primary d-inline-flex align-items-center gap-2 shadow-sm px-3 py-2 fw-semibold" style="border-radius: 8px;">
+                <i class="bi bi-person-check-fill"></i>
+                <span>Client Assignments</span>
+            </a>
+            <a href="@Url.Action("Create", "Trainers", new { area = "Admin" })" class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-sm px-3 py-2 fw-semibold" style="border-radius: 8px; background: linear-gradient(135deg, #00A3FF 0%, #0284c7 100%); border: none;">
+                <i class="bi bi-person-plus-fill"></i>
+                <span>Add New Trainer</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm mb-4" role="alert" style="border-radius: 10px;">
+            <i class="bi bi-check-circle-fill fs-5 text-success flex-shrink-0"></i>
+            <div>@TempData["SuccessMessage"]</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm mb-4" role="alert" style="border-radius: 10px;">
+            <i class="bi bi-exclamation-triangle-fill fs-5 text-warning flex-shrink-0"></i>
+            <div>@TempData["WarningMessage"]</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm mb-4" role="alert" style="border-radius: 10px;">
+            <i class="bi bi-shield-exclamation fs-5 text-danger flex-shrink-0"></i>
+            <div>@TempData["ErrorMessage"]</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Quick Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase">Total Trainers</div>
+                        <div class="fs-4 fw-bold text-dark mt-1">@Model.Count</div>
+                    </div>
+                    <div class="rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background-color: rgba(0, 163, 255, 0.12); color: #0284c7;">
+                        <i class="bi bi-people-fill fs-5"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase">Active Accounts</div>
+                        <div class="fs-4 fw-bold text-success mt-1">@Model.Count(t => t.IsInvitationAccepted)</div>
+                    </div>
+                    <div class="rounded-circle bg-success bg-opacity-10 text-success p-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="bi bi-check2-circle fs-5"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase">Pending Invites</div>
+                        <div class="fs-4 fw-bold text-warning mt-1">@Model.Count(t => !t.IsInvitationAccepted)</div>
+                    </div>
+                    <div class="rounded-circle bg-warning bg-opacity-10 text-warning p-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="bi bi-envelope-paper-fill fs-5"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase">Total Clients Coached</div>
+                        <div class="fs-4 fw-bold text-primary mt-1">@Model.Sum(t => t.ActiveClientsCount)</div>
+                    </div>
+                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="bi bi-person-heart fs-5"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trainers Table Card -->
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+        <div class="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+            <h5 class="card-title mb-0 fw-bold fs-6">Registered Trainers Roster</h5>
+            <span class="badge bg-light text-muted border">@Model.Count trainer(s) listed</span>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-muted small text-uppercase">
+                    <tr>
+                        <th class="ps-4">Trainer ID</th>
+                        <th>Coach Info</th>
+                        <th>Gender</th>
+                        <th>Specialization</th>
+                        <th>Active Workload</th>
+                        <th>Account Status</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model == null || Model.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="bi bi-person-x fs-1 d-block mb-2 text-secondary"></i>
+                                <span class="fw-semibold">No trainers found in the system.</span><br />
+                                <span class="small">Click "+ Add New Trainer" to create the first trainer account.</span>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var trainer in Model)
+                        {
+                            var capacityPercent = trainer.MaxClientCapacity > 0 ? (int)Math.Round((double)trainer.ActiveClientsCount / trainer.MaxClientCapacity * 100) : 0;
+                            var isFull = trainer.ActiveClientsCount >= trainer.MaxClientCapacity;
+
+                            <tr>
+                                <td class="ps-4">
+                                    <span class="badge bg-secondary-subtle text-secondary font-monospace fw-bold px-2 py-1">
+                                        @trainer.TrainerId
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle bg-dark text-white d-flex align-items-center justify-content-center fw-bold" style="width: 36px; height: 36px; font-size: 0.85rem;">
+                                            @(string.IsNullOrWhiteSpace(trainer.FullName) ? "T" : trainer.FullName.Substring(0, 1).ToUpper())
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark">@trainer.FullName</div>
+                                            <div class="text-muted small">
+                                                <i class="bi bi-envelope me-1"></i>@trainer.Email
+                                                @if (!string.IsNullOrEmpty(trainer.PhoneNumber))
+                                                {
+                                                    <span class="ms-2"><i class="bi bi-telephone me-1"></i>@trainer.PhoneNumber</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (trainer.Gender == "Female")
+                                    {
+                                        <span class="badge rounded-pill bg-danger-subtle text-danger px-2 py-1">
+                                            <i class="bi bi-gender-female me-1"></i>Female
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge rounded-pill bg-primary-subtle text-primary px-2 py-1">
+                                            <i class="bi bi-gender-male me-1"></i>Male
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="fw-semibold text-dark small d-block">@trainer.PrimarySpecialization</span>
+                                    <span class="text-muted" style="font-size: 0.75rem;">Created @trainer.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                </td>
+                                <td style="min-width: 160px;">
+                                    <div class="d-flex justify-content-between align-items-center small mb-1">
+                                        <span class="fw-bold text-dark">@trainer.ActiveClientsCount / @trainer.MaxClientCapacity</span>
+                                        <span class="text-muted" style="font-size: 0.75rem;">@capacityPercent%</span>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar @(isFull ? "bg-danger" : (capacityPercent > 75 ? "bg-warning" : "bg-success"))" 
+                                             role="progressbar" 
+                                             style="width: @Math.Min(100, capacityPercent)%;" 
+                                             aria-valuenow="@capacityPercent" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100"></div>
+                                    </div>
+                                    @if (isFull)
+                                    {
+                                        <span class="text-danger fw-bold" style="font-size: 0.7rem;">Capacity Full</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-column gap-1">
+                                        @if (!trainer.IsActive)
+                                        {
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-1 d-inline-flex align-items-center gap-1" style="width: fit-content;">
+                                                <i class="bi bi-slash-circle-fill"></i>Deactivated
+                                            </span>
+                                        }
+                                        else if (trainer.IsInvitationAccepted)
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 d-inline-flex align-items-center gap-1" style="width: fit-content;">
+                                                <i class="bi bi-check-circle-fill"></i>Active Coach
+                                            </span>
+                                        }
+                                        else if (trainer.IsInvitationExpired)
+                                        {
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-1 d-inline-flex align-items-center gap-1" style="width: fit-content;">
+                                                <i class="bi bi-exclamation-circle-fill"></i>Invite Expired
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2 py-1 d-inline-flex align-items-center gap-1" style="width: fit-content;">
+                                                <i class="bi bi-hourglass-split"></i>Invite Pending
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="d-flex align-items-center justify-content-end gap-2">
+                                        @if (!trainer.IsInvitationAccepted)
+                                        {
+                                            using (Html.BeginForm("ResendInvitation", "Trainers", new { area = "Admin" }, FormMethod.Post, new { @class = "d-inline" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                @Html.Hidden("trainerId", trainer.TrainerId)
+                                                <button type="submit" class="btn btn-sm btn-outline-warning py-1 px-2" title="Resend initial password-reset invitation email">
+                                                    <i class="bi bi-arrow-repeat me-1"></i>Resend Invite
+                                                </button>
+                                            }
+                                        }
+
+                                        <!-- One-Click Active/Inactive Toggle Button -->
+                                        <button type="button" 
+                                                class="btn btn-sm @(trainer.IsActive ? "btn-outline-danger" : "btn-success") py-1 px-2 fw-semibold rounded-pill"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#toggleTrainerModal-@trainer.TrainerId"
+                                                title="@(trainer.IsActive ? "Deactivate Trainer Account" : "Activate Trainer Account")">
+                                            <i class="bi @(trainer.IsActive ? "bi-slash-circle me-1" : "bi-check-circle me-1")"></i>
+                                            @(trainer.IsActive ? "Deactivate" : "Activate")
+                                        </button>
+                                    </div>
+
+                                    <!-- Trainer Toggle Confirmation Modal -->
+                                    <div class="modal fade text-start" id="toggleTrainerModal-@trainer.TrainerId" tabindex="-1" aria-labelledby="toggleTrainerModalLabel-@trainer.TrainerId" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content border-0 shadow">
+                                                <div class="modal-header border-bottom">
+                                                    <h5 class="modal-title fw-bold" id="toggleTrainerModalLabel-@trainer.TrainerId">
+                                                        <i class="bi @(trainer.IsActive ? "bi-exclamation-triangle text-danger" : "bi-shield-check text-success") me-2"></i>
+                                                        Confirm Coach @(trainer.IsActive ? "Deactivation" : "Activation")
+                                                    </h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body p-4">
+                                                    @if (trainer.IsActive)
+                                                    {
+                                                        <p class="text-dark mb-2">
+                                                            Are you sure you want to <strong>deactivate</strong> coach account for <strong>@trainer.FullName</strong> (<code>@trainer.Email</code>)?
+                                                        </p>
+                                                        <div class="alert alert-warning small mb-0">
+                                                            <i class="bi bi-info-circle-fill me-1"></i>
+                                                            Deactivating this trainer account immediately revokes login privileges and prevents access to client rosters and appointment slots.
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <p class="text-dark mb-2">
+                                                            Are you sure you want to <strong>reactivate</strong> coach account for <strong>@trainer.FullName</strong> (<code>@trainer.Email</code>)?
+                                                        </p>
+                                                        <div class="alert alert-success small mb-0">
+                                                            <i class="bi bi-info-circle-fill me-1"></i>
+                                                            Reactivating will restore trainer login access and reset any temporary login attempt lockouts.
+                                                        </div>
+                                                    }
+                                                </div>
+                                                <div class="modal-footer border-top bg-light">
+                                                    <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                                                    @using (Html.BeginForm("ToggleStatus", "Trainers", new { area = "Admin" }, FormMethod.Post, new { @class = "d-inline" }))
+                                                    {
+                                                        @Html.AntiForgeryToken()
+                                                        @Html.Hidden("trainerId", trainer.TrainerId)
+                                                        <button type="submit" class="btn @(trainer.IsActive ? "btn-danger" : "btn-success") rounded-pill px-4 fw-semibold">
+                                                            Yes, @(trainer.IsActive ? "Deactivate Account" : "Activate Account")
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>

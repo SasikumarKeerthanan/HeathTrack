@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+ <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram DiagramId="7f4786cc4c634468a716864c65567b1c" Name="Diagram1" ZoomLevel="69">
+        <EntityTypeShape EntityType="HealthTrackModel.AuthAuditLogs" Width="1.5" PointX="0.75" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="HealthTrackModel.ClientGoals" Width="1.5" PointX="5.25" PointY="13.375" IsExpanded="true" />
+        <EntityTypeShape EntityType="HealthTrackModel.ClientHealthProfile" Width="1.5" PointX="5.25" PointY="17.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="HealthTrackModel.ClientMealLogs" Width="1.5" PointX="2.75" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="HealthTrackModel.ClientPreferences" Width="1.5" PointX="5.25" PointY="21.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="HealthTrackModel.ClientProgressRecords" Width="1.5" PointX="5.25" PointY="26" IsExpanded="true" />
+        <EntityTypeShape EntityType="HealthTrackModel.Clients" Width="1.5" PointX="3" PointY="20.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="HealthTrackModel.ClientWorkoutLogs" Width="1.5" PointX="8.25" PointY="21.5" IsExpanded="true" />
+        <EntityTypeShape EntityType="HealthTrackModel.DietMeals" Width="1.5" PointX="10.5" PointY="13.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="HealthTrackModel.DietPlans" Width="1.5" PointX="8.25" PointY="14.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="HealthTrackModel.Exercises" Width="1.5" PointX="11.25" PointY="27" IsExpanded="true" />
+        <EntityTypeShape EntityType="HealthTrackModel.PasswordResetTokens" Width="1.5" PointX="5.25" PointY="40.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="HealthTrackModel.TrainerFeedback" Width="1.5" PointX="8.25" PointY="26.375" IsExpanded="true" />
+        <EntityTypeShape EntityType="HealthTrackModel.Trainers" Width="1.5" PointX="0.75" PointY="21.875" IsExpanded="true" />
+        <EntityTypeShape EntityType="HealthTrackModel.WorkoutPlanExercises" Width="1.5" PointX="13.5" PointY="21.5" IsExpanded="true" />
+        <EntityTypeShape EntityType="HealthTrackModel.WorkoutPlans" Width="1.5" PointX="11.25" PointY="20.375" IsExpanded="true" />
+        <AssociationConnector Association="HealthTrackModel.FK_ClientGoals_Clients" ManuallyRouted="false" />
+        <AssociationConnector Association="HealthTrackModel.FK_ClientHealthProfile_Clients" ManuallyRouted="false" />
+        <AssociationConnector Association="HealthTrackModel.FK_ClientPreferences_Clients" ManuallyRouted="false" />
+        <AssociationConnector Association="HealthTrackModel.FK_ClientProgressRecords_Clients" ManuallyRouted="false" />
+        <AssociationConnector Association="HealthTrackModel.FK_Clients_Trainers" ManuallyRouted="false" />
+        <AssociationConnector Association="HealthTrackModel.FK_ClientWorkoutLogs_Clients" ManuallyRouted="false" />
+        <AssociationConnector Association="HealthTrackModel.FK_DietPlans_Clients" ManuallyRouted="false" />
+        <AssociationConnector Association="HealthTrackModel.FK_PasswordResetTokens_Clients" ManuallyRouted="false" />
+        <AssociationConnector Association="HealthTrackModel.FK_TrainerFeedback_Clients" ManuallyRouted="false" />
+        <AssociationConnector Association="HealthTrackModel.FK_WorkoutPlans_Clients" ManuallyRouted="false" />
+        <AssociationConnector Association="HealthTrackModel.FK_ClientWorkoutLogs_WorkoutPlans" ManuallyRouted="false" />
+        <AssociationConnector Association="HealthTrackModel.FK_DietMeals_DietPlans" ManuallyRouted="false" />
+        <AssociationConnector Association="HealthTrackModel.FK_DietPlans_Trainers" ManuallyRouted="false" />
+        <AssociationConnector Association="HealthTrackModel.FK_WorkoutPlanExercises_Exercises" ManuallyRouted="false" />
+        <AssociationConnector Association="HealthTrackModel.FK_TrainerFeedback_Parent" ManuallyRouted="false" />
+        <AssociationConnector Association="HealthTrackModel.FK_TrainerFeedback_Trainers" ManuallyRouted="false" />
+        <AssociationConnector Association="HealthTrackModel.FK_WorkoutPlans_Trainers" ManuallyRouted="false" />
+        <AssociationConnector Association="HealthTrackModel.FK_WorkoutPlanExercises_WorkoutPlans" ManuallyRouted="false" />
+        <AssociationConnector Association="HealthTrackModel.FK_ClientMealLogs_Clients" />
+        <AssociationConnector Association="HealthTrackModel.FK_ClientMealLogs_DietMeals" />
+        <AssociationConnector Association="HealthTrackModel.FK_ClientMealLogs_DietPlans" />
+        <EntityTypeShape EntityType="HealthTrackModel.TrainerChangeRequests" Width="1.5" PointX="5.25" PointY="30.625" />
+        <AssociationConnector Association="HealthTrackModel.FK_TrainerChange_Client" />
+        <EntityTypeShape EntityType="HealthTrackModel.ClientSleepLogs" Width="1.5" PointX="5.25" PointY="35" />
+        <AssociationConnector Association="HealthTrackModel.FK_ClientSleepLogs_Clients" />
+        <EntityTypeShape EntityType="HealthTrackModel.Appointments" Width="1.5" PointX="8.25" PointY="31.5" />
+        <EntityTypeShape EntityType="HealthTrackModel.TrainerAvailability" Width="1.5" PointX="3" PointY="28.75" />
+        <AssociationConnector Association="HealthTrackModel.FK_Appointments_Availability" />
+        <AssociationConnector Association="HealthTrackModel.FK_Appointments_Clients" />
+        <AssociationConnector Association="HealthTrackModel.FK_Appointments_Trainers" />
+        <AssociationConnector Association="HealthTrackModel.FK_TrainerAvailability_Trainers" />
+        <EntityTypeShape EntityType="HealthTrackModel.SupportTickets" Width="1.5" PointX="5.25" PointY="9" />
+        <AssociationConnector Association="HealthTrackModel.FK_SupportTickets_Clients" />
+        <EntityTypeShape EntityType="HealthTrackModel.Admins" Width="1.5" PointX="5.375" PointY="0.75" />
+        <EntityTypeShape EntityType="HealthTrackModel.MessageConversations" Width="1.5" PointX="13.25" PointY="16.25" />
+        <EntityTypeShape EntityType="HealthTrackModel.Messages" Width="1.5" PointX="16.5" PointY="20.75" />
+        <AssociationConnector Association="HealthTrackModel.FK_MessageConversations_Clients" />
+        <AssociationConnector Association="HealthTrackModel.FK_Messages_Clients" />
+        <AssociationConnector Association="HealthTrackModel.FK_MessageConversations_Trainers" />
+        <AssociationConnector Association="HealthTrackModel.FK_Messages_MessageConversations" />
+        <AssociationConnector Association="HealthTrackModel.FK_Messages_Trainers" />
+      </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>

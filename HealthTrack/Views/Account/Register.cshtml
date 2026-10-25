@@ -1,0 +1,480 @@
+@model HealthTrack.Areas.Client.ViewModels.ClientRegisterViewModel
+@{
+    ViewBag.Title = "Client Registration";
+    Layout = "~/Views/Shared/_AuthLayout.cshtml";
+}
+
+<div class="reg-card p-4 p-sm-5">
+    <!-- Header -->
+    <div class="text-center mb-4">
+        <a href="@Url.Action("Index", "Home", new { area = "" })" class="d-inline-flex align-items-center gap-2 mb-2 text-decoration-none">
+            <img src="@Url.Content("~/Content/images/logo.png")" alt="HealthTrack Logo" class="rounded-2 shadow-sm" style="width: 36px; height: 36px; object-fit: contain;" />
+            <span class="fw-bold fs-4 text-white">HealthTrack</span>
+        </a>
+        <div class="mb-2">
+            <span class="badge" style="background-color: rgba(109, 84, 209, 0.2); color: #b7a9ff; border: 1px solid rgba(109, 84, 209, 0.3);">
+                <i class="bi bi-person-plus-fill me-1"></i> Client Portal Registration
+            </span>
+        </div>
+        <h3 class="fw-bold text-white mb-1">Create Your Account</h3>
+        <p class="small text-muted mb-0">Set up your credentials, profile details, and training preferences</p>
+    </div>
+
+    <!-- 3-Step Wizard Indicator -->
+    <div class="step-wizard">
+        <div class="step-item active" id="stepIndicator1">
+            <div class="step-circle" id="circle1">1</div>
+            <div class="step-label">Account</div>
+        </div>
+        <div class="step-item" id="stepIndicator2">
+            <div class="step-circle" id="circle2">2</div>
+            <div class="step-label">Profile</div>
+        </div>
+        <div class="step-item" id="stepIndicator3">
+            <div class="step-circle" id="circle3">3</div>
+            <div class="step-label">Preferences</div>
+        </div>
+    </div>
+
+    <!-- Validation Summary / Error Alerts -->
+    @if (!ViewData.ModelState.IsValid && ViewData.ModelState[""] != null && ViewData.ModelState[""].Errors.Count > 0)
+    {
+        <div class="alert alert-danger py-2 px-3 small mb-3" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5;">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-exclamation-triangle-fill flex-shrink-0 text-danger fs-6"></i>
+                <div>
+                    @Html.ValidationSummary(true, "", new { @class = "mb-0 ps-0 list-unstyled text-danger" })
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Registration Form -->
+    @using (Html.BeginForm("Register", "Account", new { area = "Client" }, FormMethod.Post, new { id = "registerForm" }))
+    {
+        @Html.AntiForgeryToken()
+
+        <!-- ================================================================= -->
+        <!-- STEP 1: Account Credentials                                        -->
+        <!-- ================================================================= -->
+        <div id="stepContent1">
+            <div id="step1AlertBox" class="dark-alert-error mb-3" style="display: none;"></div>
+            <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom border-secondary border-opacity-25">
+                <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: rgba(109, 84, 209, 0.2); color: #b7a9ff;">
+                    <i class="bi bi-shield-lock-fill"></i>
+                </div>
+                <div>
+                    <div class="section-card-title">Step 1: Account Credentials</div>
+                    <div class="small text-muted">These credentials will be used to sign into your Client portal</div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                @Html.LabelFor(m => m.FullName, new { @class = "form-label small fw-semibold text-secondary" })
+                <div class="input-group">
+                    <span class="input-group-text dark-input-group-text border-end-0"><i class="bi bi-person"></i></span>
+                    @Html.TextBoxFor(m => m.FullName, new { @class = "form-control dark-form-control border-start-0 ps-0", placeholder = "e.g. Full Name", id = "fullNameInput" })
+                </div>
+                @Html.ValidationMessageFor(m => m.FullName)
+            </div>
+
+            <div class="mb-3">
+                @Html.LabelFor(m => m.Email, new { @class = "form-label small fw-semibold text-secondary" })
+                <div class="input-group">
+                    <span class="input-group-text dark-input-group-text border-end-0"><i class="bi bi-envelope"></i></span>
+                    @Html.TextBoxFor(m => m.Email, new { @class = "form-control dark-form-control border-start-0 ps-0", placeholder = "name@example.com", id = "emailInput" })
+                </div>
+                @Html.ValidationMessageFor(m => m.Email)
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.Password, new { @class = "form-label small fw-semibold text-secondary" })
+                    <div class="input-group">
+                        <span class="input-group-text dark-input-group-text border-end-0"><i class="bi bi-key"></i></span>
+                        @Html.PasswordFor(m => m.Password, new { @class = "form-control dark-form-control border-start-0 border-end-0 ps-0", placeholder = "Min. 6 characters", id = "regPasswordInput" })
+                        <button class="btn dark-btn-addon border-start-0" type="button" onclick="togglePass('regPasswordInput', 'regPassIcon')">
+                            <i class="bi bi-eye" id="regPassIcon"></i>
+                        </button>
+                    </div>
+                    @Html.ValidationMessageFor(m => m.Password)
+                </div>
+
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.ConfirmPassword, new { @class = "form-label small fw-semibold text-secondary" })
+                    <div class="input-group">
+                        <span class="input-group-text dark-input-group-text border-end-0"><i class="bi bi-check2-circle"></i></span>
+                        @Html.PasswordFor(m => m.ConfirmPassword, new { @class = "form-control dark-form-control border-start-0 border-end-0 ps-0", placeholder = "Re-enter password", id = "regConfirmInput" })
+                        <button class="btn dark-btn-addon border-start-0" type="button" onclick="togglePass('regConfirmInput', 'regConfirmIcon')">
+                            <i class="bi bi-eye" id="regConfirmIcon"></i>
+                        </button>
+                    </div>
+                    @Html.ValidationMessageFor(m => m.ConfirmPassword)
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-purple d-flex align-items-center gap-2" onclick="validateAndGoToStep(2)">
+                    <span>Continue to Profile</span>
+                    <i class="bi bi-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- STEP 2: Personal Profile Details                                   -->
+        <!-- ================================================================= -->
+        <div id="stepContent2" class="d-none">
+            <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom border-secondary border-opacity-25">
+                <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: rgba(16, 185, 129, 0.2); color: #6ee7b7;">
+                    <i class="bi bi-person-lines-fill"></i>
+                </div>
+                <div>
+                    <div class="section-card-title">Step 2: Personal &amp; Physical Details</div>
+                    <div class="small text-muted">Helps calculate your baseline BMI and fitness metrics</div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.PhoneNumber, new { @class = "form-label small fw-semibold text-secondary" })
+                    <div class="input-group">
+                        <span class="input-group-text dark-input-group-text border-end-0"><i class="bi bi-telephone"></i></span>
+                        @Html.TextBoxFor(m => m.PhoneNumber, new { @class = "form-control dark-form-control border-start-0 ps-0", placeholder = "+1 (555) 000-0000" })
+                    </div>
+                    @Html.ValidationMessageFor(m => m.PhoneNumber)
+                </div>
+
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.Gender, new { @class = "form-label small fw-semibold text-secondary" })
+                    @Html.DropDownListFor(m => m.Gender, new List<SelectListItem>
+                    {
+                        new SelectListItem { Text = "-- Select Gender --", Value = "" },
+                        new SelectListItem { Text = "Male", Value = "Male" },
+                        new SelectListItem { Text = "Female", Value = "Female" }
+                    }, new { @class = "form-select dark-form-select" })
+                    @Html.ValidationMessageFor(m => m.Gender)
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.DateOfBirth, new { @class = "form-label small fw-semibold text-secondary" })
+                    @Html.TextBoxFor(m => m.DateOfBirth, "{0:yyyy-MM-dd}", new { @class = "form-control dark-form-control", type = "date" })
+                    @Html.ValidationMessageFor(m => m.DateOfBirth)
+                </div>
+
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.HeightCm, new { @class = "form-label small fw-semibold text-secondary" })
+                    <div class="input-group">
+                        @Html.TextBoxFor(m => m.HeightCm, new { @class = "form-control dark-form-control border-end-0", placeholder = "e.g. 172.5", type = "number", step = "0.1", min = "50", max = "250" })
+                        <span class="input-group-text dark-btn-addon">cm</span>
+                    </div>
+                    <div class="form-text small text-muted">Used for automatic BMI calculation</div>
+                    @Html.ValidationMessageFor(m => m.HeightCm)
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.WeightKg, new { @class = "form-label small fw-semibold text-secondary" })
+                    <div class="input-group">
+                        @Html.TextBoxFor(m => m.WeightKg, new { @class = "form-control dark-form-control border-end-0", placeholder = "e.g. 72.5", type = "number", step = "0.1", min = "30", max = "300" })
+                        <span class="input-group-text dark-btn-addon">kg</span>
+                    </div>
+                    <div class="form-text small text-muted">Current starting weight for baseline metrics</div>
+                    @Html.ValidationMessageFor(m => m.WeightKg)
+                </div>
+
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.TargetWeightKg, new { @class = "form-label small fw-semibold text-secondary" })
+                    <div class="input-group">
+                        @Html.TextBoxFor(m => m.TargetWeightKg, new { @class = "form-control dark-form-control border-end-0", placeholder = "e.g. 68.0", type = "number", step = "0.1", min = "30", max = "300" })
+                        <span class="input-group-text dark-btn-addon">kg</span>
+                    </div>
+                    <div class="form-text small text-muted">Goal weight you want to achieve</div>
+                    @Html.ValidationMessageFor(m => m.TargetWeightKg)
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-dark-outline d-flex align-items-center gap-1" onclick="goToStep(1)">
+                    <i class="bi bi-arrow-left"></i>
+                    <span>Back</span>
+                </button>
+                <button type="button" class="btn btn-purple d-flex align-items-center gap-2" onclick="goToStep(3)">
+                    <span>Continue to Preferences</span>
+                    <i class="bi bi-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- STEP 3: Fitness & Diet Preferences (ClientPreferences)            -->
+        <!-- ================================================================= -->
+        <div id="stepContent3" class="d-none">
+            <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom border-secondary border-opacity-25">
+                <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: rgba(245, 158, 11, 0.2); color: #fbbf24;">
+                    <i class="bi bi-sliders"></i>
+                </div>
+                <div>
+                    <div class="section-card-title">Step 3: Fitness &amp; Diet Preferences</div>
+                    <div class="small text-muted">Help your future trainer tailor your workout and meal plans</div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.PrimaryGoal, new { @class = "form-label small fw-semibold text-secondary" })
+                    @Html.DropDownListFor(m => m.PrimaryGoal, new List<SelectListItem>
+                    {
+                        new SelectListItem { Text = "Weight Loss & Fat Burning", Value = "Weight Loss" },
+                        new SelectListItem { Text = "Muscle Building & Strength", Value = "Muscle Gain" },
+                        new SelectListItem { Text = "Endurance & Stamina", Value = "Endurance" },
+                        new SelectListItem { Text = "General Health & Fitness", Value = "General Fitness", Selected = true },
+                        new SelectListItem { Text = "Flexibility & Mobility", Value = "Flexibility & Mobility" }
+                    }, new { @class = "form-select dark-form-select" })
+                </div>
+
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.FitnessLevel, new { @class = "form-label small fw-semibold text-secondary" })
+                    @Html.DropDownListFor(m => m.FitnessLevel, new List<SelectListItem>
+                    {
+                        new SelectListItem { Text = "Beginner (New to exercise)", Value = "Beginner", Selected = true },
+                        new SelectListItem { Text = "Intermediate (Regularly active)", Value = "Intermediate" },
+                        new SelectListItem { Text = "Advanced (Experienced athlete)", Value = "Advanced" }
+                    }, new { @class = "form-select dark-form-select" })
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.PreferredWorkoutType, new { @class = "form-label small fw-semibold text-secondary" })
+                    @Html.DropDownListFor(m => m.PreferredWorkoutType, new List<SelectListItem>
+                    {
+                        new SelectListItem { Text = "Strength & Weight Training", Value = "Strength Training" },
+                        new SelectListItem { Text = "Cardio & HIIT", Value = "Cardio & HIIT" },
+                        new SelectListItem { Text = "Yoga & Pilates", Value = "Yoga & Pilates" },
+                        new SelectListItem { Text = "Calisthenics (Bodyweight)", Value = "Calisthenics" },
+                        new SelectListItem { Text = "Mixed / Hybrid (Recommended)", Value = "Mixed / Hybrid", Selected = true }
+                    }, new { @class = "form-select dark-form-select" })
+                </div>
+
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.PreferredDietType, new { @class = "form-label small fw-semibold text-secondary" })
+                    @Html.DropDownListFor(m => m.PreferredDietType, new List<SelectListItem>
+                    {
+                        new SelectListItem { Text = "Standard Balanced Diet", Value = "Standard Balanced", Selected = true },
+                        new SelectListItem { Text = "High Protein Diet", Value = "High Protein" },
+                        new SelectListItem { Text = "Vegetarian", Value = "Vegetarian" },
+                        new SelectListItem { Text = "Vegan / Plant-Based", Value = "Vegan" },
+                        new SelectListItem { Text = "Ketogenic (Low Carb)", Value = "Keto" },
+                        new SelectListItem { Text = "Pescatarian", Value = "Pescatarian" }
+                    }, new { @class = "form-select dark-form-select" })
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    @Html.LabelFor(m => m.TargetDaysPerWeek, new { @class = "form-label small fw-semibold text-secondary" })
+                    @Html.DropDownListFor(m => m.TargetDaysPerWeek, new List<SelectListItem>
+                    {
+                        new SelectListItem { Text = "2 Days / Week", Value = "2" },
+                        new SelectListItem { Text = "3 Days / Week", Value = "3", Selected = true },
+                        new SelectListItem { Text = "4 Days / Week", Value = "4" },
+                        new SelectListItem { Text = "5 Days / Week", Value = "5" },
+                        new SelectListItem { Text = "6 Days / Week", Value = "6" }
+                    }, new { @class = "form-select dark-form-select" })
+                </div>
+
+                <div class="col-md-4">
+                    @Html.LabelFor(m => m.PreferredWorkoutDurationMinutes, new { @class = "form-label small fw-semibold text-secondary" })
+                    @Html.DropDownListFor(m => m.PreferredWorkoutDurationMinutes, new List<SelectListItem>
+                    {
+                        new SelectListItem { Text = "30 Minutes", Value = "30" },
+                        new SelectListItem { Text = "45 Minutes", Value = "45", Selected = true },
+                        new SelectListItem { Text = "60 Minutes", Value = "60" },
+                        new SelectListItem { Text = "90 Minutes", Value = "90" }
+                    }, new { @class = "form-select dark-form-select" })
+                </div>
+
+                <div class="col-md-4">
+                    @Html.LabelFor(m => m.PreferredWorkoutTime, new { @class = "form-label small fw-semibold text-secondary" })
+                    @Html.DropDownListFor(m => m.PreferredWorkoutTime, new List<SelectListItem>
+                    {
+                        new SelectListItem { Text = "Morning (6 AM - 12 PM)", Value = "Morning", Selected = true },
+                        new SelectListItem { Text = "Afternoon (12 PM - 5 PM)", Value = "Afternoon" },
+                        new SelectListItem { Text = "Evening (5 PM - 9 PM)", Value = "Evening" }
+                    }, new { @class = "form-select dark-form-select" })
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.PreferredWorkoutLocation, new { @class = "form-label small fw-semibold text-secondary" })
+                    @Html.DropDownListFor(m => m.PreferredWorkoutLocation, new List<SelectListItem>
+                    {
+                        new SelectListItem { Text = "Commercial Gym", Value = "Commercial Gym", Selected = true },
+                        new SelectListItem { Text = "Home Workout", Value = "Home Workout" },
+                        new SelectListItem { Text = "Outdoor / Park", Value = "Outdoor" }
+                    }, new { @class = "form-select dark-form-select" })
+                </div>
+
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.TargetTimeframeMonths, new { @class = "form-label small fw-semibold text-secondary" })
+                    @Html.DropDownListFor(m => m.TargetTimeframeMonths, new List<SelectListItem>
+                    {
+                        new SelectListItem { Text = "1 Month Kickstart", Value = "1" },
+                        new SelectListItem { Text = "3 Months Program (Recommended)", Value = "3", Selected = true },
+                        new SelectListItem { Text = "6 Months Transformation", Value = "6" },
+                        new SelectListItem { Text = "12 Months Long-term", Value = "12" }
+                    }, new { @class = "form-select dark-form-select" })
+                </div>
+            </div>
+
+            <!-- Preferred Coach Gender (Strictly Male or Female) -->
+            <div class="mb-3">
+                @Html.LabelFor(m => m.PreferredTrainerGender, "Preferred Coach Gender", new { @class = "form-label small fw-semibold text-secondary" })
+                @Html.DropDownListFor(m => m.PreferredTrainerGender, new List<SelectListItem>
+                {
+                    new SelectListItem { Text = "Male Coach", Value = "Male", Selected = true },
+                    new SelectListItem { Text = "Female Coach", Value = "Female" }
+                }, new { @class = "form-select dark-form-select" })
+                <div class="form-text small text-muted">You will be automatically paired with a coach matching your gender preference.</div>
+            </div>
+
+            <div class="mb-4">
+                @Html.LabelFor(m => m.AdditionalPreferences, new { @class = "form-label small fw-semibold text-secondary" })
+                @Html.TextAreaFor(m => m.AdditionalPreferences, new { 
+                    @class = "form-control dark-form-control", 
+                    rows = "2", 
+                    placeholder = "Any injuries, favorite exercises, dietary dislikes or special requests..." 
+                })
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-dark-outline d-flex align-items-center gap-1" onclick="goToStep(2)">
+                    <i class="bi bi-arrow-left"></i>
+                    <span>Back</span>
+                </button>
+                <button type="submit" class="btn btn-purple px-4 py-2 d-flex align-items-center gap-2 fw-semibold">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>Complete Registration</span>
+                </button>
+            </div>
+        </div>
+    }
+
+    <!-- Sign In Link -->
+    <div class="text-center mt-4 pt-3 border-top border-secondary border-opacity-25">
+        <span class="small text-muted">Already have a Client account?</span>
+        <a href="@Url.Action("Login", "Account", new { area = "Client" })" class="small fw-semibold text-decoration-none ms-1" style="color: #9d8df1;">
+            Sign In <i class="bi bi-chevron-right small"></i>
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Password Show/Hide Toggle
+        function togglePass(inputId, iconId) {
+            var input = document.getElementById(inputId);
+            var icon = document.getElementById(iconId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        }
+
+        // Beginner-friendly Wizard Step Navigation
+        function goToStep(step) {
+            document.getElementById('stepContent1').classList.add('d-none');
+            document.getElementById('stepContent2').classList.add('d-none');
+            document.getElementById('stepContent3').classList.add('d-none');
+
+            for (var i = 1; i <= 3; i++) {
+                var indicator = document.getElementById('stepIndicator' + i);
+                indicator.classList.remove('active');
+                indicator.classList.remove('completed');
+            }
+
+            for (var j = 1; j < step; j++) {
+                document.getElementById('stepIndicator' + j).classList.add('completed');
+                document.getElementById('circle' + j).innerHTML = '<i class="bi bi-check"></i>';
+            }
+
+            document.getElementById('stepContent' + step).classList.remove('d-none');
+            document.getElementById('stepIndicator' + step).classList.add('active');
+            document.getElementById('circle' + step).innerText = step;
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function validateAndGoToStep(targetStep) {
+            var nameInput = document.getElementById('fullNameInput');
+            var emailInput = document.getElementById('emailInput');
+            var passInput = document.getElementById('regPasswordInput');
+            var confirmInput = document.getElementById('regConfirmInput');
+
+            var name = nameInput ? nameInput.value.trim() : '';
+            var email = emailInput ? emailInput.value.trim() : '';
+            var pass = passInput ? passInput.value : '';
+            var confirm = confirmInput ? confirmInput.value : '';
+
+            var alertBox = document.getElementById('step1AlertBox');
+            if (alertBox) alertBox.style.display = 'none';
+
+            // Clear previous error styles
+            [nameInput, emailInput, passInput, confirmInput].forEach(function (inp) {
+                if (inp) inp.classList.remove('input-validation-error', 'shake-field');
+            });
+
+            function showStepError(inputEl, msg) {
+                if (alertBox) {
+                    alertBox.innerHTML = '<div class="dark-alert-content"><i class="bi bi-exclamation-triangle-fill fs-6 flex-shrink-0 text-danger"></i><div>' + msg + '</div></div><button type="button" class="dark-alert-close" onclick="document.getElementById(\'step1AlertBox\').style.display=\'none\';">&times;</button>';
+                    alertBox.style.display = 'flex';
+                }
+                if (inputEl) {
+                    inputEl.classList.add('input-validation-error', 'shake-field');
+                    inputEl.focus();
+                }
+            }
+
+            if (!name) {
+                showStepError(nameInput, 'Please enter your Full Name.');
+                return;
+            }
+            if (!email || email.indexOf('@@') === -1 || email.indexOf('.') === -1) {
+                showStepError(emailInput, 'Please enter a valid Email Address (e.g. name@example.com).');
+                return;
+            }
+            if (!pass || pass.length < 6) {
+                showStepError(passInput, 'Password must be at least 6 characters long.');
+                return;
+            }
+            if (pass !== confirm) {
+                showStepError(confirmInput, 'Password and Confirm Password do not match.');
+                return;
+            }
+
+            goToStep(targetStep);
+        }
+
+        // Auto-clear error when user types
+        ['fullNameInput', 'emailInput', 'regPasswordInput', 'regConfirmInput'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', function () {
+                    this.classList.remove('input-validation-error', 'shake-field');
+                    var alertBox = document.getElementById('step1AlertBox');
+                    if (alertBox) alertBox.style.display = 'none';
+                });
+            }
+        });
+    </script>
+}

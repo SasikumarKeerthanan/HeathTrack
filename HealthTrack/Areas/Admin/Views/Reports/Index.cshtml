@@ -1,0 +1,602 @@
+@model HealthTrack.Areas.Admin.ViewModels.AdminReportsViewModel
+@{
+    ViewBag.Title = "Analytics & Reports";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Include Chart.js from standard CDN for clean beginner-friendly charting -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<style>
+    /* Print / PDF Export Styling */
+    @@media print {
+        .desktop-sidebar,
+        .top-app-header,
+        .no-print,
+        .btn,
+        form {
+            display: none !important;
+        }
+
+        .main-content-wrapper {
+            margin-left: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 0 !important;
+            background-color: #ffffff !important;
+        }
+
+        .print-header {
+            display: flex !important;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #00A3FF;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            box-shadow: none !important;
+            border: 1px solid #e2e8f0 !important;
+            page-break-inside: avoid;
+        }
+    }
+
+    .print-header {
+        display: none;
+    }
+</style>
+
+<div class="container-fluid py-4 px-md-4">
+
+    <!-- ========================================================
+         EXECUTIVE PRINT / PDF HEADER (Visible only during print)
+         ======================================================== -->
+    <div class="print-header">
+        <div class="d-flex align-items-center gap-2">
+            <img src="@Url.Content("~/Content/images/logo.png")" alt="HealthTrack" style="width: 40px; height: 40px; object-fit: contain;" />
+            <div>
+                <div style="font-size: 1.3rem; font-weight: 800; color: #00A3FF; line-height: 1;">HealthTrack</div>
+                <div style="font-size: 0.65rem; font-weight: 700; color: #22C55E; letter-spacing: 0.8px;">WORKOUT &amp; NUTRITION - EXECUTIVE ANALYTICS REPORT</div>
+            </div>
+        </div>
+        <div class="text-end" style="font-size: 0.78rem; color: #64748b;">
+            <div><strong>Generated:</strong> @Model.GeneratedAt.ToString("dd MMM yyyy, hh:mm tt")</div>
+            <div><strong>Date Range:</strong> @Model.StartDate.ToString("dd MMM yyyy") to @Model.EndDate.ToString("dd MMM yyyy")</div>
+        </div>
+    </div>
+
+    <!-- REPORT SUITE SUB-NAVIGATION -->
+    <ul class="nav nav-pills gap-2 mb-4 no-print">
+        <li class="nav-item">
+            <a class="nav-link active bg-dark text-white rounded-pill px-3 py-2 fw-semibold small" href="@Url.Action("Index", "Reports", new { area = "Admin" })">
+                <i class="bi bi-speedometer2 me-1"></i> Executive Overview
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link bg-light text-secondary rounded-pill px-3 py-2 fw-semibold small" href="@Url.Action("ClientPerformance", "Reports", new { area = "Admin" })">
+                <i class="bi bi-person-fill-gear me-1"></i> Client Performance
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link bg-light text-secondary rounded-pill px-3 py-2 fw-semibold small" href="@Url.Action("PopularRoutines", "Reports", new { area = "Admin" })">
+                <i class="bi bi-fire me-1 text-danger"></i> Popular Workout Routines
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link bg-light text-secondary rounded-pill px-3 py-2 fw-semibold small" href="@Url.Action("TrainerActivity", "Reports", new { area = "Admin" })">
+                <i class="bi bi-person-badge-fill me-1 text-primary"></i> Trainer Activity &amp; Engagement
+            </a>
+        </li>
+    </ul>
+
+    <!-- ========================================================
+         PAGE HEADER & EXPORT ACTIONS
+         ======================================================== -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 no-print">
+        <div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge border px-2 py-1 rounded-pill small fw-semibold" style="background-color: rgba(0, 163, 255, 0.1); color: #0284c7; border-color: rgba(0, 163, 255, 0.25) !important;">
+                    <i class="bi bi-graph-up-arrow me-1" style="color: #22C55E;"></i>System Intelligence
+                </span>
+                <span class="text-muted small">| Live Telemetry &amp; Performance</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mt-2 mb-1">
+                Admin Analytics &amp; Reports
+            </h2>
+            <p class="text-muted small mb-0">
+                User registration trends, appointment statistics, coach capacity distribution, and workout engagement.
+            </p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <button type="button" onclick="window.print()" class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-sm px-3 py-2 fw-semibold" style="border-radius: 8px; background: linear-gradient(135deg, #00A3FF 0%, #0284c7 100%); border: none;">
+                <i class="bi bi-printer-fill"></i>
+                <span>Export PDF / Print</span>
+            </button>
+            <a href="@Url.Action("Index", "Reports", new { area = "Admin", range = Model.DateRange })" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2 shadow-sm px-3 py-2 fw-semibold" style="border-radius: 8px;">
+                <i class="bi bi-arrow-clockwise"></i>
+                <span>Refresh</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- ========================================================
+         DATE FILTER TOOLBAR
+         ======================================================== -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4 no-print">
+        <div class="row g-3 align-items-center">
+            <!-- Quick Filter Pills -->
+            <div class="col-lg-7 d-flex flex-wrap align-items-center gap-2">
+                <span class="text-muted small fw-bold text-uppercase me-1" style="font-size: 0.72rem;">
+                    <i class="bi bi-funnel-fill text-primary me-1"></i>Date Range:
+                </span>
+                <a href="@Url.Action("Index", "Reports", new { area = "Admin", range = "7days" })" 
+                   class="btn btn-sm rounded-pill px-3 @(Model.DateRange == "7days" ? "btn-primary shadow-sm" : "btn-light text-secondary border")" style="@(Model.DateRange == "7days" ? "background: #00A3FF; border-color: #00A3FF;" : "")">
+                    Last 7 Days
+                </a>
+                <a href="@Url.Action("Index", "Reports", new { area = "Admin", range = "30days" })" 
+                   class="btn btn-sm rounded-pill px-3 @(Model.DateRange == "30days" ? "btn-primary shadow-sm" : "btn-light text-secondary border")" style="@(Model.DateRange == "30days" ? "background: #00A3FF; border-color: #00A3FF;" : "")">
+                    Last 30 Days
+                </a>
+                <a href="@Url.Action("Index", "Reports", new { area = "Admin", range = "90days" })" 
+                   class="btn btn-sm rounded-pill px-3 @(Model.DateRange == "90days" ? "btn-primary shadow-sm" : "btn-light text-secondary border")" style="@(Model.DateRange == "90days" ? "background: #00A3FF; border-color: #00A3FF;" : "")">
+                    Last 90 Days
+                </a>
+                <a href="@Url.Action("Index", "Reports", new { area = "Admin", range = "year" })" 
+                   class="btn btn-sm rounded-pill px-3 @(Model.DateRange == "year" ? "btn-primary shadow-sm" : "btn-light text-secondary border")" style="@(Model.DateRange == "year" ? "background: #00A3FF; border-color: #00A3FF;" : "")">
+                    This Year
+                </a>
+                <a href="@Url.Action("Index", "Reports", new { area = "Admin", range = "all" })" 
+                   class="btn btn-sm rounded-pill px-3 @(Model.DateRange == "all" ? "btn-primary shadow-sm" : "btn-light text-secondary border")" style="@(Model.DateRange == "all" ? "background: #00A3FF; border-color: #00A3FF;" : "")">
+                    All Time
+                </a>
+            </div>
+
+            <!-- Custom Date Range Picker -->
+            <div class="col-lg-5">
+                <form method="get" action="@Url.Action("Index", "Reports", new { area = "Admin" })" class="d-flex align-items-center gap-2">
+                    <input type="hidden" name="range" value="custom" />
+                    <input type="date" name="startDate" value="@Model.StartDate.ToString("yyyy-MM-dd")" class="form-control form-control-sm" required title="Start Date" />
+                    <span class="text-muted small">to</span>
+                    <input type="date" name="endDate" value="@Model.EndDate.ToString("yyyy-MM-dd")" class="form-control form-control-sm" required title="End Date" />
+                    <button type="submit" class="btn btn-sm btn-dark px-3 fw-semibold flex-shrink-0" style="border-radius: 6px;">
+                        Filter
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Filter Info Banner -->
+    <div class="d-flex align-items-center justify-content-between mb-3 text-muted small">
+        <div>
+            Reporting Period: <strong class="text-dark">@Model.StartDate.ToString("MMM dd, yyyy")</strong> &mdash; <strong class="text-dark">@Model.EndDate.ToString("MMM dd, yyyy")</strong>
+        </div>
+        <div>
+            Generated by System Administrator &bull; @Model.GeneratedAt.ToString("hh:mm tt")
+        </div>
+    </div>
+
+    <!-- ========================================================
+         1. TOP-LEVEL KPI METRICS SUMMARY
+         ======================================================== -->
+    <div class="row g-3 mb-4">
+        <!-- Metric 1: User Growth -->
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-muted small fw-bold text-uppercase">Total Users</span>
+                        <div class="rounded-3 p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background-color: rgba(0, 163, 255, 0.12); color: #0284c7;">
+                            <i class="bi bi-people-fill fs-5"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2">
+                        <h2 class="display-6 fw-bold text-dark mb-0">@(Model.TotalClients + Model.TotalTrainers)</h2>
+                        <span class="badge bg-success-subtle text-success rounded-pill fw-semibold small">
+                            +@(Model.NewClientsInPeriod + Model.NewTrainersInPeriod) in period
+                        </span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between mt-3 pt-3 border-top small text-muted">
+                        <span><strong class="text-dark">@Model.TotalClients</strong> Clients (@Model.ActiveClients Active)</span>
+                        <span><strong class="text-dark">@Model.TotalTrainers</strong> Coaches</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metric 2: Appointments -->
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-muted small fw-bold text-uppercase">Appointments</span>
+                        <div class="rounded-3 p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background-color: rgba(234, 179, 8, 0.12); color: #ca8a04;">
+                            <i class="bi bi-calendar2-check-fill fs-5"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2">
+                        <h2 class="display-6 fw-bold text-dark mb-0">@Model.TotalAppointments</h2>
+                        <span class="badge bg-success-subtle text-success rounded-pill fw-semibold small">
+                            @Model.CompletedAppointments Completed
+                        </span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between mt-3 pt-3 border-top small text-muted">
+                        <span><strong class="text-primary">@Model.ApprovedAppointments</strong> Confirmed</span>
+                        <span><strong class="text-warning">@Model.PendingAppointments</strong> Pending</span>
+                        <span><strong class="text-danger">@Model.CancelledAppointments</strong> Cancelled</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metric 3: Workout Engagement -->
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-muted small fw-bold text-uppercase">Workout Engagement</span>
+                        <div class="rounded-3 p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background-color: rgba(34, 197, 94, 0.12); color: #16a34a;">
+                            <i class="bi bi-activity fs-5"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2">
+                        <h2 class="display-6 fw-bold text-dark mb-0">@Model.TotalWorkoutLogs</h2>
+                        <span class="badge bg-success-subtle text-success rounded-pill fw-semibold small">
+                            Sessions Logged
+                        </span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between mt-3 pt-3 border-top small text-muted">
+                        <span><strong class="text-success">@Model.TotalCaloriesBurned.ToString("N0")</strong> kcal burned</span>
+                        <span><strong class="text-primary">@Model.TotalStepsLogged.ToString("N0")</strong> steps</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metric 4: System Usage & Audits -->
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-muted small fw-bold text-uppercase">System Activity</span>
+                        <div class="rounded-3 p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background-color: rgba(14, 165, 233, 0.12); color: #0284c7;">
+                            <i class="bi bi-shield-check fs-5"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2">
+                        <h2 class="display-6 fw-bold text-dark mb-0">@Model.TotalSecurityEvents</h2>
+                        <span class="badge bg-info-subtle text-info rounded-pill fw-semibold small">
+                            Security Audits
+                        </span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between mt-3 pt-3 border-top small text-muted">
+                        <span><strong class="text-dark">@Model.TotalMealLogs</strong> Meal Logs</span>
+                        <span class="text-success fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>Healthy State</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================
+         2. CHARTS SECTION (Chart.js)
+         ======================================================== -->
+    <div class="row g-4 mb-4">
+        <!-- Chart 1: Registration & Growth Trend -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 bg-white h-100">
+                <div class="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+                    <div>
+                        <h5 class="card-title mb-0 fw-bold fs-6">
+                            <i class="bi bi-bar-chart-fill me-2" style="color: #00A3FF;"></i>User Registration &amp; Onboarding Trend
+                        </h5>
+                        <span class="text-muted small">Monthly registration comparison between Clients and Fitness Coaches</span>
+                    </div>
+                    <span class="badge rounded-pill" style="background-color: rgba(0, 163, 255, 0.12); color: #0284c7;">Past 6 Months</span>
+                </div>
+                <div class="card-body p-4">
+                    <div style="height: 280px; position: relative;">
+                        <canvas id="userGrowthChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart 2: Appointment Status Breakdown -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-white h-100">
+                <div class="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+                    <div>
+                        <h5 class="card-title mb-0 fw-bold fs-6">
+                            <i class="bi bi-pie-chart-fill me-2" style="color: #22C55E;"></i>Appointment Status
+                        </h5>
+                        <span class="text-muted small">Distribution of consultation bookings</span>
+                    </div>
+                </div>
+                <div class="card-body p-4 d-flex flex-column align-items-center justify-content-center">
+                    <div style="height: 220px; width: 100%; position: relative;">
+                        <canvas id="appointmentStatusChart"></canvas>
+                    </div>
+                    <div class="d-flex flex-wrap justify-content-center gap-3 mt-3 small text-muted">
+                        <span><span class="badge rounded-circle p-1 me-1" style="background-color: #22C55E;">&nbsp;</span>Completed</span>
+                        <span><span class="badge rounded-circle p-1 me-1" style="background-color: #00A3FF;">&nbsp;</span>Confirmed</span>
+                        <span><span class="badge rounded-circle p-1 me-1" style="background-color: #F59E0B;">&nbsp;</span>Pending</span>
+                        <span><span class="badge rounded-circle p-1 me-1" style="background-color: #EF4444;">&nbsp;</span>Cancelled</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================
+         3. TRAINER ACTIVITY & WORKLOAD PERFORMANCE TABLE
+         ======================================================== -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white mb-4 overflow-hidden">
+        <div class="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+            <div>
+                <h5 class="card-title mb-0 fw-bold fs-6">
+                    <i class="bi bi-person-badge-fill me-2" style="color: #22C55E;"></i>Coach Activity &amp; Capacity Utilization
+                </h5>
+                <span class="text-muted small">Performance metrics, assigned client loads, and conducted consultation sessions</span>
+            </div>
+            <a href="@Url.Action("Index", "Trainers", new { area = "Admin" })" class="btn btn-sm btn-outline-primary rounded-pill px-3 no-print">
+                Manage Trainers &rarr;
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-muted small text-uppercase">
+                    <tr>
+                        <th class="ps-4">Coach</th>
+                        <th>Specialization</th>
+                        <th>Client Workload</th>
+                        <th>Utilization</th>
+                        <th>Total Bookings</th>
+                        <th>Completed Sessions</th>
+                        <th class="pe-4 text-end">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.TrainerActivities == null || !Model.TrainerActivities.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                No trainers registered in the system.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var t in Model.TrainerActivities)
+                        {
+                            var isFull = t.AssignedClientsCount >= t.MaxCapacity;
+                            var barColor = !t.IsActive ? "bg-secondary" : (isFull ? "bg-danger" : (t.UtilizationPercentage > 75 ? "bg-warning" : "bg-success"));
+
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle text-white d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 32px; height: 32px; font-size: 0.8rem; background: linear-gradient(135deg, #00A3FF 0%, #22C55E 100%);">
+                                            @(string.IsNullOrWhiteSpace(t.FullName) ? "C" : t.FullName.Substring(0, 1).ToUpper())
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark small">@t.FullName</div>
+                                            <span class="text-muted" style="font-size: 0.7rem;">@t.TrainerId</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">@t.Specialization</span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-dark small">@t.AssignedClientsCount</span>
+                                    <span class="text-muted small">/ @t.MaxCapacity max</span>
+                                </td>
+                                <td style="width: 180px;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 6px; border-radius: 4px;">
+                                            <div class="progress-bar @barColor" style="width: @t.UtilizationPercentage%;"></div>
+                                        </div>
+                                        <span class="small fw-semibold text-muted" style="font-size: 0.72rem;">@t.UtilizationPercentage%</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-dark small">@t.TotalAppointmentsCount</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success-subtle text-success rounded-pill fw-semibold">
+                                        @t.CompletedSessionsCount Done
+                                    </span>
+                                </td>
+                                <td class="pe-4 text-end">
+                                    @if (t.IsActive)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill">Inactive</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ========================================================
+         4. RECENT SYSTEM & WORKOUT ENGAGEMENT AUDIT LOGS
+         ======================================================== -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+        <div class="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+            <div>
+                <h5 class="card-title mb-0 fw-bold fs-6">
+                    <i class="bi bi-clock-history me-2" style="color: #00A3FF;"></i>Recent Engagement &amp; Telemetry Feed
+                </h5>
+                <span class="text-muted small">Real-time workout sessions and consultations logged across the platform</span>
+            </div>
+            <span class="badge bg-light text-muted border">Latest 10 Events</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-muted small text-uppercase">
+                    <tr>
+                        <th class="ps-4">Date &amp; Time</th>
+                        <th>Client</th>
+                        <th>Category</th>
+                        <th>Activity Title</th>
+                        <th>Details</th>
+                        <th class="pe-4 text-end">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.RecentActivities == null || !Model.RecentActivities.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                No activity recorded during this reporting period.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var act in Model.RecentActivities)
+                        {
+                            var badgeClass = act.ActivityType == "Workout" ? "bg-success-subtle text-success border border-success-subtle" : "bg-primary-subtle text-primary border border-primary-subtle";
+
+                            <tr>
+                                <td class="ps-4 text-muted small">
+                                    @act.ActivityDate.ToLocalTime().ToString("MMM dd, yyyy")
+                                </td>
+                                <td>
+                                    <span class="fw-semibold text-dark small">@act.ClientName</span>
+                                </td>
+                                <td>
+                                    <span class="badge @badgeClass rounded-pill px-2 py-1 small">
+                                        @act.ActivityType
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="fw-semibold text-dark small">@act.Title</span>
+                                </td>
+                                <td class="text-muted small">
+                                    @act.DetailSummary
+                                </td>
+                                <td class="pe-4 text-end">
+                                    <span class="badge bg-light text-dark border">
+                                        @act.Status
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- ========================================================
+     CHART.JS SCRIPTS (Beginner-Friendly Initialization)
+     ======================================================== -->
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // 1. User Registration & Growth Trend Chart
+            var growthCtx = document.getElementById('userGrowthChart');
+            if (growthCtx) {
+                var trendLabels = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.TrendLabels));
+                var clientData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.ClientTrendData));
+                var trainerData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.TrainerTrendData));
+
+                new Chart(growthCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: trendLabels,
+                        datasets: [
+                            {
+                                label: 'New Clients',
+                                data: clientData,
+                                backgroundColor: 'rgba(0, 163, 255, 0.85)',
+                                borderColor: '#00A3FF',
+                                borderWidth: 1,
+                                borderRadius: 6
+                            },
+                            {
+                                label: 'New Coaches',
+                                data: trainerData,
+                                backgroundColor: 'rgba(34, 197, 94, 0.85)',
+                                borderColor: '#22C55E',
+                                borderWidth: 1,
+                                borderRadius: 6
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    boxWidth: 12,
+                                    font: { family: "'Plus Jakarta Sans', sans-serif", size: 12 }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { precision: 0, font: { family: "'Plus Jakarta Sans', sans-serif" } },
+                                grid: { color: 'rgba(0,0,0,0.04)' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { family: "'Plus Jakarta Sans', sans-serif" } }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 2. Appointment Status Doughnut Chart
+            var statusCtx = document.getElementById('appointmentStatusChart');
+            if (statusCtx) {
+                var completed = @Model.CompletedAppointments;
+                var approved = @Model.ApprovedAppointments;
+                var pending = @Model.PendingAppointments;
+                var cancelled = @Model.CancelledAppointments;
+
+                // Provide sensible default if all 0
+                if (completed === 0 && approved === 0 && pending === 0 && cancelled === 0) {
+                    completed = 1;
+                }
+
+                new Chart(statusCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Completed', 'Confirmed', 'Pending', 'Cancelled'],
+                        datasets: [{
+                            data: [completed, approved, pending, cancelled],
+                            backgroundColor: ['#22C55E', '#00A3FF', '#F59E0B', '#EF4444'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff',
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        cutout: '68%'
+                    }
+                });
+            }
+        });
+    </script>
+}

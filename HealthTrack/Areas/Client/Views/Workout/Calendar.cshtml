@@ -1,0 +1,328 @@
+@model HealthTrack.Areas.Client.ViewModels.WorkoutCalendarViewModel
+
+@{
+    ViewBag.Title = "Workout Calendar - " + Model.MonthName;
+    var prevMonth = Model.CurrentMonth == 1 ? 12 : Model.CurrentMonth - 1;
+    var prevYear = Model.CurrentMonth == 1 ? Model.CurrentYear - 1 : Model.CurrentYear;
+    var nextMonth = Model.CurrentMonth == 12 ? 1 : Model.CurrentMonth + 1;
+    var nextYear = Model.CurrentMonth == 12 ? Model.CurrentYear + 1 : Model.CurrentYear;
+}
+
+<div class="container-fluid px-4 py-3">
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-2">
+        <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a href="@Url.Action("Index", "Workout", new { area = "Client" })" class="text-decoration-none">Workout Hub</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Workout Calendar</li>
+        </ol>
+    </nav>
+
+    <!-- Header & Calendar Month Controls -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom g-3">
+        <div>
+            <h2 class="h3 fw-bold mb-1 text-dark d-flex align-items-center gap-2">
+                <i class="bi bi-calendar3-range text-primary"></i> Training Schedule &amp; Calendar
+            </h2>
+            <p class="text-muted small mb-0">
+                Track consistency, completed routines, and upcoming workouts for <strong>@Model.Client.FullName</strong>
+            </p>
+        </div>
+
+        <!-- Month Navigation Switcher -->
+        <div class="d-flex align-items-center gap-2">
+            <div class="btn-group shadow-sm">
+                <a href="@Url.Action("Calendar", "Workout", new { area = "Client", month = prevMonth, year = prevYear })" class="btn btn-outline-secondary">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+                <a href="@Url.Action("Calendar", "Workout", new { area = "Client" })" class="btn btn-outline-secondary fw-semibold">
+                    Today
+                </a>
+                <a href="@Url.Action("Calendar", "Workout", new { area = "Client", month = nextMonth, year = nextYear })" class="btn btn-outline-secondary">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </div>
+
+            <div class="px-3 py-2 bg-white rounded-3 border shadow-sm fw-bold fs-5 text-dark">
+                @Model.MonthName
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Summary KPI Bar -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-6">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white text-center">
+                <div class="text-muted x-small text-uppercase fw-bold">Scheduled Sessions</div>
+                <div class="fs-4 fw-bold text-primary mt-1">@Model.ScheduledThisMonth</div>
+                <div class="x-small text-muted">Planned Routines</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white text-center">
+                <div class="text-muted x-small text-uppercase fw-bold">Completed Sessions</div>
+                <div class="fs-4 fw-bold text-success mt-1">@Model.CompletedThisMonth</div>
+                <div class="x-small text-muted">Verified Logged</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white text-center">
+                <div class="text-muted x-small text-uppercase fw-bold">Time Invested</div>
+                <div class="fs-4 fw-bold text-info mt-1">@Model.TotalMinutesThisMonth <span class="fs-6 text-muted">mins</span></div>
+                <div class="x-small text-muted">~@((Model.TotalMinutesThisMonth / 60.0).ToString("0.0")) Hours</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white text-center">
+                <div class="text-muted x-small text-uppercase fw-bold">Month Adherence</div>
+                <div class="fs-4 fw-bold text-warning mt-1">@Model.AdherenceRatePercent%</div>
+                <div class="progress mt-2" style="height: 4px;">
+                    <div class="progress-bar bg-warning" style="width: @Model.AdherenceRatePercent%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar Legend & Filter Indicators -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between p-3 bg-white rounded-4 border shadow-sm mb-4 g-2">
+        <div class="d-flex flex-wrap align-items-center gap-2 small">
+            <span class="fw-bold text-dark me-2 d-flex align-items-center gap-1">
+                <i class="bi bi-info-circle text-primary"></i> Legend:
+            </span>
+            <span class="badge bg-success-subtle text-success border border-success-subtle py-1 px-2 d-inline-flex align-items-center gap-1">
+                <i class="bi bi-check-circle-fill"></i> Completed Workout
+            </span>
+            <span class="badge bg-primary text-white py-1 px-2 d-inline-flex align-items-center gap-1 shadow-xs">
+                <i class="bi bi-star-fill"></i> Today's Scheduled
+            </span>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle py-1 px-2 d-inline-flex align-items-center gap-1">
+                <i class="bi bi-calendar-event"></i> Upcoming Scheduled
+            </span>
+            <span class="badge bg-light text-muted border py-1 px-2 d-inline-flex align-items-center gap-1">
+                <i class="bi bi-cup-hot"></i> Rest &amp; Recovery
+            </span>
+        </div>
+
+        <a href="@Url.Action("Index", "Workout", new { area = "Client" })" class="btn btn-sm btn-outline-primary shadow-xs d-inline-flex align-items-center gap-1">
+            <i class="bi bi-arrow-left-circle me-1"></i> Today's Workout
+        </a>
+    </div>
+
+    <!-- ========================================================
+         CALENDAR 7-COLUMN GRID
+         ======================================================== -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-4">
+        
+        <!-- Day-of-Week Column Headers -->
+        <div class="calendar-header-row bg-light border-bottom d-flex">
+            <div class="calendar-col text-center py-2 fw-bold text-secondary text-uppercase x-small">Monday</div>
+            <div class="calendar-col text-center py-2 fw-bold text-secondary text-uppercase x-small">Tuesday</div>
+            <div class="calendar-col text-center py-2 fw-bold text-secondary text-uppercase x-small">Wednesday</div>
+            <div class="calendar-col text-center py-2 fw-bold text-secondary text-uppercase x-small">Thursday</div>
+            <div class="calendar-col text-center py-2 fw-bold text-secondary text-uppercase x-small">Friday</div>
+            <div class="calendar-col text-center py-2 fw-bold text-secondary text-uppercase x-small">Saturday</div>
+            <div class="calendar-col text-center py-2 fw-bold text-secondary text-uppercase x-small">Sunday</div>
+        </div>
+
+        <!-- Calendar Days Grid -->
+        <div class="calendar-grid d-flex flex-wrap">
+            @foreach (var day in Model.DaysInMonth)
+            {
+                <div class="calendar-cell p-2 border-end border-bottom @(!day.IsCurrentMonth ? "bg-light bg-opacity-75 opacity-50" : "bg-white") @(day.IsToday ? "today-cell" : "")">
+                    
+                    <!-- Date Number Bar -->
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="day-number @(day.IsToday ? "today-badge" : "text-muted") fw-bold small">
+                            @day.DayNumber
+                        </span>
+                        @if (day.IsToday)
+                        {
+                            <span class="badge bg-primary text-white x-small">Today</span>
+                        }
+                    </div>
+
+                    <!-- Day Content -->
+                    <div class="d-flex flex-column gap-1">
+                        @if (day.IsCompleted)
+                        {
+                            <!-- COMPLETED WORKOUT BADGE -->
+                            <div class="calendar-event-card bg-success bg-opacity-10 border border-success-subtle rounded-2 p-2 shadow-2xs cursor-pointer"
+                                 data-bs-toggle="modal" data-bs-target="#dayDetailsModal"
+                                 data-day-date="@day.Date.ToString("MMMM dd, yyyy")"
+                                 data-status="Completed"
+                                 data-session-name="@day.CompletedLog.SessionName"
+                                 data-duration="@day.CompletedLog.DurationMinutes mins"
+                                 data-calories="@day.CompletedLog.CaloriesBurned kcal"
+                                 data-rpe="RPE @(day.CompletedLog.PerceivedExertion)/10"
+                                 data-notes="@day.CompletedLog.ClientNotes"
+                                 data-feedback="@day.CompletedLog.CoachFeedback">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span class="badge bg-success text-white x-small py-0 px-1">
+                                        <i class="bi bi-check-lg"></i> Completed
+                                    </span>
+                                    <span class="text-success fw-bold x-small">@day.CompletedLog.DurationMinutes m</span>
+                                </div>
+                                <div class="fw-bold text-dark x-small text-truncate mt-1">@day.CompletedLog.SessionName</div>
+                                <div class="text-muted x-small"><i class="bi bi-fire text-danger me-1"></i>@day.CompletedLog.CaloriesBurned kcal</div>
+                            </div>
+                        }
+                        else if (day.IsScheduledWorkout)
+                        {
+                            <!-- SCHEDULED WORKOUT BADGE -->
+                            <div class="calendar-event-card @(day.IsToday ? "bg-primary text-white" : "bg-primary-subtle text-primary border border-primary-subtle") rounded-2 p-2 shadow-2xs cursor-pointer"
+                                 data-bs-toggle="modal" data-bs-target="#dayDetailsModal"
+                                 data-day-date="@day.Date.ToString("MMMM dd, yyyy")"
+                                 data-status="@(day.IsToday ? "Scheduled for Today" : (day.IsPast ? "Missed Routine" : "Upcoming Scheduled Routine"))"
+                                 data-session-name="@day.ScheduledSessionName"
+                                 data-moves="@day.ScheduledExercisesCount moves"
+                                 data-can-log="@(day.IsToday || day.IsPast ? "true" : "false")">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span class="badge @(day.IsToday ? "bg-white text-primary" : "bg-primary text-white") x-small py-0 px-1">
+                                        @(day.IsToday ? "Today" : "Scheduled")
+                                    </span>
+                                    <span class="x-small">@day.ScheduledExercisesCount moves</span>
+                                </div>
+                                <div class="fw-bold x-small text-truncate mt-1 @(day.IsToday ? "text-white" : "text-dark")">@day.ScheduledSessionName</div>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- REST DAY -->
+                            <div class="text-center py-2 text-muted x-small">
+                                <i class="bi bi-cup-hot text-muted opacity-50"></i>
+                                <span class="d-block opacity-75">Rest</span>
+                            </div>
+                        }
+                    </div>
+
+                </div>
+            }
+        </div>
+    </div>
+
+</div>
+
+<!-- ========================================================
+     DAY DETAILS MODAL (POPUP ON DAY CLICK)
+     ======================================================== -->
+<div class="modal fade" id="dayDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <div>
+                    <h5 class="modal-title fw-bold text-white mb-0" id="dayModalDate">Selected Date</h5>
+                    <div class="x-small text-white-50" id="dayModalStatus">Workout Details</div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="rounded-circle bg-success bg-opacity-10 text-success p-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                        <i class="bi bi-activity fs-3" id="dayModalIcon"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold text-dark mb-0" id="dayModalSessionName">Session Title</h5>
+                        <div class="text-muted small" id="dayModalMeta">Duration &bull; Calories</div>
+                    </div>
+                </div>
+
+                <div id="dayModalNotesContainer" class="p-3 bg-light rounded-3 mb-3 border d-none">
+                    <strong class="text-dark small d-block mb-1"><i class="bi bi-chat-left-text text-secondary me-1"></i>Logged Notes:</strong>
+                    <div class="fs-6 text-dark lh-base" id="dayModalNotes">Client reflections</div>
+                </div>
+
+                <div id="dayModalFeedbackContainer" class="p-3 bg-primary bg-opacity-10 text-primary rounded-3 mb-3 border border-primary-subtle d-none">
+                    <strong class="small d-block mb-1 text-primary"><i class="bi bi-chat-quote-fill me-1"></i>Trainer Feedback:</strong>
+                    <div class="fs-6 text-dark lh-base" id="dayModalFeedback">Feedback content</div>
+                </div>
+            </div>
+
+            <div class="modal-footer border-top bg-light py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                <a href="@Url.Action("Index", "Workout", new { area = "Client" })" class="btn btn-primary btn-sm" id="btnGoToWorkoutHub">
+                    Go to Today's Hub
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .calendar-col {
+        flex: 0 0 calc(100% / 7);
+        max-width: calc(100% / 7);
+    }
+    .calendar-cell {
+        flex: 0 0 calc(100% / 7);
+        max-width: calc(100% / 7);
+        min-height: 125px;
+        box-sizing: border-box;
+    }
+    .today-cell {
+        background-color: #f0fdf4 !important;
+        border: 2px solid #10b981 !important;
+    }
+    .today-badge {
+        background-color: #10b981;
+        color: white;
+        padding: 2px 7px;
+        border-radius: 50%;
+    }
+    .cursor-pointer {
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .cursor-pointer:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+</style>
+
+@section Scripts {
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const dayCards = document.querySelectorAll(".calendar-event-card");
+        dayCards.forEach(card => {
+            card.addEventListener("click", function () {
+                const date = this.getAttribute("data-day-date");
+                const status = this.getAttribute("data-status");
+                const session = this.getAttribute("data-session-name");
+                const duration = this.getAttribute("data-duration");
+                const calories = this.getAttribute("data-calories");
+                const rpe = this.getAttribute("data-rpe");
+                const notes = this.getAttribute("data-notes");
+                const feedback = this.getAttribute("data-feedback");
+
+                document.getElementById("dayModalDate").textContent = date;
+                document.getElementById("dayModalStatus").textContent = status;
+                document.getElementById("dayModalSessionName").textContent = session;
+
+                let meta = "";
+                if (duration) meta += "Duration: " + duration + " | ";
+                if (calories) meta += "Burn: " + calories + " | ";
+                if (rpe) meta += rpe;
+                if (!meta) meta = this.getAttribute("data-moves") || "Scheduled Session";
+
+                document.getElementById("dayModalMeta").textContent = meta;
+
+                const notesBox = document.getElementById("dayModalNotesContainer");
+                if (notes && notes.trim().length > 0) {
+                    notesBox.classList.remove("d-none");
+                    document.getElementById("dayModalNotes").textContent = notes;
+                } else {
+                    notesBox.classList.add("d-none");
+                }
+
+                const feedbackBox = document.getElementById("dayModalFeedbackContainer");
+                if (feedback && feedback.trim().length > 0) {
+                    feedbackBox.classList.remove("d-none");
+                    document.getElementById("dayModalFeedback").textContent = feedback;
+                } else {
+                    feedbackBox.classList.add("d-none");
+                }
+            });
+        });
+    });
+</script>
+}

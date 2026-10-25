@@ -1,0 +1,286 @@
+@model HealthTrack.Areas.Client.ViewModels.EditHealthMeasurementViewModel
+@{
+    ViewBag.Title = "Edit Health Measurement - HealthTrack";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-3 px-lg-4 py-3">
+
+    <!-- Breadcrumb & Top Bar -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-3 border-bottom border-slate-200">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index", "Dashboard", new { area = "Client" })" class="text-decoration-none text-muted">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index", "Progress", new { area = "Client" })" class="text-decoration-none text-muted">Progress &amp; Plans</a></li>
+                    <li class="breadcrumb-item active text-primary fw-semibold" aria-current="page">Edit Measurement</li>
+                </ol>
+            </nav>
+            <h1 class="h3 fw-bold text-dark mb-0" style="letter-spacing: -0.4px;">Edit Recorded Health Measurement</h1>
+            <p class="text-muted small mb-0">Update your previously recorded telemetry, biometrics, and activity records for @Model.RecordedDate.ToString("MMMM dd, yyyy").</p>
+        </div>
+
+        <div>
+            <a href="@Url.Action("Index", "Progress", new { area = "Client" })" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-2 shadow-sm">
+                <i class="bi bi-arrow-left me-1"></i> Return to Progress Report
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 mb-4 rounded-3 shadow-sm border-0" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-5 text-danger"></i>
+            <div class="fw-semibold">@TempData["ErrorMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Edit Form Card -->
+    <div class="row justify-content-center">
+        <div class="col-lg-9 col-xl-8">
+            <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+                <!-- Header Banner -->
+                <div class="p-4" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 70%, #0369a1 100%);">
+                    <div class="d-flex align-items-center gap-3 text-white">
+                        <div class="rounded-3 bg-white bg-opacity-10 p-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 54px; height: 54px; border: 1px solid rgba(255,255,255,0.2);">
+                            <i class="bi bi-speedometer2 fs-4 text-info"></i>
+                        </div>
+                        <div>
+                            <div class="small text-white-50 text-uppercase fw-bold">Telemetry Record #@Model.RecordId</div>
+                            <h4 class="fw-bold text-white mb-0">Recorded on @Model.RecordedDate.ToString("dddd, MMMM dd, yyyy")</h4>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Content -->
+                <div class="card-body p-4 p-md-5">
+                    @using (Html.BeginForm("Edit", "Progress", new { area = "Client" }, FormMethod.Post, new { id = "editMeasurementForm" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.RecordId)
+                        @Html.HiddenFor(m => m.ClientId)
+                        @Html.HiddenFor(m => m.RecordedDate)
+
+                        <!-- Section 1: Biometrics -->
+                        <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                            <i class="bi bi-person-lines-fill text-primary fs-5"></i>
+                            <h5 class="fw-bold text-dark mb-0">1. Biometric Measurements</h5>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                @Html.LabelFor(m => m.WeightKg, new { @class = "form-label small fw-semibold text-secondary" })
+                                <span class="text-danger">*</span>
+                                <div class="input-group">
+                                    @Html.TextBoxFor(m => m.WeightKg, new { @class = "form-control", @type = "number", @step = "0.1", @min = "20", @max = "400", @id = "pageWeight", @required = "required" })
+                                    <span class="input-group-text bg-light text-muted small">kg</span>
+                                </div>
+                                @Html.ValidationMessageFor(m => m.WeightKg, "", new { @class = "text-danger x-small" })
+                            </div>
+
+                            <div class="col-md-4">
+                                @Html.LabelFor(m => m.HeightCm, new { @class = "form-label small fw-semibold text-secondary" })
+                                <span class="text-danger">*</span>
+                                <div class="input-group">
+                                    @Html.TextBoxFor(m => m.HeightCm, new { @class = "form-control", @type = "number", @step = "0.1", @min = "50", @max = "260", @id = "pageHeight", @required = "required" })
+                                    <span class="input-group-text bg-light text-muted small">cm</span>
+                                </div>
+                                @Html.ValidationMessageFor(m => m.HeightCm, "", new { @class = "text-danger x-small" })
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold text-secondary">Automatic Computed BMI</label>
+                                <div class="p-2 bg-light rounded-3 border d-flex align-items-center justify-content-between" style="min-height: 38px;">
+                                    <span class="small text-muted">Body Mass Index:</span>
+                                    <span id="pageBmiPreview" class="badge bg-primary text-white fw-bold">@(Model.Bmi.HasValue ? Model.Bmi.Value.ToString("0.0") : "--")</span>
+                                </div>
+                                <div class="form-text x-small text-muted">Calculated automatically from weight &amp; height</div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                @Html.LabelFor(m => m.BodyFatPercentage, new { @class = "form-label small fw-semibold text-secondary" })
+                                <div class="input-group">
+                                    @Html.TextBoxFor(m => m.BodyFatPercentage, new { @class = "form-control", @type = "number", @step = "0.1", @min = "1", @max = "70", @placeholder = "Optional (e.g. 18.5)" })
+                                    <span class="input-group-text bg-light text-muted small">%</span>
+                                </div>
+                                @Html.ValidationMessageFor(m => m.BodyFatPercentage, "", new { @class = "text-danger x-small" })
+                            </div>
+
+                            <div class="col-md-6">
+                                @Html.LabelFor(m => m.HeartRateBpm, new { @class = "form-label small fw-semibold text-secondary" })
+                                <div class="input-group">
+                                    @Html.TextBoxFor(m => m.HeartRateBpm, new { @class = "form-control", @type = "number", @min = "30", @max = "250", @placeholder = "Optional (e.g. 72)" })
+                                    <span class="input-group-text bg-light text-muted small">bpm</span>
+                                </div>
+                                @Html.ValidationMessageFor(m => m.HeartRateBpm, "", new { @class = "text-danger x-small" })
+                            </div>
+                        </div>
+
+                        <!-- Section 2: Telemetry & Activity -->
+                        <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                            <i class="bi bi-activity text-success fs-5"></i>
+                            <h5 class="fw-bold text-dark mb-0">2. Daily Telemetry &amp; Energy Balance</h5>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                @Html.LabelFor(m => m.StepsCount, new { @class = "form-label small fw-semibold text-secondary" })
+                                <div class="input-group">
+                                    @Html.TextBoxFor(m => m.StepsCount, new { @class = "form-control", @type = "number", @min = "0", @max = "100000", @placeholder = "0" })
+                                    <span class="input-group-text bg-light text-muted small">steps</span>
+                                </div>
+                                @Html.ValidationMessageFor(m => m.StepsCount, "", new { @class = "text-danger x-small" })
+                            </div>
+
+                            <div class="col-md-4">
+                                @Html.LabelFor(m => m.CaloriesConsumed, new { @class = "form-label small fw-semibold text-secondary" })
+                                <div class="input-group">
+                                    @Html.TextBoxFor(m => m.CaloriesConsumed, new { @class = "form-control", @type = "number", @min = "0", @max = "20000", @placeholder = "0" })
+                                    <span class="input-group-text bg-light text-muted small">kcal</span>
+                                </div>
+                                @Html.ValidationMessageFor(m => m.CaloriesConsumed, "", new { @class = "text-danger x-small" })
+                            </div>
+
+                            <div class="col-md-4">
+                                @Html.LabelFor(m => m.CaloriesBurned, new { @class = "form-label small fw-semibold text-secondary" })
+                                <div class="input-group">
+                                    @Html.TextBoxFor(m => m.CaloriesBurned, new { @class = "form-control", @type = "number", @min = "0", @max = "20000", @placeholder = "0" })
+                                    <span class="input-group-text bg-light text-muted small">kcal</span>
+                                </div>
+                                @Html.ValidationMessageFor(m => m.CaloriesBurned, "", new { @class = "text-danger x-small" })
+                            </div>
+                        </div>
+
+                        <!-- Section 3: Hydration & Notes -->
+                        <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                            <i class="bi bi-droplet-half text-info fs-5"></i>
+                            <h5 class="fw-bold text-dark mb-0">3. Hydration &amp; Check-In Notes</h5>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                @Html.LabelFor(m => m.WaterIntakeMl, new { @class = "form-label small fw-semibold text-secondary" })
+                                <div class="input-group">
+                                    @Html.TextBoxFor(m => m.WaterIntakeMl, new { @class = "form-control", @type = "number", @min = "0", @max = "20000", @placeholder = "0" })
+                                    <span class="input-group-text bg-light text-muted small">ml</span>
+                                </div>
+                                <div class="form-text x-small text-muted">1,000 ml = 1.0 Liter</div>
+                                @Html.ValidationMessageFor(m => m.WaterIntakeMl, "", new { @class = "text-danger x-small" })
+                            </div>
+
+                            <div class="col-md-6">
+                                @Html.LabelFor(m => m.Notes, new { @class = "form-label small fw-semibold text-secondary" })
+                                @Html.TextBoxFor(m => m.Notes, new { @class = "form-control", @maxlength = "500", @placeholder = "e.g. Post-workout weigh-in, feeling great" })
+                                @Html.ValidationMessageFor(m => m.Notes, "", new { @class = "text-danger x-small" })
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex align-items-center justify-content-between pt-3 border-top">
+                            <div class="d-flex align-items-center gap-2">
+                                <a href="@Url.Action("Index", "Progress", new { area = "Client" })" class="btn btn-light rounded-pill px-4">
+                                    Cancel
+                                </a>
+                                <button type="button" class="btn btn-outline-danger rounded-pill px-3 fw-semibold" data-bs-toggle="modal" data-bs-target="#deleteMeasurementModal">
+                                    <i class="bi bi-trash me-1"></i> Delete
+                                </button>
+                            </div>
+                            <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm">
+                                <i class="bi bi-check2-circle me-1"></i> Update Health Measurement
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Health Measurement Confirmation Modal (FR-C-27) -->
+<div class="modal fade" id="deleteMeasurementModal" tabindex="-1" aria-labelledby="deleteMeasurementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            @using (Html.BeginForm("Delete", "Progress", new { area = "Client" }, FormMethod.Post, new { id = "deleteMeasurementForm" }))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.RecordId" />
+
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-3 bg-danger bg-opacity-10 text-danger p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                            <i class="bi bi-trash-fill fs-5"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title fw-bold text-dark mb-0" id="deleteMeasurementModalLabel">Delete Health Measurement</h5>
+                            <div class="text-muted small">Permanent Deletion Confirmation</div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body p-4">
+                    <p class="text-dark mb-2">
+                        Are you sure you want to permanently delete your health measurement recorded on <strong>@Model.RecordedDate.ToString("MMMM dd, yyyy")</strong>?
+                    </p>
+                    <div class="p-3 bg-light rounded-3 border mb-3">
+                        <div class="d-flex justify-content-between small text-muted mb-0">
+                            <span>Recorded Metrics:</span>
+                            <span class="fw-bold text-dark">Weight: @Model.WeightKg.ToString("0.0") kg • Height: @Model.HeightCm.ToString("0.0") cm</span>
+                        </div>
+                    </div>
+                    <div class="alert alert-warning d-flex align-items-center gap-2 mb-0 py-2 px-3 rounded-3 border-0 small">
+                        <i class="bi bi-exclamation-triangle-fill text-warning fs-6"></i>
+                        <div>This action is permanent and cannot be undone. The record will be removed from your history and charts.</div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 pt-0 pb-4 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold shadow-sm">
+                        <i class="bi bi-trash-fill me-1"></i> Confirm Delete
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function calculatePageBmi() {
+            var w = parseFloat(document.getElementById('pageWeight').value);
+            var h = parseFloat(document.getElementById('pageHeight').value);
+            var preview = document.getElementById('pageBmiPreview');
+            if (!preview) return;
+
+            if (!isNaN(w) && !isNaN(h) && w > 0 && h > 0) {
+                var hM = h / 100.0;
+                var bmi = (w / (hM * hM)).toFixed(1);
+                preview.innerText = bmi;
+                if (bmi < 18.5) {
+                    preview.className = 'badge bg-warning text-dark fw-bold';
+                } else if (bmi <= 24.9) {
+                    preview.className = 'badge bg-success text-white fw-bold';
+                } else if (bmi <= 29.9) {
+                    preview.className = 'badge bg-warning text-dark fw-bold';
+                } else {
+                    preview.className = 'badge bg-danger text-white fw-bold';
+                }
+            } else {
+                preview.innerText = '--';
+                preview.className = 'badge bg-primary text-white fw-bold';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var w = document.getElementById('pageWeight');
+            var h = document.getElementById('pageHeight');
+            if (w) w.addEventListener('input', calculatePageBmi);
+            if (h) h.addEventListener('input', calculatePageBmi);
+            calculatePageBmi();
+        });
+    </script>
+}

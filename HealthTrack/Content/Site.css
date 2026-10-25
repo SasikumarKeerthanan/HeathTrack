@@ -1,0 +1,215 @@
+html {
+  font-size: 16px;
+  position: relative;
+  min-height: 100%;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden !important;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #f8fafc;
+  color: #1e293b;
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden !important;
+}
+
+/* ========================================================
+   REUSABLE SIDEBAR & APP LAYOUT STYLES (DESKTOP)
+   ======================================================== */
+
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  position: relative;
+  overflow-x: hidden !important;
+}
+
+/* Desktop Sidebar */
+.desktop-sidebar {
+  width: 270px;
+  min-width: 270px;
+  max-width: 270px;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1020;
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
+}
+
+/* Main Content Area next to Sidebar */
+.main-content-wrapper {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100vh;
+  margin-left: 270px;
+  width: calc(100% - 270px);
+  max-width: calc(100% - 270px);
+  background-color: #f8fafc;
+  overflow-x: hidden !important;
+}
+
+/* Top Navigation Bar inside Main Content */
+.top-app-header {
+  height: 56px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 1010;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  width: 100%;
+}
+
+/* Sidebar Inner Styling */
+.sidebar-inner {
+  background-color: #111417 !important;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
+  padding: 0.5rem 0.65rem 0.35rem 0.65rem !important;
+}
+
+.brand-header-link {
+  transition: all 0.15s ease-in-out;
+}
+
+.brand-header-link:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-nav-container {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  padding-right: 2px;
+}
+
+.sidebar-nav-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-nav-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav-container::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+.sidebar-nav-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Nav Link Treatments */
+.sidebar-inner .nav-pills .nav-link {
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 0.32rem 0.6rem;
+  border-radius: 0.45rem;
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-inner .nav-pills .nav-link:hover:not(.active) {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff !important;
+}
+
+.sidebar-inner .nav-pills .nav-link.active {
+  background: linear-gradient(90deg, #00A3FF 0%, #0284c7 100%) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 163, 255, 0.35);
+}
+
+.nav-section-title {
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.75px;
+  color: rgba(255, 255, 255, 0.45) !important;
+  margin-top: 0.38rem;
+  margin-bottom: 0.1rem;
+  padding-left: 0.45rem;
+  text-transform: uppercase;
+}
+
+.hover-profile-chip {
+  transition: all 0.15s ease-in-out;
+}
+
+.hover-profile-chip:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.x-small {
+  font-size: 0.82rem !important;
+  line-height: 1.4;
+}
+
+.small, small {
+  font-size: 0.94rem !important;
+  line-height: 1.55;
+}
+
+.client-note-box {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #1e293b;
+}
+
+.coach-feedback-box {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #0369a1;
+}
+
+.guidance-box {
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.safety-cue-box {
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.step-instruction-box {
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.hover-bg-dark:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Global button focus */
+.btn:focus, .btn:active:focus, .form-control:focus, .form-select:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.25);
+  border-color: #86b7fe;
+}

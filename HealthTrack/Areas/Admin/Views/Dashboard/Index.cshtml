@@ -1,0 +1,304 @@
+@model HealthTrack.Areas.Admin.ViewModels.AdminDashboardViewModel
+@{
+    ViewBag.Title = "Admin Central Dashboard";
+}
+
+<div class="container-fluid py-4 px-md-4">
+
+    <!-- Welcome & Hero Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge border px-2 py-1 rounded-pill small fw-semibold" style="background-color: rgba(0, 163, 255, 0.1); color: #0284c7; border-color: rgba(0, 163, 255, 0.25) !important;">
+                    <i class="bi bi-shield-check me-1"></i>System Administration
+                </span>
+                <span class="text-muted small">| @DateTime.Now.ToString("dd MMM yyyy, hh:mm tt")</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mt-2 mb-1">
+                Central Administrator Dashboard
+            </h2>
+            <p class="text-muted small mb-0">
+                Live system overview, member roster statistics, coach workload capacities, and security audit telemetry.
+            </p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="@Url.Action("Create", "Trainers", new { area = "Admin" })" class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-sm px-3 py-2 fw-semibold" style="border-radius: 8px; background: linear-gradient(135deg, #00A3FF 0%, #0284c7 100%); border: none;">
+                <i class="bi bi-person-plus-fill"></i>
+                <span>Add New Trainer</span>
+            </a>
+            <a href="@Url.Action("Index", "Clients", new { area = "Admin" })" class="btn btn-outline-dark d-inline-flex align-items-center gap-2 shadow-sm px-3 py-2 fw-semibold" style="border-radius: 8px;">
+                <i class="bi bi-people-fill"></i>
+                <span>Manage Clients</span>
+            </a>
+            <a href="@Url.Action("Index", "AuditLogs", new { area = "Admin" })" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2 shadow-sm px-3 py-2 fw-semibold" style="border-radius: 8px;">
+                <i class="bi bi-journal-text"></i>
+                <span>Audit Logs</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert / Notification Banners -->
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm mb-4" role="alert" style="border-radius: 10px;">
+            <i class="bi bi-exclamation-triangle-fill fs-5 text-danger flex-shrink-0"></i>
+            <div>@ViewBag.ErrorMessage</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- 1. TOP-LEVEL KPI METRICS CARDS -->
+    <div class="row g-3 mb-4">
+        <!-- Card 1: Clients -->
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden bg-white">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-muted small fw-bold text-uppercase tracking-wider">Registered Clients</span>
+                        <div class="rounded-3 bg-primary bg-opacity-10 text-primary p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                            <i class="bi bi-people fs-5"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2">
+                        <h2 class="display-6 fw-bold text-dark mb-0">@Model.TotalClients</h2>
+                        <span class="badge bg-success-subtle text-success rounded-pill fw-semibold small">
+                            <i class="bi bi-check-circle-fill me-1"></i>@Model.ActiveClients Active
+                        </span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between mt-3 pt-3 border-top small text-muted">
+                        <span><strong class="text-danger">@Model.InactiveClients</strong> Inactive</span>
+                        <span><strong class="text-warning">@Model.UnassignedClients</strong> Unassigned</span>
+                        <a href="@Url.Action("Index", "Clients", new { area = "Admin" })" class="text-decoration-none fw-semibold text-primary">View &rarr;</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2: Trainers -->
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden bg-white">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-muted small fw-bold text-uppercase tracking-wider">Coaches & Trainers</span>
+                        <div class="rounded-3 p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background-color: rgba(34, 197, 94, 0.12); color: #16a34a;">
+                            <i class="bi bi-person-badge fs-5"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2">
+                        <h2 class="display-6 fw-bold text-dark mb-0">@Model.TotalTrainers</h2>
+                        <span class="badge bg-success-subtle text-success rounded-pill fw-semibold small">
+                            <i class="bi bi-check-circle-fill me-1"></i>@Model.ActiveTrainers Active
+                        </span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between mt-3 pt-3 border-top small text-muted">
+                        <span><strong class="text-danger">@Model.InactiveTrainers</strong> Inactive</span>
+                        <span><strong class="text-warning">@Model.PendingInviteTrainers</strong> Pending</span>
+                        <a href="@Url.Action("Index", "Trainers", new { area = "Admin" })" class="text-decoration-none fw-semibold text-success">View &rarr;</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3: Appointments -->
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden bg-white">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-muted small fw-bold text-uppercase tracking-wider">Total Sessions</span>
+                        <div class="rounded-3 bg-warning bg-opacity-10 text-warning p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                            <i class="bi bi-calendar-check fs-5"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2">
+                        <h2 class="display-6 fw-bold text-dark mb-0">@Model.TotalAppointments</h2>
+                        <span class="badge bg-info-subtle text-info rounded-pill fw-semibold small">
+                            @Model.ScheduledAppointments Scheduled
+                        </span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between mt-3 pt-3 border-top small text-muted">
+                        <span><strong class="text-success">@Model.CompletedAppointments</strong> Completed</span>
+                        <a href="@Url.Action("Index", "Appointments", new { area = "Admin" })" class="text-decoration-none fw-semibold text-warning">Monitor &rarr;</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 4: Change Requests & Governance -->
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden bg-white">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-muted small fw-bold text-uppercase tracking-wider">Trainer Reassignments</span>
+                        <div class="rounded-3 bg-info bg-opacity-10 text-info p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                            <i class="bi bi-arrow-repeat fs-5"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2">
+                        <h2 class="display-6 fw-bold @(Model.PendingTrainerChangeRequests > 0 ? "text-danger" : "text-dark") mb-0">
+                            @Model.PendingTrainerChangeRequests
+                        </h2>
+                        <span class="badge @(Model.PendingTrainerChangeRequests > 0 ? "bg-danger" : "bg-secondary-subtle text-secondary") rounded-pill fw-semibold small">
+                            Pending Review
+                        </span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between mt-3 pt-3 border-top small text-muted">
+                        <span>Workflow requests</span>
+                        <a href="@Url.Action("Requests", "Assignments", new { area = "Admin" })" class="text-decoration-none fw-semibold text-info">Review &rarr;</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. MAIN 2-COLUMN SECTION: TRAINER CAPACITY vs SECURITY AUDIT FEED -->
+    <div class="row g-4 mb-4">
+        
+        <!-- Left Column: Trainer Workload & Capacity Meters -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+                    <div>
+                        <h5 class="card-title mb-0 fw-bold fs-6">
+                            <i class="bi bi-bar-chart-line text-primary me-2"></i>Trainer Capacity & Workload Distribution
+                        </h5>
+                        <span class="text-muted small">Real-time coaching utilization versus individual capacity ceilings</span>
+                    </div>
+                    <a href="@Url.Action("Index", "Assignments", new { area = "Admin" })" class="btn btn-sm btn-outline-primary py-1 px-3 rounded-pill fw-semibold">
+                        Assign Clients
+                    </a>
+                </div>
+                <div class="card-body p-4">
+                    @if (Model.TrainerWorkloads == null || !Model.TrainerWorkloads.Any())
+                    {
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-person-x fs-1 d-block mb-2 text-secondary"></i>
+                            <span class="fw-semibold">No trainers currently registered in the system.</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-column gap-3">
+                            @foreach (var trainer in Model.TrainerWorkloads)
+                            {
+                                var isFull = trainer.ActiveClientsCount >= trainer.MaxCapacity;
+                                var barColor = !trainer.IsActive ? "bg-secondary" : (isFull ? "bg-danger" : (trainer.UtilizationPercentage > 75 ? "bg-warning" : "bg-success"));
+
+                                <div class="p-3 rounded-3 border bg-light bg-opacity-50">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="rounded-circle bg-dark text-white d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                                @(string.IsNullOrWhiteSpace(trainer.FullName) ? "T" : trainer.FullName.Substring(0, 1).ToUpper())
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-dark small">
+                                                    @trainer.FullName
+                                                    @if (!trainer.IsActive)
+                                                    {
+                                                        <span class="badge bg-secondary ms-1" style="font-size: 0.65rem;">Inactive</span>
+                                                    }
+                                                </div>
+                                                <span class="text-muted" style="font-size: 0.75rem;">@trainer.Specialization</span>
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="fw-bold text-dark small">@trainer.ActiveClientsCount / @trainer.MaxCapacity Clients</span>
+                                            <span class="badge @(isFull ? "bg-danger" : "bg-light text-dark border") ms-2 font-monospace" style="font-size: 0.72rem;">
+                                                @trainer.UtilizationPercentage%
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Capacity Bar -->
+                                    <div class="progress" style="height: 7px; border-radius: 4px;">
+                                        <div class="progress-bar @barColor" 
+                                             role="progressbar" 
+                                             style="width: @Math.Min(100, trainer.UtilizationPercentage)%;" 
+                                             aria-valuenow="@trainer.UtilizationPercentage" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Recent System & Security Audit Telemetry Feed -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+                    <div>
+                        <h5 class="card-title mb-0 fw-bold fs-6">
+                            <i class="bi bi-shield-check text-success me-2"></i>Security & Audit Activity
+                        </h5>
+                        <span class="text-muted small">Live security events & authorization logs</span>
+                    </div>
+                    <a href="@Url.Action("Index", "AuditLogs", new { area = "Admin" })" class="btn btn-sm btn-outline-secondary py-1 px-3 rounded-pill fw-semibold">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body p-3">
+                    @if (Model.RecentActivities == null || !Model.RecentActivities.Any())
+                    {
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-shield-slash fs-1 d-block mb-2 text-secondary"></i>
+                            <span class="fw-semibold">No audit logs recorded yet.</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var log in Model.RecentActivities)
+                            {
+                                var badgeClass = "bg-secondary-subtle text-secondary";
+                                var iconClass = "bi-info-circle";
+
+                                if (log.EventType.Contains("SUCCESS"))
+                                {
+                                    badgeClass = "bg-success-subtle text-success border border-success-subtle";
+                                    iconClass = "bi-check-circle-fill";
+                                }
+                                else if (log.EventType.Contains("FAILED") || log.EventType.Contains("DEACTIVATED") || log.EventType.Contains("LOCKED"))
+                                {
+                                    badgeClass = "bg-danger-subtle text-danger border border-danger-subtle";
+                                    iconClass = "bi-shield-exclamation";
+                                }
+                                else if (log.EventType.Contains("CREATED") || log.EventType.Contains("ACTIVATED"))
+                                {
+                                    badgeClass = "bg-primary-subtle text-primary border border-primary-subtle";
+                                    iconClass = "bi-plus-circle-fill";
+                                }
+
+                                <div class="list-group-item px-2 py-3 border-bottom border-light">
+                                    <div class="d-flex align-items-start justify-content-between gap-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge @badgeClass rounded-pill px-2 py-1 small" style="font-size: 0.7rem;">
+                                                <i class="bi @iconClass me-1"></i>@log.EventType
+                                            </span>
+                                            <span class="badge bg-light text-muted border font-monospace" style="font-size: 0.68rem;">
+                                                @log.UserRole
+                                            </span>
+                                        </div>
+                                        <span class="text-muted" style="font-size: 0.72rem;">
+                                            @log.TimestampUtc.ToLocalTime().ToString("MMM dd, hh:mm tt")
+                                        </span>
+                                    </div>
+                                    <div class="text-dark small mt-1 fw-semibold" style="line-height: 1.3;">
+                                        @log.Details
+                                    </div>
+                                    <div class="text-muted" style="font-size: 0.7rem;">
+                                        User: <span class="font-monospace text-secondary">@log.UserId</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>

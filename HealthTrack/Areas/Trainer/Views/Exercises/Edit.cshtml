@@ -1,0 +1,209 @@
+@model HealthTrack.Models.Exercises
+
+@{
+    ViewBag.Title = "Edit Exercise";
+}
+
+<div class="container-fluid px-4 py-3" style="max-width: 860px;">
+
+    <!-- Breadcrumb & Header -->
+    <nav aria-label="breadcrumb" class="mb-2">
+        <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a href="@Url.Action("Index")" class="text-decoration-none">Exercise Library</a></li>
+            <li class="breadcrumb-item"><a href="@Url.Action("Details", new { id = Model.ExerciseId })" class="text-decoration-none">@Model.Name</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Edit</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="h3 fw-bold mb-0 text-dark">Edit Exercise: @Model.Name</h2>
+            <p class="text-muted small mb-0">Update technical specs, difficulty, equipment, or technique cues</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("Details", new { id = Model.ExerciseId })" class="btn btn-outline-secondary">
+                <i class="bi bi-eye me-1"></i> View Details
+            </a>
+            <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-body p-4">
+            <form action="@Url.Action("Edit")" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ExerciseId" value="@Model.ExerciseId" />
+
+                @Html.ValidationSummary(true, "", new { @class = "alert alert-danger shadow-sm mb-4" })
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label for="Name" class="form-label fw-semibold">Exercise Name <span class="text-danger">*</span></label>
+                        <input type="text" name="Name" id="Name" value="@Model.Name" class="form-control" />
+                        @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger small" })
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="Category" class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                        <select name="Category" id="Category" class="form-select">
+                            <option value="Strength" @(Model.Category == "Strength" ? "selected" : "")>Strength</option>
+                            <option value="Cardio" @(Model.Category == "Cardio" ? "selected" : "")>Cardio</option>
+                            <option value="Core" @(Model.Category == "Core" ? "selected" : "")>Core</option>
+                            <option value="HIIT" @(Model.Category == "HIIT" ? "selected" : "")>HIIT</option>
+                            <option value="Flexibility" @(Model.Category == "Flexibility" ? "selected" : "")>Flexibility</option>
+                        </select>
+                        @Html.ValidationMessageFor(m => m.Category, "", new { @class = "text-danger small" })
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="DifficultyLevel" class="form-label fw-semibold">Difficulty <span class="text-danger">*</span></label>
+                        <select name="DifficultyLevel" id="DifficultyLevel" class="form-select">
+                            <option value="Beginner" @(Model.DifficultyLevel == "Beginner" ? "selected" : "")>Beginner</option>
+                            <option value="Intermediate" @(Model.DifficultyLevel == "Intermediate" ? "selected" : "")>Intermediate</option>
+                            <option value="Advanced" @(Model.DifficultyLevel == "Advanced" ? "selected" : "")>Advanced</option>
+                        </select>
+                        @Html.ValidationMessageFor(m => m.DifficultyLevel, "", new { @class = "text-danger small" })
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label for="TargetMuscle" class="form-label fw-semibold">Primary Target Muscle <span class="text-danger">*</span></label>
+                        <select name="TargetMuscle" id="TargetMuscle" class="form-select">
+                            <option value="Chest" @(Model.TargetMuscle == "Chest" ? "selected" : "")>Chest</option>
+                            <option value="Back" @(Model.TargetMuscle == "Back" ? "selected" : "")>Back</option>
+                            <option value="Legs" @(Model.TargetMuscle == "Legs" ? "selected" : "")>Legs</option>
+                            <option value="Shoulders" @(Model.TargetMuscle == "Shoulders" ? "selected" : "")>Shoulders</option>
+                            <option value="Arms" @(Model.TargetMuscle == "Arms" ? "selected" : "")>Arms</option>
+                            <option value="Core" @(Model.TargetMuscle == "Core" ? "selected" : "")>Core</option>
+                            <option value="Full Body" @(Model.TargetMuscle == "Full Body" ? "selected" : "")>Full Body</option>
+                        </select>
+                        @Html.ValidationMessageFor(m => m.TargetMuscle, "", new { @class = "text-danger small" })
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="MovementPattern" class="form-label fw-semibold">Movement Pattern</label>
+                        <select name="MovementPattern" id="MovementPattern" class="form-select">
+                            <option value="Compound" @(Model.MovementPattern == "Compound" ? "selected" : "")>Compound</option>
+                            <option value="Isolation" @(Model.MovementPattern == "Isolation" ? "selected" : "")>Isolation</option>
+                            <option value="Stability" @(Model.MovementPattern == "Stability" ? "selected" : "")>Stability</option>
+                            <option value="Bodyweight" @(Model.MovementPattern == "Bodyweight" ? "selected" : "")>Bodyweight</option>
+                            <option value="Cardio Conditioning" @(Model.MovementPattern == "Cardio Conditioning" ? "selected" : "")>Cardio Conditioning</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="Equipment" class="form-label fw-semibold">Equipment Needed</label>
+                        <select name="Equipment" id="Equipment" class="form-select">
+                            <option value="Bodyweight" @(Model.Equipment == "Bodyweight" ? "selected" : "")>Bodyweight</option>
+                            <option value="Barbell" @(Model.Equipment == "Barbell" ? "selected" : "")>Barbell</option>
+                            <option value="Dumbbell" @(Model.Equipment == "Dumbbell" ? "selected" : "")>Dumbbell</option>
+                            <option value="Machine" @(Model.Equipment == "Machine" ? "selected" : "")>Machine</option>
+                            <option value="Cable" @(Model.Equipment == "Cable" ? "selected" : "")>Cable</option>
+                            <option value="Kettlebell" @(Model.Equipment == "Kettlebell" ? "selected" : "")>Kettlebell</option>
+                        </select>
+                        @Html.ValidationMessageFor(m => m.Equipment, "", new { @class = "text-danger small" })
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label for="SecondaryMuscles" class="form-label fw-semibold">Secondary Muscles</label>
+                        <input type="text" name="SecondaryMuscles" id="SecondaryMuscles" value="@Model.SecondaryMuscles" class="form-control" placeholder="e.g. Glutes, Hamstrings, Core" />
+                        @Html.ValidationMessageFor(m => m.SecondaryMuscles, "", new { @class = "text-danger small" })
+                    </div>
+                    <div class="col-md-6">
+                        <label for="DefaultCaloriesBurnEstimate" class="form-label fw-semibold">Est. Burn (kcal/10m)</label>
+                        <input type="number" name="DefaultCaloriesBurnEstimate" id="DefaultCaloriesBurnEstimate" value="@Model.DefaultCaloriesBurnEstimate" class="form-control" min="0" max="500" />
+                        @Html.ValidationMessageFor(m => m.DefaultCaloriesBurnEstimate, "", new { @class = "text-danger small" })
+                    </div>
+                </div>
+
+                <!-- Exercise Demonstration Photos & Stages Upload -->
+                <div class="p-3 bg-light rounded-3 border mb-3">
+                    <h6 class="fw-bold text-dark small mb-3 d-flex align-items-center gap-1">
+                        <i class="bi bi-camera-fill text-primary"></i> Exercise Demonstration Images &amp; Stages
+                    </h6>
+                    <div class="row g-3">
+                        <!-- Main Demonstration Photo -->
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Primary Demo Image</label>
+                            @if (!string.IsNullOrEmpty(Model.ImagePath))
+                            {
+                                <div class="mb-2 rounded-2 overflow-hidden border" style="height: 90px;">
+                                    <img src="@Url.Content(Model.ImagePath)" alt="@Model.Name" class="w-100 h-100 object-fit-cover" />
+                                </div>
+                            }
+                            <input type="file" name="imageFile" class="form-control form-control-sm" accept=".jpg,.jpeg,.png,.webp" />
+                            <div class="form-text x-small">JPG, PNG, WebP (Max 5MB)</div>
+                        </div>
+
+                        <!-- Start Stage Photo -->
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Start Stage Thumbnail</label>
+                            @if (!string.IsNullOrEmpty(Model.StartImagePath))
+                            {
+                                <div class="mb-2 rounded-2 overflow-hidden border" style="height: 90px;">
+                                    <img src="@Url.Content(Model.StartImagePath)" alt="Start Stage" class="w-100 h-100 object-fit-cover" />
+                                </div>
+                            }
+                            <input type="file" name="startImageFile" class="form-control form-control-sm" accept=".jpg,.jpeg,.png,.webp" />
+                            <div class="form-text x-small">Setup / starting posture</div>
+                        </div>
+
+                        <!-- Movement Stage Photo -->
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Movement Stage Thumbnail</label>
+                            @if (!string.IsNullOrEmpty(Model.MovementImagePath))
+                            {
+                                <div class="mb-2 rounded-2 overflow-hidden border" style="height: 90px;">
+                                    <img src="@Url.Content(Model.MovementImagePath)" alt="Movement Stage" class="w-100 h-100 object-fit-cover" />
+                                </div>
+                            }
+                            <input type="file" name="movementImageFile" class="form-control form-control-sm" accept=".jpg,.jpeg,.png,.webp" />
+                            <div class="form-text x-small">Peak execution posture</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="KeyGuidance" class="form-label fw-semibold">Key Guidance Checklist (Cues for Exercise Cards)</label>
+                    <textarea name="KeyGuidance" id="KeyGuidance" class="form-control" rows="3" placeholder="Enter concise bullet points (one per line):&#10;Brace your core and keep your chest lifted.&#10;Lower with control; keep knees aligned with toes.&#10;Drive through your mid-foot to stand.">@Model.KeyGuidance</textarea>
+                    <div class="form-text x-small text-muted">Each line will appear as a crisp checkmark item on the client guidance card.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="Description" class="form-label fw-semibold">Description <span class="text-danger">*</span></label>
+                    <textarea name="Description" id="Description" class="form-control" rows="2">@Model.Description</textarea>
+                    @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger small" })
+                </div>
+
+                <div class="mb-3">
+                    <label for="Instructions" class="form-label fw-semibold">Step-by-Step Instructions</label>
+                    <textarea name="Instructions" id="Instructions" class="form-control" rows="4">@Model.Instructions</textarea>
+                    @Html.ValidationMessageFor(m => m.Instructions, "", new { @class = "text-danger small" })
+                </div>
+
+                <div class="mb-4">
+                    <label for="TipsAndPrecautions" class="form-label fw-semibold">Form Tips & Common Mistakes</label>
+                    <textarea name="TipsAndPrecautions" id="TipsAndPrecautions" class="form-control" rows="2">@Model.TipsAndPrecautions</textarea>
+                    @Html.ValidationMessageFor(m => m.TipsAndPrecautions, "", new { @class = "text-danger small" })
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+                    <a href="@Url.Action("Details", new { id = Model.ExerciseId })" class="btn btn-light px-4">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                        <i class="bi bi-check-lg me-1"></i> Update Exercise
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    @Html.Partial("_ValidationScriptsPartial")
+}
